@@ -1,21 +1,32 @@
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
+import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
+import type { StockSummary } from "@/lib/data/products";
+import { StockRowEditor } from "./stock-row-editor";
+import { StockToolbar } from "./stock-toolbar";
 import type { Product, Seller } from "@/types/domain";
 
 export type StockScreenProps = {
   seller: Seller;
   products: ReadonlyArray<Product>;
+  page: number;
+  pageSize: number;
+  total: number;
+  query: string;
+  summary: StockSummary;
 };
 
-export function StockScreen({ seller, products }: StockScreenProps) {
-  const totalUnits = products.reduce((acc, p) => acc + p.stock, 0);
-  const activeSkus = products.length;
-  const outOfStock = products.filter((p) => p.stock === 0).length;
-
+export function StockScreen({
+  seller,
+  products,
+  page,
+  pageSize,
+  total,
+  query,
+  summary,
+}: StockScreenProps) {
   return (
     <SellerShell
       seller={seller}
@@ -26,31 +37,33 @@ export function StockScreen({ seller, products }: StockScreenProps) {
       <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         <Card padding={20}>
           <div className="text-xs text-ink-3">Total unidades</div>
-          <div className="text-[26px] font-bold">{totalUnits}</div>
+          <div className="text-[26px] font-bold">{summary.totalUnits}</div>
         </Card>
         <Card padding={20}>
-          <div className="text-xs text-ink-3">SKUs activos</div>
-          <div className="text-[26px] font-bold">{activeSkus}</div>
+          <div className="text-xs text-ink-3">Productos activos</div>
+          <div className="text-[26px] font-bold">{summary.activeSkus}</div>
         </Card>
         <Card padding={20}>
           <div className="text-xs text-ink-3">Sin stock</div>
-          <div className="text-[26px] font-bold text-danger">{outOfStock}</div>
+          <div className="text-[26px] font-bold text-danger">{summary.outOfStock}</div>
         </Card>
       </div>
+
+      <StockToolbar initialQuery={query} />
 
       <Card padding={0}>
         <div className="p-5 border-b border-line flex justify-between items-center">
           <h3 className="m-0 text-base font-semibold">Inventario por producto</h3>
         </div>
         <div className="overflow-x-auto hidden lgx:block">
-          <table className="w-full border-collapse text-[13px] min-w-[760px]">
+          <table className="w-full border-collapse text-[13px] min-w-[760px] table-fixed">
             <thead className="bg-cream">
               <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
-                <th className="py-2.5 px-5">SKU</th>
+                <th className="py-2.5 px-5 w-28">ID</th>
                 <th className="py-2.5 px-3">Producto</th>
-                <th className="py-2.5 px-3 text-center">Stock</th>
-                <th className="py-2.5 px-3">Estado</th>
-                <th className="py-2.5 px-5"></th>
+                <th className="py-2.5 px-3 w-20 text-center">Stock</th>
+                <th className="py-2.5 px-3 w-28">Estado</th>
+                <th className="py-2.5 px-3 w-[152px]"></th>
               </tr>
             </thead>
             <tbody>
@@ -59,7 +72,7 @@ export function StockScreen({ seller, products }: StockScreenProps) {
                 return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5 font-mono text-xs">
-                      SKU-{p.id.toUpperCase()}
+                      {p.id.toUpperCase()}
                     </td>
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2.5">
@@ -80,18 +93,19 @@ export function StockScreen({ seller, products }: StockScreenProps) {
                         {label}
                       </Pill>
                     </td>
-                    <td className="py-3 px-5">
-                      <button
-                        type="button"
-                        aria-label={`Sumar stock de ${p.title}`}
-                        className="w-8 h-8 rounded-full bg-bone inline-flex items-center justify-center"
-                      >
-                        <Icon name="plus" size={14} />
-                      </button>
+                    <td className="py-3 px-3">
+                      <StockRowEditor initialStock={p.stock} productName={p.title} />
                     </td>
                   </tr>
                 );
               })}
+              {products.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-12 px-5 text-center text-ink-3">
+                    No hay productos que coincidan con tu búsqueda.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -115,30 +129,30 @@ export function StockScreen({ seller, products }: StockScreenProps) {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold">{p.title}</div>
                     <div className="text-[11px] text-ink-3 font-mono mt-0.5">
-                      SKU-{p.id.toUpperCase()}
+                      {p.id.toUpperCase()}
                     </div>
                   </div>
                   <Pill tone={p.stock === 0 ? "danger" : "sage"} size="sm">
                     {label}
                   </Pill>
-                  <button
-                    type="button"
-                    aria-label={`Sumar stock de ${p.title}`}
-                    className="w-8 h-8 rounded-full bg-bone inline-flex items-center justify-center shrink-0"
-                  >
-                    <Icon name="plus" size={14} />
-                  </button>
                 </div>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="bg-cream rounded-xl p-2.5 text-center">
+                <div className="flex items-center justify-between bg-cream rounded-xl p-2.5">
+                  <div>
                     <div className="text-[10px] text-ink-3">Stock</div>
                     <div className="text-base font-bold">{p.stock}</div>
                   </div>
+                  <StockRowEditor initialStock={p.stock} productName={p.title} />
                 </div>
               </div>
             );
           })}
+          {products.length === 0 && (
+            <div className="text-center text-ink-3 py-10 text-sm">
+              No hay productos que coincidan con tu búsqueda.
+            </div>
+          )}
         </div>
+        <Pager page={page} pageSize={pageSize} total={total} basePath="/stock" />
       </Card>
     </SellerShell>
   );

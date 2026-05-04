@@ -19,20 +19,39 @@ const TAB_TO_STATUS: Record<string, OrderStatus | "todos"> = {
 };
 
 type OrdersPageProps = {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    q?: string;
+    page?: string;
+    pageSize?: string;
+  }>;
 };
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const seller = await getCurrentSeller();
-  const { tab = "todos" } = await searchParams;
+  const params = await searchParams;
+  const tab = params.tab ?? "todos";
   const activeTab = TAB_TO_STATUS[tab] ? tab : "todos";
-  const filtered = listSellerOrders(TAB_TO_STATUS[activeTab]);
+  const q = params.q ?? "";
+  const pageNum = Number.parseInt(params.page ?? "1", 10);
+  const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
+
+  const result = listSellerOrders({
+    status: TAB_TO_STATUS[activeTab],
+    query: q,
+    page: Number.isFinite(pageNum) ? pageNum : 1,
+    pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
+  });
   const counts = countSellerOrdersByStatus();
 
   return (
     <OrdersScreen
       seller={seller}
-      orders={filtered}
+      orders={result.items}
+      page={result.page}
+      pageSize={result.pageSize}
+      total={result.total}
+      query={q}
       activeTab={activeTab}
       counts={counts}
     />

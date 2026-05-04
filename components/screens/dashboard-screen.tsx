@@ -14,7 +14,6 @@ import type { Order, Product, Seller } from "@/types/domain";
 export type DashboardScreenProps = {
   seller: Seller;
   stats: ReadonlyArray<DashboardStat>;
-  salesChartBars: ReadonlyArray<number>;
   topProducts: ReadonlyArray<Product>;
   recentOrders: ReadonlyArray<Order>;
 };
@@ -22,7 +21,6 @@ export type DashboardScreenProps = {
 export function DashboardScreen({
   seller,
   stats,
-  salesChartBars,
   topProducts,
   recentOrders,
 }: DashboardScreenProps) {
@@ -55,69 +53,35 @@ export function DashboardScreen({
         ))}
       </div>
 
-      <div className="grid gap-4 mb-6 grid-cols-1 max-[900px]:grid-cols-1 min-[901px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Card padding={24}>
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="m-0 text-base font-semibold">
-              Ventas — últimos 14 días
-            </h3>
-            <select
-              aria-label="Período del gráfico"
-              className="bg-bone border-0 rounded-full px-3 py-1.5 text-xs"
+      <Card padding={24} className="mb-6">
+        <h3 className="m-0 mb-4 text-base font-semibold">Top productos</h3>
+        <div className="flex flex-col">
+          {topProducts.map((p, i) => (
+            <div
+              key={p.id}
+              className={`flex items-center gap-3 py-3 ${i < topProducts.length - 1 ? "border-b border-line" : ""}`}
             >
-              <option>14 días</option>
-              <option>30 días</option>
-              <option>90 días</option>
-            </select>
-          </div>
-          <svg
-            viewBox="0 0 560 200"
-            className="w-full h-[200px]"
-            role="img"
-            aria-label="Gráfico de ventas de los últimos 14 días"
-          >
-            {salesChartBars.map((v, i) => (
-              <g key={i}>
-                <rect
-                  x={i * 40 + 8}
-                  y={170 - v}
-                  width={28}
-                  height={v}
-                  rx={4}
-                  fill={i === salesChartBars.length - 1 ? "#414833" : "#a4ac86"}
-                />
-              </g>
-            ))}
-            <line x1="0" y1="170" x2="560" y2="170" stroke="#e2dccc" />
-          </svg>
-        </Card>
-        <Card padding={24}>
-          <h3 className="m-0 mb-4 text-base font-semibold">Top productos</h3>
-          <div className="flex flex-col gap-3.5">
-            {topProducts.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-3">
-                <div className="w-3.5 font-mono text-[11px] text-ink-3">
-                  0{i + 1}
-                </div>
-                <div
-                  className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                  style={{
-                    background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
-                  }}
-                >
-                  <ProductGlyph kind={p.glyph} palette={p.palette} size={22} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                    {p.title}
-                  </div>
-                  <div className="text-[11px] text-ink-3">{p.reviews} ventas</div>
-                </div>
+              <div className="w-5 font-mono text-[11px] text-ink-3 shrink-0 text-center">
+                {String(i + 1).padStart(2, "0")}
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+              <div
+                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
+                }}
+              >
+                <ProductGlyph kind={p.glyph} palette={p.palette} size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {p.title}
+                </div>
+                <div className="text-[11px] text-ink-3">{p.reviews} ventas</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card padding={0}>
         <div className="p-5 flex justify-between items-center border-b border-line">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
+import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import type { TabItem } from "@/components/ui/tabs";
 import { SellerShell } from "@/components/layout/seller-shell";
@@ -13,6 +14,10 @@ import { OrdersToolbar } from "./orders-toolbar";
 export type OrdersScreenProps = {
   seller: Seller;
   orders: ReadonlyArray<Order>;
+  page: number;
+  pageSize: number;
+  total: number;
+  query: string;
   activeTab: string;
   counts: {
     todos: number;
@@ -25,6 +30,10 @@ export type OrdersScreenProps = {
 export function OrdersScreen({
   seller,
   orders,
+  page,
+  pageSize,
+  total,
+  query,
   activeTab,
   counts,
 }: OrdersScreenProps) {
@@ -42,7 +51,7 @@ export function OrdersScreen({
       subtitle="Operaciones"
       title="Pedidos recibidos"
     >
-      <OrdersToolbar activeTab={activeTab} tabs={tabs} />
+      <OrdersToolbar initialQuery={query} activeTab={activeTab} tabs={tabs} />
       <div className="mt-4">
         <Card padding={0}>
           <div className="overflow-x-auto hidden lgx:block">
@@ -152,6 +161,7 @@ export function OrdersScreen({
               </div>
             )}
           </div>
+          <Pager page={page} pageSize={pageSize} total={total} basePath="/orders" />
         </Card>
       </div>
     </SellerShell>

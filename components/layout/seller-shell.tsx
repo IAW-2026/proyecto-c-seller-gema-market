@@ -53,25 +53,20 @@ export function SellerShell({
             );
           })}
         </nav>
-        <div className="mt-auto p-3 bg-bone rounded-r2">
-          <div className="flex items-center gap-2.5 mb-2">
-            <Avatar name={seller.name} size={36} />
-            <div className="min-w-0">
-              <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
-                {seller.name}
-              </div>
-              <div className="text-[11px] text-ink-3">
-                {seller.verified ? "Vendedor verificado" : "Vendedor"}
-              </div>
+        <Link
+          href="/shop"
+          className="mt-auto p-3 bg-bone rounded-r2 flex items-center gap-2.5 hover:bg-[#e8e2d9] transition-colors"
+        >
+          <Avatar name={seller.name} size={36} />
+          <div className="min-w-0">
+            <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+              {seller.name}
+            </div>
+            <div className="text-[11px] text-ink-3">
+              {seller.verified ? "Vendedor verificado" : "Vendedor"}
             </div>
           </div>
-          <Link
-            href="/"
-            className="text-[11px] text-ink-3 flex items-center gap-1"
-          >
-            <Icon name="arrowLeft" size={11} /> Volver al hub
-          </Link>
-        </div>
+        </Link>
       </aside>
 
       <main

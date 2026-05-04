@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
+import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import type { TabItem } from "@/components/ui/tabs";
@@ -13,6 +14,9 @@ import { ProductsToolbar } from "./products-toolbar";
 export type ProductsScreenProps = {
   seller: Seller;
   products: ReadonlyArray<Product>;
+  page: number;
+  pageSize: number;
+  total: number;
   query: string;
   activeTab: string;
   counts: { active: number; paused: number };
@@ -21,6 +25,9 @@ export type ProductsScreenProps = {
 export function ProductsScreen({
   seller,
   products,
+  page,
+  pageSize,
+  total,
   query,
   activeTab,
   counts,
@@ -79,7 +86,7 @@ export function ProductsScreen({
                         <div>
                           <div className="font-medium">{p.title}</div>
                           <div className="text-[11px] text-ink-3 font-mono">
-                            SKU-{p.id.toUpperCase()}
+                            {p.id.toUpperCase()}
                           </div>
                         </div>
                       </Link>
@@ -133,7 +140,7 @@ export function ProductsScreen({
                       {p.title}
                     </div>
                     <div className="text-[11px] text-ink-3 font-mono mt-[3px]">
-                      SKU-{p.id.toUpperCase()}
+                      {p.id.toUpperCase()}
                     </div>
                   </div>
                   <Icon name="chevronRight" size={16} className="text-ink-3 shrink-0" />
@@ -162,6 +169,7 @@ export function ProductsScreen({
               </div>
             )}
           </div>
+          <Pager page={page} pageSize={pageSize} total={total} basePath="/products" />
         </Card>
       </div>
     </SellerShell>

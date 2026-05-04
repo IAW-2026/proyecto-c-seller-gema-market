@@ -1,4 +1,5 @@
-import type { Product, ProductStatus } from "@/types/domain";
+import type { Page, PageSize, Product, ProductStatus } from "@/types/domain";
+import { PAGE_SIZES } from "@/types/domain";
 
 export const PRODUCTS: ReadonlyArray<Product> = [
   { id: "p1", title: "Sillón de pana 2 cuerpos", price: 89000, oldPrice: 110000, seller: "Hogar Pampeano", sellerId: "s1", rating: 4.8, reviews: 32, category: "living", glyph: "living", palette: ["#a4ac86", "#414833"], stock: 3, condition: "Usado · Como nuevo", location: "Bahía Blanca", shipping: 4500, dims: "180×85×90 cm", status: "active" },
@@ -15,24 +16,77 @@ export const PRODUCTS: ReadonlyArray<Product> = [
   { id: "p12", title: "Almohadón lino crudo", price: 6800, seller: "Textil Hogar", sellerId: "s4", rating: 4.7, reviews: 65, category: "decoracion", glyph: "decoracion", palette: ["#b6ad90", "#a4ac86"], stock: 40, condition: "Nuevo", location: "Bahía Blanca", shipping: 1200, dims: "45×45 cm", status: "active" },
 ];
 
+export type SortBy =
+  | "price_asc"
+  | "price_desc"
+  | "sales_asc"
+  | "sales_desc"
+  | "stock_asc"
+  | "stock_desc";
+
+export type StockFilter = "all" | "low" | "out";
+
 export type ProductFilters = {
   query?: string;
   status?: ProductStatus;
+  sortBy?: SortBy;
+  stockFilter?: StockFilter;
+  page?: number;
+  pageSize?: number;
 };
 
-export function listProducts(filters: ProductFilters = {}): ReadonlyArray<Product> {
+export const DEFAULT_PRODUCTS_PAGE_SIZE: PageSize = 20;
+
+function filterAndSortProducts(filters: ProductFilters): ReadonlyArray<Product> {
   const normalizedQuery = filters.query?.trim().toLowerCase();
 
-  return PRODUCTS.filter((product) => {
+  let result = PRODUCTS.filter((product) => {
     const matchesQuery = normalizedQuery
       ? product.title.toLowerCase().includes(normalizedQuery)
       : true;
-    const matchesStatus = filters.status
-      ? product.status === filters.status
-      : true;
-
-    return matchesQuery && matchesStatus;
+    const matchesStatus = filters.status ? product.status === filters.status : true;
+    const matchesStock =
+      filters.stockFilter === "low"
+        ? product.stock > 0 && product.stock < 5
+        : filters.stockFilter === "out"
+          ? product.stock === 0
+          : true;
+    return matchesQuery && matchesStatus && matchesStock;
   });
+
+  if (filters.sortBy) {
+    result = [...result].sort((a, b) => {
+      switch (filters.sortBy) {
+        case "price_asc": return a.price - b.price;
+        case "price_desc": return b.price - a.price;
+        case "sales_asc": return a.reviews - b.reviews;
+        case "sales_desc": return b.reviews - a.reviews;
+        case "stock_asc": return a.stock - b.stock;
+        case "stock_desc": return b.stock - a.stock;
+        default: return 0;
+      }
+    });
+  }
+
+  return result;
+}
+
+function resolvePageSize(value: number | undefined, fallback: PageSize): PageSize {
+  return (PAGE_SIZES as ReadonlyArray<number>).includes(value ?? -1)
+    ? (value as PageSize)
+    : fallback;
+}
+
+export function listProducts(filters: ProductFilters = {}): Page<Product> {
+  const all = filterAndSortProducts(filters);
+  const total = all.length;
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PRODUCTS_PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const requested = Math.max(1, Math.floor(filters.page ?? 1));
+  const page = Math.min(requested, totalPages);
+  const offset = (page - 1) * pageSize;
+  const items = all.slice(offset, offset + pageSize);
+  return { items, total, page, pageSize };
 }
 
 export function countProductsByStatus(): Record<ProductStatus, number> {
@@ -42,6 +96,23 @@ export function countProductsByStatus(): Record<ProductStatus, number> {
       [product.status]: counts[product.status] + 1,
     }),
     { active: 0, paused: 0 },
+  );
+}
+
+export type StockSummary = {
+  totalUnits: number;
+  activeSkus: number;
+  outOfStock: number;
+};
+
+export function getStockSummary(): StockSummary {
+  return PRODUCTS.reduce<StockSummary>(
+    (acc, p) => ({
+      totalUnits: acc.totalUnits + p.stock,
+      activeSkus: acc.activeSkus + 1,
+      outOfStock: acc.outOfStock + (p.stock === 0 ? 1 : 0),
+    }),
+    { totalUnits: 0, activeSkus: 0, outOfStock: 0 },
   );
 }
 
@@ -60,5 +131,5 @@ export function findProduct(id: string): Product | undefined {
 }
 
 export function listProductsForOrder(items: number): ReadonlyArray<Product> {
-  return listProducts({ status: "active" }).slice(0, items);
+  return filterAndSortProducts({ status: "active" }).slice(0, items);
 }

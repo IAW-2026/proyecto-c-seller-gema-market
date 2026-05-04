@@ -14,7 +14,6 @@ export default async function DashboardPage() {
     <DashboardScreen
       seller={seller}
       recentOrders={dashboard.recentOrders}
-      salesChartBars={dashboard.salesChartBars}
       stats={dashboard.stats}
       topProducts={dashboard.topProducts}
     />

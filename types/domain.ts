@@ -106,6 +106,16 @@ export type PillTone =
 
 export type Palette = readonly [string, string];
 
+export type Page<T> = {
+  items: ReadonlyArray<T>;
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export const PAGE_SIZES = [10, 20, 50] as const;
+export type PageSize = (typeof PAGE_SIZES)[number];
+
 export type Category = {
   id: CategoryId;
   name: string;
