@@ -1,0 +1,106 @@
+// UniHousing — Seller App
+//
+// Schema base del bounded context Seller.
+// Decisiones de modelado deben quedar reflejadas en docs/04-modelo-de-datos.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum ProductCondition {
+  NEW
+  USED
+}
+
+enum OrderStatus {
+  PAYMENT_PENDING
+  PREPARING
+  READY_TO_SHIP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+model Seller {
+  id           String    @id @default(cuid())
+  clerkUserId  String?   @unique
+  name         String
+  city         String
+  bio          String
+  email        String    @unique
+  phone        String
+  street       String
+  number       String
+  apartment    String?
+  postalCode   String
+  verified     Boolean   @default(false)
+  products     Product[]
+  orders       Order[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  sellerId    String
+  title       String
+  price       Int
+  oldPrice    Int?
+  category    String
+  glyph       String
+  paletteFrom String
+  paletteTo   String
+  stock       Int
+  condition   ProductCondition @default(NEW)
+  location    String
+  shipping    Int
+  dimensions  String
+  status      ProductStatus    @default(ACTIVE)
+  rating      Float            @default(0)
+  reviews     Int              @default(0)
+  seller      Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([sellerId, status])
+  @@index([title])
+}
+
+model Order {
+  id        String      @id
+  sellerId  String
+  buyerName String
+  address   String
+  trackId   String
+  status    OrderStatus
+  total     Int
+  items     OrderItem[]
+  seller    Seller      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([sellerId, status])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int     @default(1)
+  unitPrice Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([orderId, productId])
+}
