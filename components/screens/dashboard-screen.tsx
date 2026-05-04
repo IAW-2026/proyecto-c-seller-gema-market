@@ -6,10 +6,31 @@ import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { ORDER_STATUS_META } from "@/lib/data/status";
+import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui-config";
 import { fmtARS } from "@/lib/format";
-import type { DashboardStat } from "@/lib/data/dashboard";
-import type { Order, Product, Seller } from "@/types/domain";
+import type { DashboardStat, DashboardStatId, Order, Product, Seller } from "@/types/domain";
+
+const DASHBOARD_STAT_META: Readonly<
+  Record<DashboardStatId, { label: string; valueFormat: "currency" | "number"; deltaFormat: "percent" | "number" | "none" }>
+> = {
+  monthlySales: { label: "Ventas del mes", valueFormat: "currency", deltaFormat: "percent" },
+  orders: { label: "Pedidos", valueFormat: "number", deltaFormat: "number" },
+  activeProducts: { label: "Productos activos", valueFormat: "number", deltaFormat: "none" },
+};
+
+function formatDashboardValue(stat: DashboardStat): string {
+  const meta = DASHBOARD_STAT_META[stat.id];
+  return meta.valueFormat === "currency" ? fmtARS(stat.value) : String(stat.value);
+}
+
+function formatDashboardDelta(stat: DashboardStat): string {
+  const meta = DASHBOARD_STAT_META[stat.id];
+  if (stat.delta === null || meta.deltaFormat === "none") return "-";
+  const sign = stat.delta > 0 ? "+" : "";
+  return meta.deltaFormat === "percent"
+    ? `${sign}${stat.delta}%`
+    : `${sign}${stat.delta}`;
+}
 
 export type DashboardScreenProps = {
   seller: Seller;
@@ -38,16 +59,16 @@ export function DashboardScreen({
     >
       <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
         {stats.map((s) => (
-          <Card key={s.label} padding={20}>
-            <div className="text-xs text-ink-3 mb-2">{s.label}</div>
+          <Card key={s.id} padding={20}>
+            <div className="text-xs text-ink-3 mb-2">{DASHBOARD_STAT_META[s.id].label}</div>
             <div className="text-[26px] font-bold tracking-[-0.02em] mb-2">
-              {s.value}
+              {formatDashboardValue(s)}
             </div>
             <div
               className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-full text-[11px] font-semibold ${s.trend === "up" ? "bg-[#d8e3c8] text-success" : "bg-bone text-ink-3"}`}
             >
               {s.trend === "up" && <Icon name="arrowUp" size={11} />}
-              {s.delta}
+              {formatDashboardDelta(s)}
             </div>
           </Card>
         ))}
@@ -56,30 +77,33 @@ export function DashboardScreen({
       <Card padding={24} className="mb-6">
         <h3 className="m-0 mb-4 text-base font-semibold">Top productos</h3>
         <div className="flex flex-col">
-          {topProducts.map((p, i) => (
-            <div
-              key={p.id}
-              className={`flex items-center gap-3 py-3 ${i < topProducts.length - 1 ? "border-b border-line" : ""}`}
-            >
-              <div className="w-5 font-mono text-[11px] text-ink-3 shrink-0 text-center">
-                {String(i + 1).padStart(2, "0")}
-              </div>
+          {topProducts.map((p, i) => {
+            const visual = getProductVisual(p);
+            return (
               <div
-                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
-                }}
+                key={p.id}
+                className={`flex items-center gap-3 py-3 ${i < topProducts.length - 1 ? "border-b border-line" : ""}`}
               >
-                <ProductGlyph kind={p.glyph} palette={p.palette} size={22} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                  {p.title}
+                <div className="w-5 font-mono text-[11px] text-ink-3 shrink-0 text-center">
+                  {String(i + 1).padStart(2, "0")}
                 </div>
-                <div className="text-[11px] text-ink-3">{p.reviews} ventas</div>
+                <div
+                  className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
+                  }}
+                >
+                  <ProductGlyph kind={visual.glyph} palette={visual.palette} size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                    {p.title}
+                  </div>
+                  <div className="text-[11px] text-ink-3">{p.salesCount} ventas</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 

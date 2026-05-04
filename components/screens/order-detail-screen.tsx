@@ -1,26 +1,41 @@
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { ORDER_TIMELINE } from "@/lib/data/order-timeline";
-import { ORDER_STATUS_META } from "@/lib/data/status";
+import {
+  getOrderTimelineIndex,
+  getProductVisual,
+  ORDER_STATUS_META,
+  ORDER_TIMELINE,
+} from "@/lib/ui-config";
 import { fmtARS } from "@/lib/format";
-import type { Order, Product, Seller } from "@/types/domain";
+import { nextOrderStatus } from "@/lib/data/orders";
+import type { BuyerInfo, Order, PaymentInfo, Product, Seller, ShippingInfo } from "@/types/domain";
+import { OrderActionButton } from "./order-action-button";
 
 export type OrderDetailScreenProps = {
   seller: Seller;
   order: Order;
-  items: ReadonlyArray<Product>;
+  product: Product;
+  buyerInfo: BuyerInfo;
+  shippingInfo: ShippingInfo;
+  paymentInfo: PaymentInfo;
 };
 
 export function OrderDetailScreen({
   seller,
   order,
-  items,
+  product,
+  buyerInfo,
+  shippingInfo,
+  paymentInfo,
 }: OrderDetailScreenProps) {
   const status = ORDER_STATUS_META[order.status];
+  const statusIndex = getOrderTimelineIndex(order.status);
+  const hasNextTransition = nextOrderStatus(order.status) !== null;
+  const isWaitingExternal = order.status === "shipping";
+  const showActionSlot = hasNextTransition || isWaitingExternal;
 
   return (
     <SellerShell
@@ -29,9 +44,9 @@ export function OrderDetailScreen({
       subtitle={`Pedido ${order.id}`}
       title={`Para ${order.buyer}`}
       action={
-        <Button variant="accent" icon="check">
-          Marcar como listo
-        </Button>
+        showActionSlot ? (
+          <OrderActionButton orderId={order.id} status={order.status} />
+        ) : undefined
       }
     >
       <div className="grid gap-4 grid-cols-1 min-[901px]:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
@@ -42,13 +57,13 @@ export function OrderDetailScreen({
               <Pill tone={status.tone}>{status.label}</Pill>
             </div>
             <div className="flex gap-1">
-              {ORDER_TIMELINE.map((s, i) => (
-                <div key={s} className="flex-1">
+              {ORDER_TIMELINE.map((step, i) => (
+                <div key={step.status} className="flex-1">
                   <div
-                    className={`h-1 rounded-full mb-2 ${i <= 2 ? "bg-cocoa" : "bg-line-2"}`}
+                    className={`h-1 rounded-full mb-2 ${i <= statusIndex ? "bg-cocoa" : "bg-line-2"}`}
                   />
                   <div className="text-[11px] text-ink-3 font-mono">
-                    0{i + 1} {s}
+                    0{i + 1} {step.label}
                   </div>
                 </div>
               ))}
@@ -59,30 +74,30 @@ export function OrderDetailScreen({
             <div className="p-5 border-b border-line">
               <h3 className="m-0 text-base font-semibold">Productos</h3>
             </div>
-            {items.map((p) => (
-              <div
-                key={p.id}
-                className="p-4 flex gap-3 items-center border-b border-line max-[900px]:flex-wrap max-[900px]:items-start"
-              >
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
-                  }}
-                >
-                  <ProductGlyph kind={p.glyph} palette={p.palette} size={32} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium">{p.title}</div>
-                  <div className="text-xs text-ink-3 font-mono">
-                    SKU-{p.id.toUpperCase()} · 1 unidad
+            {(() => {
+              const visual = getProductVisual(product);
+              return (
+                <div className="p-4 flex gap-3 items-center border-b border-line max-[900px]:flex-wrap max-[900px]:items-start">
+                  <div
+                    className="w-14 h-14 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
+                    }}
+                  >
+                    <ProductGlyph kind={visual.glyph} palette={visual.palette} size={32} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">{product.title}</div>
+                    <div className="text-xs text-ink-3 font-mono">
+                      SKU-{product.id.toUpperCase()} · 1 unidad
+                    </div>
+                  </div>
+                  <div className="font-semibold max-[900px]:w-full max-[900px]:text-left">
+                    {fmtARS(product.price)}
                   </div>
                 </div>
-                <div className="font-semibold max-[900px]:w-full max-[900px]:text-left">
-                  {fmtARS(p.price)}
-                </div>
-              </div>
-            ))}
+              );
+            })()}
             <div className="p-5 flex justify-between text-base font-bold">
               <span>Total</span>
               <span>{fmtARS(order.total)}</span>
@@ -99,7 +114,7 @@ export function OrderDetailScreen({
               <Avatar name={order.buyer} size={44} />
               <div>
                 <div className="font-semibold">{order.buyer}</div>
-                <div className="text-xs text-ink-3">3 compras previas</div>
+                <div className="text-xs text-ink-3">{buyerInfo.previousPurchases} compras previas</div>
               </div>
             </div>
           </Card>
@@ -112,7 +127,7 @@ export function OrderDetailScreen({
             <div className="text-xs text-ink-3">
               Tracking: <span className="font-mono">{order.trackId}</span>
             </div>
-            <div className="text-xs text-ink-3 mt-1">Repartidor: Marcos R.</div>
+            <div className="text-xs text-ink-3 mt-1">Repartidor: {shippingInfo.carrier}</div>
           </Card>
 
           <Card padding={20}>
@@ -121,17 +136,17 @@ export function OrderDetailScreen({
             </h4>
             <div className="flex justify-between text-[13px] mb-1">
               <span>Método</span>
-              <span>Mercado Pago</span>
+              <span>{paymentInfo.method}</span>
             </div>
             <div className="flex justify-between text-[13px] mb-1">
               <span>Estado</span>
-              <Pill size="sm" tone="success">
-                Aprobado
+              <Pill size="sm" tone={paymentInfo.approved ? "success" : "danger"}>
+                {paymentInfo.statusLabel}
               </Pill>
             </div>
             <div className="flex justify-between text-[13px]">
               <span>Comisión</span>
-              <span>{fmtARS(Math.round(order.total * 0.06))}</span>
+              <span>{fmtARS(order.fee)}</span>
             </div>
           </Card>
         </div>

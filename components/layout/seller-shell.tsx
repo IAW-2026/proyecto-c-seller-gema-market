@@ -7,7 +7,7 @@ import { SELLER_NAV, type NavId } from "@/lib/nav";
 import type { Seller } from "@/types/domain";
 
 export type SellerShellProps = {
-  seller: Pick<Seller, "name" | "verified">;
+  seller: Pick<Seller, "name">;
   activeNavId: NavId;
   title: string;
   subtitle?: string;
@@ -62,9 +62,7 @@ export function SellerShell({
             <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
               {seller.name}
             </div>
-            <div className="text-[11px] text-ink-3">
-              {seller.verified ? "Vendedor verificado" : "Vendedor"}
-            </div>
+            <div className="text-[11px] text-ink-3">Vendedor</div>
           </div>
         </Link>
       </aside>

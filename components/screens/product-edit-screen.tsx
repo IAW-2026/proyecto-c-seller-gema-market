@@ -9,33 +9,45 @@ import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { PRODUCT_STATUS_OPTIONS } from "@/lib/data/status";
-import type { Category, Product, Seller } from "@/types/domain";
+import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui-config";
+import { uploadProductImageAction } from "@/app/products/actions";
+import type { Category, CategoryId, Product, ProductInput, ProductStatus, Seller } from "@/types/domain";
 
 type Mode = "new" | "edit";
 
 type FormState = {
   title: string;
+  description: string;
   price: string;
   stock: string;
-  description: string;
-  category: string;
+  category: CategoryId;
+  weight: string;
+  height: string;
+  width: string;
+  depth: string;
+  material: string;
+  color: string;
   condition: "Nuevo" | "Usado";
-  dims: string;
-  status: Product["status"];
+  status: ProductStatus;
+  images: ReadonlyArray<string>;
 };
 
 function toFormState(product: Product | null): FormState {
   return {
     title: product?.title ?? "",
+    description: product?.description ?? "",
     price: product ? String(product.price) : "",
     stock: product ? String(product.stock) : "1",
-    description:
-      "Pieza ideal para departamentos pequeños y luminosos. Material noble, traída desde el taller.",
     category: product?.category ?? "living",
+    weight: product ? String(product.weight) : "",
+    height: product ? String(product.height) : "",
+    width: product ? String(product.width) : "",
+    depth: product ? String(product.depth) : "",
+    material: product?.material ?? "",
+    color: product?.color ?? "",
     condition: product?.condition.startsWith("Usado") ? "Usado" : "Nuevo",
-    dims: product?.dims ?? "",
     status: product?.status ?? "active",
+    images: product?.images ?? [],
   };
 }
 
@@ -44,21 +56,75 @@ export type ProductEditScreenProps = {
   mode: Mode;
   product: Product | null;
   categories: ReadonlyArray<Category>;
+  onSaveAction: (input: ProductInput) => Promise<void>;
 };
-
-const FALLBACK_PALETTE: Product["palette"] = ["#a4ac86", "#414833"];
 
 export function ProductEditScreen({
   seller,
   mode,
   product,
   categories,
+  onSaveAction,
 }: ProductEditScreenProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(product));
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSaveAction({
+        id: product?.id,
+        title: form.title,
+        description: form.description,
+        price: parseFloat(form.price) || 0,
+        category: form.category,
+        stock: parseInt(form.stock, 10) || 0,
+        weight: parseFloat(form.weight) || 0,
+        height: parseFloat(form.height) || 0,
+        width: parseFloat(form.width) || 0,
+        depth: parseFloat(form.depth) || 0,
+        material: form.material,
+        color: form.color,
+        condition: form.condition,
+        images: form.images,
+        status: form.status,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.set("file", file);
+        const url = await uploadProductImageAction(fd);
+        uploaded.push(url);
+      }
+      setForm((prev) => ({ ...prev, images: [...prev.images, ...uploaded] }));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Error al subir imagen");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
 
   const isNew = mode === "new";
-  const palette = product?.palette ?? FALLBACK_PALETTE;
-  const glyph = product?.glyph ?? "box";
+  const visual = getProductVisual({ category: form.category });
 
   return (
     <SellerShell
@@ -71,7 +137,7 @@ export function ProductEditScreen({
           <Button href="/products" variant="secondary">
             Cancelar
           </Button>
-          <Button variant="accent" icon="check">
+          <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
             Guardar
           </Button>
         </div>
@@ -100,85 +166,144 @@ export function ProductEditScreen({
                 />
               </Field>
               <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
-                <Field label="Categoría">
-                  <select
-                    value={form.category}
-                    onChange={(e) =>
-                      setForm({ ...form, category: e.target.value })
-                    }
-                    className="w-full h-[46px] border border-line-2 rounded-r2 px-3.5 bg-paper"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Condición">
-                  <div className="flex gap-1.5 flex-wrap">
-                    {(["Nuevo", "Usado"] as const).map((c) => (
-                      <Pill
-                        key={c}
-                        active={form.condition === c}
-                        onClick={() => setForm({ ...form, condition: c })}
-                        size="lg"
-                      >
-                        {c}
-                      </Pill>
-                    ))}
-                  </div>
-                </Field>
-              </div>
+              <Field label="Categoría">
+                <select
+                  value={form.category}
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value as CategoryId })
+                  }
+                  className="w-full h-[46px] border border-line-2 rounded-r2 px-3.5 bg-paper"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Condición">
+                <div className="flex gap-1.5 flex-wrap">
+                  {(["Nuevo", "Usado"] as const).map((c) => (
+                    <Pill
+                      key={c}
+                      active={form.condition === c}
+                      onClick={() => setForm({ ...form, condition: c })}
+                      size="lg"
+                    >
+                      {c}
+                    </Pill>
+                  ))}
+                </div>
+              </Field>
+            </div>
             </div>
           </Card>
 
           <Card padding={24}>
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Imágenes</h3>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2.5">
-              <div className="aspect-square border-2 border-dashed border-line-2 rounded-r2 flex flex-col items-center justify-center text-ink-3 cursor-pointer bg-cream">
-                <Icon name="upload" size={20} />
-                <span className="text-[11px] mt-1.5">Subir</span>
-              </div>
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="aspect-square rounded-r2 flex items-center justify-center relative"
-                  style={{
-                    background: `linear-gradient(135deg, ${palette[0]}55, ${palette[1]}55)`,
+              <label
+                className={`aspect-square border-2 border-dashed border-line-2 rounded-r2 flex flex-col items-center justify-center text-ink-3 bg-cream ${isUploading ? "opacity-60 cursor-progress" : "cursor-pointer"}`}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  disabled={isUploading}
+                  onChange={(e) => {
+                    handleUpload(e.target.files);
+                    e.target.value = "";
                   }}
-                >
-                  <ProductGlyph kind={glyph} palette={palette} size={48} />
-                  <button
-                    type="button"
-                    aria-label="Quitar imagen"
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-paper/90 flex items-center justify-center"
-                  >
-                    <Icon name="close" size={12} />
-                  </button>
-                </div>
-              ))}
+                />
+                <Icon name="upload" size={20} />
+                <span className="text-[11px] mt-1.5">
+                  {isUploading ? "Subiendo…" : "Subir"}
+                </span>
+              </label>
+              {form.images.length === 0
+                ? [0, 1, 2].map((i) => (
+                    <div
+                      key={`placeholder-${i}`}
+                      className="aspect-square rounded-r2 flex items-center justify-center"
+                      style={{
+                        background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
+                      }}
+                    >
+                      <ProductGlyph kind={visual.glyph} palette={visual.palette} size={48} />
+                    </div>
+                  ))
+                : form.images.map((url, i) => (
+                    <div
+                      key={`${url}-${i}`}
+                      className="aspect-square rounded-r2 relative overflow-hidden bg-cream"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Imagen ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        aria-label="Quitar imagen"
+                        onClick={() => handleRemoveImage(i)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-paper/90 flex items-center justify-center"
+                      >
+                        <Icon name="close" size={12} />
+                      </button>
+                    </div>
+                  ))}
             </div>
+            {uploadError && (
+              <div className="mt-2 text-[12px] text-danger">{uploadError}</div>
+            )}
           </Card>
 
           <Card padding={24}>
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Especificaciones</h3>
             <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
-              <Field label="Dimensiones">
+              <Field label="Alto (cm)">
                 <Input
-                  placeholder="180 × 85 × 90 cm"
-                  value={form.dims}
-                  onChange={(e) => setForm({ ...form, dims: e.target.value })}
+                  placeholder="90"
+                  value={form.height}
+                  onChange={(e) => setForm({ ...form, height: e.target.value })}
+                />
+              </Field>
+              <Field label="Ancho (cm)">
+                <Input
+                  placeholder="180"
+                  value={form.width}
+                  onChange={(e) => setForm({ ...form, width: e.target.value })}
+                />
+              </Field>
+              <Field label="Profundidad (cm)">
+                <Input
+                  placeholder="85"
+                  value={form.depth}
+                  onChange={(e) => setForm({ ...form, depth: e.target.value })}
                 />
               </Field>
               <Field label="Peso (kg)">
-                <Input placeholder="32" />
+                <Input
+                  placeholder="32"
+                  value={form.weight}
+                  onChange={(e) => setForm({ ...form, weight: e.target.value })}
+                />
               </Field>
               <Field label="Material">
-                <Input placeholder="Pino macizo + pana" />
+                <Input
+                  placeholder="Pino macizo + pana"
+                  value={form.material}
+                  onChange={(e) => setForm({ ...form, material: e.target.value })}
+                />
               </Field>
               <Field label="Color">
-                <Input placeholder="Verde oliva" />
+                <Input
+                  placeholder="Verde oliva"
+                  value={form.color}
+                  onChange={(e) => setForm({ ...form, color: e.target.value })}
+                />
               </Field>
             </div>
           </Card>
@@ -195,9 +320,6 @@ export function ProductEditScreen({
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                 />
-              </Field>
-              <Field label="Precio anterior" optional hint="Mostrar descuento">
-                <Input suffix="ARS" placeholder="0" />
               </Field>
               <Field label="Stock disponible">
                 <Input

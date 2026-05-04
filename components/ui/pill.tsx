@@ -1,5 +1,5 @@
 import type { MouseEventHandler, ReactNode } from "react";
-import type { IconName, PillTone } from "@/types/domain";
+import type { IconName, PillTone } from "@/types/ui";
 import { Icon } from "./icon";
 
 export type PillSize = "sm" | "md" | "lg";

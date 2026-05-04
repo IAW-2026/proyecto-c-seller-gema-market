@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { ProductsScreen } from "@/components/screens/products-screen";
 import { getCurrentSeller } from "@/lib/current-seller";
-import { countProductsByStatus, listProducts, type SortBy, type StockFilter } from "@/lib/data/products";
-import type { ProductStatus } from "@/types/domain";
+import { countProductsByStatus, listProducts } from "@/lib/data/products";
+import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
 
 export const metadata: Metadata = {
   title: "Publicaciones",

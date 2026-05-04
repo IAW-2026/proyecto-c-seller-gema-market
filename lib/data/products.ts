@@ -1,41 +1,258 @@
-import type { Page, PageSize, Product, ProductStatus } from "@/types/domain";
+import type {
+  Page,
+  PageSize,
+  Product,
+  ProductFilters,
+  ProductInput,
+  ProductStatus,
+  StockSummary,
+} from "@/types/domain";
 import { PAGE_SIZES } from "@/types/domain";
 
 export const PRODUCTS: ReadonlyArray<Product> = [
-  { id: "p1", title: "Sillón de pana 2 cuerpos", price: 89000, oldPrice: 110000, seller: "Hogar Pampeano", sellerId: "s1", rating: 4.8, reviews: 32, category: "living", glyph: "living", palette: ["#a4ac86", "#414833"], stock: 3, condition: "Usado · Como nuevo", location: "Bahía Blanca", shipping: 4500, dims: "180×85×90 cm", status: "active" },
-  { id: "p2", title: "Mesa de luz roble", price: 24500, seller: "Carpintería Sur", sellerId: "s2", rating: 4.9, reviews: 71, category: "dormitorio", glyph: "dormitorio", palette: ["#936639", "#582f0e"], stock: 8, condition: "Nuevo", location: "Bahía Blanca", shipping: 2800, dims: "45×40×55 cm", status: "active" },
-  { id: "p3", title: "Lámpara de pie mimbre", price: 18900, seller: "La Lámpara", sellerId: "s3", rating: 4.6, reviews: 18, category: "decoracion", glyph: "decoracion", palette: ["#b6ad90", "#7f4f24"], stock: 5, condition: "Nuevo", location: "Bahía Blanca", shipping: 2200, dims: "40×40×160 cm", status: "active" },
-  { id: "p4", title: "Juego de sábanas king", price: 32000, seller: "Textil Hogar", sellerId: "s4", rating: 4.7, reviews: 124, category: "dormitorio", glyph: "dormitorio", palette: ["#c2c5aa", "#656d4a"], stock: 22, condition: "Nuevo", location: "Bahía Blanca", shipping: 1800, dims: "Varios", status: "active" },
-  { id: "p5", title: "Set de vajilla 12 pzs", price: 15600, seller: "Cocina&Co", sellerId: "s5", rating: 4.5, reviews: 56, category: "cocina", glyph: "cocina", palette: ["#a68a64", "#414833"], stock: 14, condition: "Nuevo", location: "Bahía Blanca", shipping: 2100, dims: "12 piezas", status: "active" },
-  { id: "p6", title: "Mesa redonda 4 personas", price: 67000, seller: "Carpintería Sur", sellerId: "s2", rating: 4.8, reviews: 41, category: "comedor", glyph: "comedor", palette: ["#7f4f24", "#582f0e"], stock: 2, condition: "Nuevo", location: "Bahía Blanca", shipping: 5200, dims: "Ø100×75 cm", status: "active" },
-  { id: "p7", title: "Cortina de baño bambú", price: 8400, seller: "Casa Verde", sellerId: "s6", rating: 4.4, reviews: 22, category: "bath", glyph: "bath", palette: ["#a4ac86", "#333d29"], stock: 30, condition: "Nuevo", location: "Bahía Blanca", shipping: 1500, dims: "180×200 cm", status: "paused" },
-  { id: "p8", title: "Reposera plegable lona", price: 22500, seller: "Patio&Jardín", sellerId: "s7", rating: 4.7, reviews: 38, category: "terraza", glyph: "terraza", palette: ["#656d4a", "#a68a64"], stock: 6, condition: "Nuevo", location: "Bahía Blanca", shipping: 2900, dims: "60×80×90 cm", status: "active" },
-  { id: "p9", title: "Espejo redondo 60cm", price: 16800, seller: "La Lámpara", sellerId: "s3", rating: 4.6, reviews: 27, category: "decoracion", glyph: "decoracion", palette: ["#b6ad90", "#414833"], stock: 9, condition: "Nuevo", location: "Bahía Blanca", shipping: 2400, dims: "Ø60 cm", status: "active" },
-  { id: "p10", title: "Estantería pino 4 niveles", price: 38900, seller: "Carpintería Sur", sellerId: "s2", rating: 4.9, reviews: 88, category: "living", glyph: "living", palette: ["#936639", "#7f4f24"], stock: 4, condition: "Nuevo", location: "Bahía Blanca", shipping: 3500, dims: "80×30×160 cm", status: "active" },
-  { id: "p11", title: "Pava eléctrica 1.7L", price: 19200, seller: "Cocina&Co", sellerId: "s5", rating: 4.5, reviews: 102, category: "cocina", glyph: "cocina", palette: ["#a4ac86", "#414833"], stock: 18, condition: "Nuevo", location: "Bahía Blanca", shipping: 1900, dims: "1.7 L", status: "paused" },
-  { id: "p12", title: "Almohadón lino crudo", price: 6800, seller: "Textil Hogar", sellerId: "s4", rating: 4.7, reviews: 65, category: "decoracion", glyph: "decoracion", palette: ["#b6ad90", "#a4ac86"], stock: 40, condition: "Nuevo", location: "Bahía Blanca", shipping: 1200, dims: "45×45 cm", status: "active" },
+  {
+    id: "p1",
+    title: "Sillón de pana 2 cuerpos",
+    description: "Sillón de 2 cuerpos tapizado en pana de alta densidad. Ideal para living y espacios de descanso.",
+    price: 89000,
+    seller: "Hogar Pampeano",
+    sellerId: "s1",
+    category: "living",
+    stock: 3,
+    salesCount: 32,
+    weight: 45,
+    height: 90,
+    width: 180,
+    depth: 85,
+    material: "Pana",
+    color: "Verde oliva",
+    condition: "Usado · Como nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p2",
+    title: "Mesa de luz roble",
+    description: "Mesa de luz en madera de roble macizo con cajón y estante inferior. Terminación natural.",
+    price: 24500,
+    seller: "Carpintería Sur",
+    sellerId: "s2",
+    category: "dormitorio",
+    stock: 8,
+    salesCount: 71,
+    weight: 12,
+    height: 55,
+    width: 45,
+    depth: 40,
+    material: "Roble",
+    color: "Natural",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p3",
+    title: "Lámpara de pie mimbre",
+    description: "Lámpara de pie artesanal tejida en mimbre natural. Crea una luz cálida y ambiente relajado.",
+    price: 18900,
+    seller: "La Lámpara",
+    sellerId: "s3",
+    category: "decoracion",
+    stock: 5,
+    salesCount: 18,
+    weight: 3,
+    height: 160,
+    width: 40,
+    depth: 40,
+    material: "Mimbre",
+    color: "Natural",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p4",
+    title: "Juego de sábanas king",
+    description: "Juego de sábanas king 100% algodón percal 300 hilos. Incluye sábana bajera, encimera y dos fundas.",
+    price: 32000,
+    seller: "Textil Hogar",
+    sellerId: "s4",
+    category: "dormitorio",
+    stock: 22,
+    salesCount: 124,
+    weight: 1,
+    height: 5,
+    width: 40,
+    depth: 30,
+    material: "Algodón",
+    color: "Blanco",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p5",
+    title: "Set de vajilla 12 pzs",
+    description: "Set de vajilla de cerámica 12 piezas: 4 platos planos, 4 platos hondos y 4 tazas. Apto microondas.",
+    price: 15600,
+    seller: "Cocina&Co",
+    sellerId: "s5",
+    category: "cocina",
+    stock: 14,
+    salesCount: 56,
+    weight: 4,
+    height: 25,
+    width: 40,
+    depth: 40,
+    material: "Cerámica",
+    color: "Blanco",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p6",
+    title: "Mesa redonda 4 personas",
+    description: "Mesa de comedor redonda para 4 personas en madera maciza. Diseño escandinavo con patas cónicas.",
+    price: 67000,
+    seller: "Carpintería Sur",
+    sellerId: "s2",
+    category: "comedor",
+    stock: 2,
+    salesCount: 41,
+    weight: 30,
+    height: 75,
+    width: 100,
+    depth: 100,
+    material: "Madera",
+    color: "Natural",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p7",
+    title: "Cortina de baño bambú",
+    description: "Cortina de baño en bambú natural tratado. Incluye argollas metálicas y es resistente a la humedad.",
+    price: 8400,
+    seller: "Casa Verde",
+    sellerId: "s6",
+    category: "bath",
+    stock: 30,
+    salesCount: 22,
+    weight: 1,
+    height: 200,
+    width: 180,
+    depth: 1,
+    material: "Bambú",
+    color: "Natural",
+    condition: "Nuevo",
+    images: [],
+    status: "paused",
+  },
+  {
+    id: "p8",
+    title: "Reposera plegable lona",
+    description: "Reposera plegable con lona reforzada y marco de aluminio. Regulable en 5 posiciones. Ideal para terraza.",
+    price: 22500,
+    seller: "Patio&Jardín",
+    sellerId: "s7",
+    category: "terraza",
+    stock: 6,
+    salesCount: 38,
+    weight: 8,
+    height: 90,
+    width: 60,
+    depth: 80,
+    material: "Lona",
+    color: "Beige",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p9",
+    title: "Espejo redondo 60cm",
+    description: "Espejo redondo con marco metálico dorado. Diámetro 60 cm. Incluye sistema de colgado.",
+    price: 16800,
+    seller: "La Lámpara",
+    sellerId: "s3",
+    category: "decoracion",
+    stock: 9,
+    salesCount: 27,
+    weight: 3,
+    height: 60,
+    width: 60,
+    depth: 5,
+    material: "Vidrio",
+    color: "Dorado",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p10",
+    title: "Estantería pino 4 niveles",
+    description: "Estantería de pino natural con 4 niveles y estructura reforzada. Capacidad 20 kg por estante.",
+    price: 38900,
+    seller: "Carpintería Sur",
+    sellerId: "s2",
+    category: "living",
+    stock: 4,
+    salesCount: 88,
+    weight: 20,
+    height: 160,
+    width: 80,
+    depth: 30,
+    material: "Pino",
+    color: "Natural",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
+  {
+    id: "p11",
+    title: "Pava eléctrica 1.7L",
+    description: "Pava eléctrica de acero inoxidable 1.7L con apagado automático y filtro anti-cal. 2200W.",
+    price: 19200,
+    seller: "Cocina&Co",
+    sellerId: "s5",
+    category: "cocina",
+    stock: 18,
+    salesCount: 102,
+    weight: 1,
+    height: 25,
+    width: 20,
+    depth: 20,
+    material: "Acero inoxidable",
+    color: "Plateado",
+    condition: "Nuevo",
+    images: [],
+    status: "paused",
+  },
+  {
+    id: "p12",
+    title: "Almohadón lino crudo",
+    description: "Almohadón decorativo en lino crudo natural 45×45 cm. Relleno de fibra siliconada. Cierre oculto.",
+    price: 6800,
+    seller: "Textil Hogar",
+    sellerId: "s4",
+    category: "decoracion",
+    stock: 40,
+    salesCount: 65,
+    weight: 1,
+    height: 45,
+    width: 45,
+    depth: 15,
+    material: "Lino",
+    color: "Crudo",
+    condition: "Nuevo",
+    images: [],
+    status: "active",
+  },
 ];
 
-export type SortBy =
-  | "price_asc"
-  | "price_desc"
-  | "sales_asc"
-  | "sales_desc"
-  | "stock_asc"
-  | "stock_desc";
-
-export type StockFilter = "all" | "low" | "out";
-
-export type ProductFilters = {
-  query?: string;
-  status?: ProductStatus;
-  sortBy?: SortBy;
-  stockFilter?: StockFilter;
-  page?: number;
-  pageSize?: number;
-};
-
-export const DEFAULT_PRODUCTS_PAGE_SIZE: PageSize = 20;
+export const DEFAULT_PRODUCTS_PAGE_SIZE: PageSize = 10;
 
 function filterAndSortProducts(filters: ProductFilters): ReadonlyArray<Product> {
   const normalizedQuery = filters.query?.trim().toLowerCase();
@@ -57,11 +274,11 @@ function filterAndSortProducts(filters: ProductFilters): ReadonlyArray<Product> 
   if (filters.sortBy) {
     result = [...result].sort((a, b) => {
       switch (filters.sortBy) {
-        case "price_asc": return a.price - b.price;
+        case "price_asc":  return a.price - b.price;
         case "price_desc": return b.price - a.price;
-        case "sales_asc": return a.reviews - b.reviews;
-        case "sales_desc": return b.reviews - a.reviews;
-        case "stock_asc": return a.stock - b.stock;
+        case "sales_asc":  return a.salesCount - b.salesCount;
+        case "sales_desc": return b.salesCount - a.salesCount;
+        case "stock_asc":  return a.stock - b.stock;
         case "stock_desc": return b.stock - a.stock;
         default: return 0;
       }
@@ -99,12 +316,6 @@ export function countProductsByStatus(): Record<ProductStatus, number> {
   );
 }
 
-export type StockSummary = {
-  totalUnits: number;
-  activeSkus: number;
-  outOfStock: number;
-};
-
 export function getStockSummary(): StockSummary {
   return PRODUCTS.reduce<StockSummary>(
     (acc, p) => ({
@@ -118,18 +329,33 @@ export function getStockSummary(): StockSummary {
 
 export function getTopProducts(limit: number): ReadonlyArray<Product> {
   return [...PRODUCTS]
-    .sort((a, b) => b.reviews - a.reviews)
+    .sort((a, b) => b.salesCount - a.salesCount)
     .slice(0, limit);
-}
-
-export function getProductStaticParams(): Array<{ id: string }> {
-  return PRODUCTS.map((product) => ({ id: product.id }));
 }
 
 export function findProduct(id: string): Product | undefined {
   return PRODUCTS.find((p) => p.id === id);
 }
 
-export function listProductsForOrder(items: number): ReadonlyArray<Product> {
-  return filterAndSortProducts({ status: "active" }).slice(0, items);
+export async function saveProduct(input: ProductInput): Promise<Product> {
+  // TODO: implementar con Prisma
+  // await prisma.producto.upsert({ where: { id: input.id ?? "" }, ... })
+  throw new Error("saveProduct: backend no implementado aún");
+}
+
+export async function updateProductStock(
+  productId: string,
+  stock: number,
+): Promise<void> {
+  // TODO: implementar con Prisma
+  // await prisma.producto.update({ where: { id: productId }, data: { stock } })
+  void productId;
+  void stock;
+  throw new Error("updateProductStock: backend no implementado aún");
+}
+
+export async function uploadProductImage(file: File): Promise<string> {
+  // TODO: subir el archivo al storage (Vercel Blob, S3, etc.) y devolver la URL pública
+  void file;
+  throw new Error("uploadProductImage: backend no implementado aún");
 }

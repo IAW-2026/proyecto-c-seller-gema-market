@@ -6,9 +6,9 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import type { TabItem } from "@/components/ui/tabs";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { ORDER_STATUS_META } from "@/lib/data/status";
+import { ORDER_STATUS_META } from "@/lib/ui-config";
 import { fmtARS } from "@/lib/format";
-import type { Order, Seller } from "@/types/domain";
+import type { Order, OrderDateRange, Seller } from "@/types/domain";
 import { OrdersToolbar } from "./orders-toolbar";
 
 export type OrdersScreenProps = {
@@ -19,6 +19,8 @@ export type OrdersScreenProps = {
   total: number;
   query: string;
   activeTab: string;
+  dateRange: OrderDateRange;
+  dateRangeOptions: ReadonlyArray<{ id: OrderDateRange; label: string }>;
   counts: {
     todos: number;
     preparando: number;
@@ -35,6 +37,8 @@ export function OrdersScreen({
   total,
   query,
   activeTab,
+  dateRange,
+  dateRangeOptions,
   counts,
 }: OrdersScreenProps) {
   const tabs: ReadonlyArray<TabItem> = [
@@ -51,7 +55,13 @@ export function OrdersScreen({
       subtitle="Operaciones"
       title="Pedidos recibidos"
     >
-      <OrdersToolbar initialQuery={query} activeTab={activeTab} tabs={tabs} />
+      <OrdersToolbar
+        initialQuery={query}
+        activeTab={activeTab}
+        tabs={tabs}
+        dateRange={dateRange}
+        dateRangeOptions={dateRangeOptions}
+      />
       <div className="mt-4">
         <Card padding={0}>
           <div className="overflow-x-auto hidden lgx:block">
@@ -61,7 +71,6 @@ export function OrdersScreen({
                   <th className="py-2.5 px-5">ID</th>
                   <th className="py-2.5 px-3">Comprador</th>
                   <th className="py-2.5 px-3">Fecha</th>
-                  <th className="py-2.5 px-3">Items</th>
                   <th className="py-2.5 px-3">Estado</th>
                   <th className="py-2.5 px-3 text-right">Total</th>
                   <th className="py-2.5 px-5"></th>
@@ -87,7 +96,6 @@ export function OrdersScreen({
                         </Link>
                       </td>
                       <td className="py-3.5 px-3 text-ink-3">{o.date}</td>
-                      <td className="py-3.5 px-3">{o.items}</td>
                       <td className="py-3.5 px-3">
                         <Pill tone={st.tone} size="sm">
                           {st.label}
@@ -110,7 +118,7 @@ export function OrdersScreen({
                 })}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-12 px-5 text-center text-ink-3">
+                    <td colSpan={6} className="py-12 px-5 text-center text-ink-3">
                       No hay pedidos en esta categoría.
                     </td>
                   </tr>
@@ -142,10 +150,6 @@ export function OrdersScreen({
                     <div className="bg-cream rounded-xl p-2.5">
                       <div className="text-[10px] text-ink-3">Fecha</div>
                       <div className="text-xs font-semibold">{o.date}</div>
-                    </div>
-                    <div className="bg-cream rounded-xl p-2.5">
-                      <div className="text-[10px] text-ink-3">Items</div>
-                      <div className="text-xs font-semibold">{o.items}</div>
                     </div>
                     <div className="bg-cream rounded-xl p-2.5">
                       <div className="text-[10px] text-ink-3">Total</div>

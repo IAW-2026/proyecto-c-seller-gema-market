@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { GlyphKind, Palette } from "@/types/domain";
+import type { GlyphKind, Palette } from "@/types/ui";
 
 export type ProductGlyphProps = {
   kind: GlyphKind;

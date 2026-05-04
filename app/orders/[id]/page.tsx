@@ -3,29 +3,38 @@ import { notFound } from "next/navigation";
 import { OrderDetailScreen } from "@/components/screens/order-detail-screen";
 import { getCurrentSeller } from "@/lib/current-seller";
 import { findOrder } from "@/lib/data/orders";
-import { listProductsForOrder } from "@/lib/data/products";
+import { findProduct } from "@/lib/data/products";
+import { getOrderBuyerInfo, getOrderPaymentInfo, getOrderShippingInfo } from "@/lib/data/order-detail";
 
-type OrderPageProps = {
-  params: Promise<{ id: string }>;
-};
+type OrderPageProps = { params: Promise<{ id: string }> };
 
-export async function generateMetadata({
-  params,
-}: OrderPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: OrderPageProps): Promise<Metadata> {
   const { id } = await params;
   const order = findOrder(id);
-  return {
-    title: order ? `Pedido ${order.id}` : "Pedido no encontrado",
-  };
+  return { title: order ? `Pedido ${order.id}` : "Pedido no encontrado" };
 }
 
 export default async function OrderPage({ params }: OrderPageProps) {
   const { id } = await params;
   const order = findOrder(id);
-  if (!order || order.status === "pago_pendiente") {
-    notFound();
-  }
+  if (!order || order.status === "pending_payment") notFound();
+
+  const product = findProduct(order.productId);
+  if (!product) notFound();
+
   const seller = await getCurrentSeller();
-  const items = listProductsForOrder(order.items);
-  return <OrderDetailScreen seller={seller} order={order} items={items} />;
+  const buyerInfo = getOrderBuyerInfo(order);
+  const shippingInfo = getOrderShippingInfo(order);
+  const paymentInfo = getOrderPaymentInfo(order);
+
+  return (
+    <OrderDetailScreen
+      seller={seller}
+      order={order}
+      product={product}
+      buyerInfo={buyerInfo}
+      shippingInfo={shippingInfo}
+      paymentInfo={paymentInfo}
+    />
+  );
 }
