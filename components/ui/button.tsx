@@ -4,7 +4,7 @@ import type {
   ButtonHTMLAttributes,
   ReactNode,
 } from "react";
-import type { IconName } from "@/types/domain";
+import type { IconName } from "@/types/ui";
 import { Icon } from "./icon";
 
 export type ButtonVariant =

@@ -1,4 +1,4 @@
-import type { IconName } from "@/types/domain";
+import type { IconName } from "@/types/ui";
 
 export type NavItem = {
   id: NavId;

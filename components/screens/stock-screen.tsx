@@ -3,10 +3,10 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import type { StockSummary } from "@/lib/data/products";
+import { getProductVisual } from "@/lib/ui-config";
 import { StockRowEditor } from "./stock-row-editor";
 import { StockToolbar } from "./stock-toolbar";
-import type { Product, Seller } from "@/types/domain";
+import type { Product, Seller, StockSummary } from "@/types/domain";
 
 export type StockScreenProps = {
   seller: Seller;
@@ -69,6 +69,7 @@ export function StockScreen({
             <tbody>
               {products.map((p) => {
                 const label = p.stock === 0 ? "Sin stock" : "Disponible";
+                const visual = getProductVisual(p);
                 return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5 font-mono text-xs">
@@ -79,10 +80,10 @@ export function StockScreen({
                         <div
                           className="w-9 h-9 rounded-[9px] flex items-center justify-center"
                           style={{
-                            background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
+                            background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
                           }}
                         >
-                          <ProductGlyph kind={p.glyph} palette={p.palette} size={22} />
+                          <ProductGlyph kind={visual.glyph} palette={visual.palette} size={22} />
                         </div>
                         <span className="font-medium">{p.title}</span>
                       </div>
@@ -94,7 +95,7 @@ export function StockScreen({
                       </Pill>
                     </td>
                     <td className="py-3 px-3">
-                      <StockRowEditor initialStock={p.stock} productName={p.title} />
+                      <StockRowEditor productId={p.id} initialStock={p.stock} productName={p.title} />
                     </td>
                   </tr>
                 );
@@ -112,6 +113,7 @@ export function StockScreen({
         <div className="grid gap-3 p-3 lgx:hidden">
           {products.map((p) => {
             const label = p.stock === 0 ? "Sin stock" : "Disponible";
+            const visual = getProductVisual(p);
             return (
               <div
                 key={p.id}
@@ -121,10 +123,10 @@ export function StockScreen({
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                     style={{
-                      background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
+                      background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
                     }}
                   >
-                    <ProductGlyph kind={p.glyph} palette={p.palette} size={30} />
+                    <ProductGlyph kind={visual.glyph} palette={visual.palette} size={30} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold">{p.title}</div>
@@ -141,7 +143,7 @@ export function StockScreen({
                     <div className="text-[10px] text-ink-3">Stock</div>
                     <div className="text-base font-bold">{p.stock}</div>
                   </div>
-                  <StockRowEditor initialStock={p.stock} productName={p.title} />
+                  <StockRowEditor productId={p.id} initialStock={p.stock} productName={p.title} />
                 </div>
               </div>
             );

@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
+import type { OrderDateRange } from "@/types/domain";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -12,9 +13,17 @@ export type OrdersToolbarProps = {
   initialQuery: string;
   activeTab: string;
   tabs: ReadonlyArray<TabItem>;
+  dateRange: OrderDateRange;
+  dateRangeOptions: ReadonlyArray<{ id: OrderDateRange; label: string }>;
 };
 
-export function OrdersToolbar({ initialQuery, activeTab, tabs }: OrdersToolbarProps) {
+export function OrdersToolbar({
+  initialQuery,
+  activeTab,
+  tabs,
+  dateRange,
+  dateRangeOptions,
+}: OrdersToolbarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
@@ -48,6 +57,14 @@ export function OrdersToolbar({ initialQuery, activeTab, tabs }: OrdersToolbarPr
     router.replace(qs ? `/orders?${qs}` : "/orders", { scroll: false });
   };
 
+  const onRangeChange = (next: OrderDateRange) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("range", next);
+    params.delete("page");
+    const qs = params.toString();
+    router.replace(qs ? `/orders?${qs}` : "/orders", { scroll: false });
+  };
+
   return (
     <>
       <div className="mb-4 flex gap-3 flex-wrap">
@@ -60,9 +77,31 @@ export function OrdersToolbar({ initialQuery, activeTab, tabs }: OrdersToolbarPr
             aria-label="Buscar pedidos"
           />
         </div>
-        <Button variant="secondary" icon="calendar">
-          Últimos 30 días
-        </Button>
+        <label className="relative inline-flex items-center">
+          <span className="sr-only">Rango de fechas</span>
+          <Icon
+            name="calendar"
+            size={16}
+            className="absolute left-3.5 text-ink-3 pointer-events-none"
+          />
+          <select
+            value={dateRange}
+            onChange={(e) => onRangeChange(e.target.value as OrderDateRange)}
+            aria-label="Rango de fechas"
+            className="h-[42px] pl-9 pr-9 rounded-full bg-paper border border-line-2 text-sm font-medium appearance-none cursor-pointer"
+          >
+            {dateRangeOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <Icon
+            name="chevronDown"
+            size={14}
+            className="absolute right-3.5 text-ink-3 pointer-events-none"
+          />
+        </label>
       </div>
       <Tabs
         tabs={tabs}

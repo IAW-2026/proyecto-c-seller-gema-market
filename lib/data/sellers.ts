@@ -1,6 +1,6 @@
-import { getSellerOrders } from "@/lib/data/orders";
+import { getActiveSellerOrders } from "@/lib/data/orders";
 import { countProductsByStatus } from "@/lib/data/products";
-import type { Seller } from "@/types/domain";
+import type { Seller, SellerInput } from "@/types/domain";
 
 type SellerSeed = Omit<Seller, "productsCount" | "salesCount">;
 
@@ -17,7 +17,6 @@ const SELLERS: ReadonlyArray<SellerSeed> = [
       number: "1200",
       postalCode: "8000",
     },
-    verified: true,
   },
 ];
 
@@ -31,7 +30,7 @@ export function findSeller(id: string): Seller | undefined {
   return {
     ...seller,
     productsCount: countProductsByStatus().active,
-    salesCount: getSellerOrders().length,
+    salesCount: getActiveSellerOrders().length,
   };
 }
 
@@ -43,4 +42,17 @@ export function getDefaultSeller(): Seller {
   }
 
   return seller;
+}
+
+export async function saveSeller(input: SellerInput): Promise<Seller> {
+  // TODO: implementar con Prisma
+  // await prisma.usuario.update({ where: { id: currentSellerId }, data: { ... } })
+  void input;
+  throw new Error("saveSeller: backend no implementado aún");
+}
+
+export async function uploadSellerCover(file: File): Promise<string> {
+  // TODO: subir el archivo al storage y devolver la URL pública
+  void file;
+  throw new Error("uploadSellerCover: backend no implementado aún");
 }

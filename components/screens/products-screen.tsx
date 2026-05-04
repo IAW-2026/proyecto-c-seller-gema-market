@@ -8,6 +8,7 @@ import { ProductGlyph } from "@/components/ui/product-glyph";
 import type { TabItem } from "@/components/ui/tabs";
 import { SellerShell } from "@/components/layout/seller-shell";
 import { fmtARS } from "@/lib/format";
+import { getProductVisual } from "@/lib/ui-config";
 import type { Product, Seller } from "@/types/domain";
 import { ProductsToolbar } from "./products-toolbar";
 
@@ -68,7 +69,9 @@ export function ProductsScreen({
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
+                {products.map((p) => {
+                  const visual = getProductVisual(p);
+                  return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5">
                       <Link
@@ -78,10 +81,10 @@ export function ProductsScreen({
                         <div
                           className="w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0"
                           style={{
-                            background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
+                            background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
                           }}
                         >
-                          <ProductGlyph kind={p.glyph} palette={p.palette} size={28} />
+                          <ProductGlyph kind={visual.glyph} palette={visual.palette} size={28} />
                         </div>
                         <div>
                           <div className="font-medium">{p.title}</div>
@@ -97,7 +100,7 @@ export function ProductsScreen({
                         {p.stock}
                       </Pill>
                     </td>
-                    <td className="py-3 px-3 text-ink-3">{p.reviews}</td>
+                    <td className="py-3 px-3 text-ink-3">{p.salesCount}</td>
                     <td className="py-3 px-5">
                       <Link
                         href={`/products/${p.id}`}
@@ -108,7 +111,8 @@ export function ProductsScreen({
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {products.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-12 px-5 text-center text-ink-3">
@@ -120,20 +124,22 @@ export function ProductsScreen({
             </table>
           </div>
           <div className="grid gap-3 p-3 lgx:hidden">
-            {products.map((p) => (
-              <Link
-                key={p.id}
-                href={`/products/${p.id}`}
-                className="w-full text-left bg-paper border border-line rounded-2xl p-3 block"
-              >
+            {products.map((p) => {
+              const visual = getProductVisual(p);
+              return (
+                <Link
+                  key={p.id}
+                  href={`/products/${p.id}`}
+                  className="w-full text-left bg-paper border border-line rounded-2xl p-3 block"
+                >
                 <div className="flex gap-3 items-center">
                   <div
                     className="w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0"
                     style={{
-                      background: `linear-gradient(135deg, ${p.palette[0]}55, ${p.palette[1]}55)`,
+                      background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
                     }}
                   >
-                    <ProductGlyph kind={p.glyph} palette={p.palette} size={32} />
+                    <ProductGlyph kind={visual.glyph} palette={visual.palette} size={32} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold leading-[1.25]">
@@ -158,11 +164,12 @@ export function ProductsScreen({
                   </div>
                   <div className="bg-cream rounded-xl p-2.5">
                     <div className="text-[10px] text-ink-3">Ventas</div>
-                    <div className="text-[13px] font-bold">{p.reviews}</div>
+                    <div className="text-[13px] font-bold">{p.salesCount}</div>
                   </div>
                 </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
             {products.length === 0 && (
               <div className="text-center text-ink-3 py-10 text-sm">
                 No hay publicaciones que coincidan con tu búsqueda.

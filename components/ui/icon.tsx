@@ -1,4 +1,4 @@
-import type { IconName } from "@/types/domain";
+import type { IconName } from "@/types/ui";
 import type { ReactNode, SVGProps } from "react";
 
 const PATHS: Record<IconName, ReactNode> = {
