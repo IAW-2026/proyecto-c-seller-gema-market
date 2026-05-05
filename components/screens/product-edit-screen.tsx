@@ -11,7 +11,7 @@ import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/app/products/actions";
-import type { Category, CategoryId, Product, ProductInput, ProductStatus } from "@/types/domain";
+import type { Category, CategoryId, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
 
 type Mode = "new" | "edit";
 
@@ -27,7 +27,7 @@ type FormState = {
   depth: string;
   material: string;
   color: string;
-  condition: "Nuevo" | "Usado";
+  condition: ProductCondition;
   status: ProductStatus;
   images: ReadonlyArray<string>;
 };
@@ -45,7 +45,7 @@ function toFormState(product: Product | null): FormState {
     depth: product ? String(product.depth) : "",
     material: product?.material ?? "",
     color: product?.color ?? "",
-    condition: product?.condition.startsWith("Usado") ? "Usado" : "Nuevo",
+    condition: product?.condition ?? "nuevo",
     status: product?.status ?? "active",
     images: product?.images ?? [],
   };
@@ -181,14 +181,17 @@ export function ProductEditScreen({
               </Field>
               <Field label="Condición">
                 <div className="flex gap-1.5 flex-wrap">
-                  {(["Nuevo", "Usado"] as const).map((c) => (
+                  {([
+                    { value: "nuevo", label: "Nuevo" },
+                    { value: "usado", label: "Usado" },
+                  ] as const).map((c) => (
                     <Pill
-                      key={c}
-                      active={form.condition === c}
-                      onClick={() => setForm({ ...form, condition: c })}
+                      key={c.value}
+                      active={form.condition === c.value}
+                      onClick={() => setForm({ ...form, condition: c.value })}
                       size="lg"
                     >
-                      {c}
+                      {c.label}
                     </Pill>
                   ))}
                 </div>
