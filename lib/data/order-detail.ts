@@ -20,7 +20,7 @@ export function getOrderShippingInfo(order: Order): ShippingInfo {
   };
 }
 
-export function getOrderPaymentInfo(order: Order): PaymentInfo {
+export function getOrderPaymentInfo(_order: Order): PaymentInfo {
   return {
     method: "Mercado Pago",  // TODO: obtener del Payments App via order.paymentId
     statusLabel: "Aprobado",

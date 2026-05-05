@@ -340,6 +340,7 @@ export function findProduct(id: string): Product | undefined {
 export async function saveProduct(input: ProductInput): Promise<Product> {
   // TODO: implementar con Prisma
   // await prisma.producto.upsert({ where: { id: input.id ?? "" }, ... })
+  void input;
   throw new Error("saveProduct: backend no implementado aún");
 }
 
