@@ -1,3 +1,4 @@
+import 'server-only';
 import type { Product } from "@/types/domain";
 
 export const PRODUCTS: ReadonlyArray<Product> = [

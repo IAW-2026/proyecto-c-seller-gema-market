@@ -49,7 +49,7 @@ export function DashboardScreen({
     <>
       <PageHeader
         subtitle="Resumen"
-        title={`Hola, ${seller.name}`}
+        title={`Hola, ${seller.shopName}`}
         action={
           <Button href="/products/new" variant="accent" icon="plus">
             Nueva publicación

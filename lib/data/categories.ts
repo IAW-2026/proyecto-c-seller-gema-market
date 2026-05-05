@@ -1,3 +1,4 @@
+import 'server-only';
 import type { Category } from "@/types/domain";
 
 export const CATEGORIES: ReadonlyArray<Category> = [

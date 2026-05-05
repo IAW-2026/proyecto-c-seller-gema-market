@@ -1,3 +1,4 @@
+import 'server-only';
 import { countProductsByStatus, getTopProducts } from "@/lib/data/products";
 import { getRecentSellerOrders, getActiveSellerOrders } from "@/lib/data/orders";
 import type { DashboardData } from "@/types/domain";

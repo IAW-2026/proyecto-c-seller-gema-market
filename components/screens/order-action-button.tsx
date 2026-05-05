@@ -3,9 +3,8 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { advanceOrderStatusAction } from "@/app/orders/actions";
-import { nextOrderStatus } from "@/lib/data/orders";
 import { ORDER_TIMELINE } from "@/lib/ui/ui-config";
-import type { OrderStatus } from "@/types/domain";
+import { nextOrderStatus, type OrderStatus } from "@/types/domain";
 
 const NEXT_STATUS_LABEL: Readonly<Record<OrderStatus, string>> = {
   pending_payment:  "",

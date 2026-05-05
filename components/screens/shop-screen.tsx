@@ -16,7 +16,7 @@ export type ShopScreenProps = {
 };
 
 type FormState = {
-  name: string;
+  shopName: string;
   city: string;
   bio: string;
   email: string;
@@ -29,7 +29,7 @@ type FormState = {
 
 function toFormState(seller: Seller): FormState {
   return {
-    name: seller.name,
+    shopName: seller.shopName,
     city: seller.city,
     bio: seller.bio,
     email: seller.email,
@@ -43,7 +43,7 @@ function toFormState(seller: Seller): FormState {
 
 function toSellerInput(form: FormState): SellerInput {
   return {
-    name: form.name,
+    shopName: form.shopName,
     city: form.city,
     bio: form.bio,
     email: form.email,
@@ -157,7 +157,7 @@ export function ShopScreen({
             </div>
             <div className="flex-1 pt-3 min-w-0">
               <h2 className="m-0 text-[22px] font-semibold max-[560px]:text-[19px]">
-                {form.name || seller.name}
+                {form.shopName || seller.shopName}
               </h2>
               <div className="text-[13px] text-ink-3 flex gap-2.5 items-center mt-1 flex-wrap">
                 <span className="inline-flex items-center gap-1">
@@ -189,8 +189,8 @@ export function ShopScreen({
           <div className="flex flex-col gap-3.5">
             <Field label="Nombre de la tienda">
               <Input
-                value={form.name}
-                onChange={(e) => updateField("name", e.target.value)}
+                value={form.shopName}
+                onChange={(e) => updateField("shopName", e.target.value)}
               />
             </Field>
             <Field label="Bio">

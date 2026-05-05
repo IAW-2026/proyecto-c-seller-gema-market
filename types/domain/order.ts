@@ -66,3 +66,13 @@ export type PaymentInfo = {
   statusLabel: string;
   approved: boolean;
 };
+
+// Flujo bajo control del seller: paid → shipping.
+// `delivered` lo setea otra app (Shipping) cuando confirma la entrega.
+const STATUS_FLOW: Readonly<Partial<Record<OrderStatus, OrderStatus>>> = {
+  paid: "shipping",
+};
+
+export function nextOrderStatus(current: OrderStatus): OrderStatus | null {
+  return STATUS_FLOW[current] ?? null;
+}

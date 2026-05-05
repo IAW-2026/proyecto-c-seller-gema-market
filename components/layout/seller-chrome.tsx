@@ -7,7 +7,7 @@ import { SellerNav } from "./seller-nav";
 import type { Seller } from "@/types/domain";
 
 type SellerChromeProps = {
-  seller: Pick<Seller, "name">;
+  seller: Pick<Seller, "shopName">;
   children: ReactNode;
 };
 
@@ -31,10 +31,10 @@ export function SellerChrome({ seller, children }: SellerChromeProps) {
           href="/shop"
           className="mt-auto p-3 bg-bone rounded-r2 flex items-center gap-2.5 hover:bg-[#e8e2d9] transition-colors"
         >
-          <Avatar name={seller.name} size={36} />
+          <Avatar name={seller.shopName} size={36} />
           <div className="min-w-0">
             <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
-              {seller.name}
+              {seller.shopName}
             </div>
             <div className="text-[11px] text-ink-3">Vendedor</div>
           </div>
