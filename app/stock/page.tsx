@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { StockScreen } from "@/components/screens/stock-screen";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { getStockSummary, listProducts } from "@/lib/data/products";
 
 export const metadata: Metadata = {
@@ -25,7 +24,6 @@ export default function StockPage({ searchParams }: StockPageProps) {
 }
 
 async function StockContent({ searchParams }: StockPageProps) {
-  const seller = await getCurrentSeller();
   const params = await searchParams;
   const q = params.q ?? "";
   const pageNum = Number.parseInt(params.page ?? "1", 10);
@@ -40,7 +38,6 @@ async function StockContent({ searchParams }: StockPageProps) {
 
   return (
     <StockScreen
-      seller={seller}
       products={result.items}
       page={result.page}
       pageSize={result.pageSize}

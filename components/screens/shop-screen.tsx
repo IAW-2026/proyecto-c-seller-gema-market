@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
-import { SellerShell } from "@/components/layout/seller-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Seller, SellerInput } from "@/types/domain";
 
 export type ShopScreenProps = {
@@ -104,22 +104,22 @@ export function ShopScreen({
     setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="shop"
-      subtitle="Pública"
-      title="Perfil de tienda"
-      action={
-        <Button
-          variant="accent"
-          icon="check"
-          onClick={handleSave}
-          disabled={isPending}
-        >
-          {isPending ? "Guardando…" : "Guardar cambios"}
-        </Button>
-      }
-    >
+    <>
+      <PageHeader
+        subtitle="Pública"
+        title="Perfil de tienda"
+        action={
+          <Button
+            variant="accent"
+            icon="check"
+            onClick={handleSave}
+            disabled={isPending}
+          >
+            {isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        }
+      />
+      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <Card padding={0} className="mb-4 overflow-hidden">
         <div
           className="h-40 max-[560px]:h-[132px] bg-gradient-to-br from-clay to-bark relative"
@@ -261,6 +261,7 @@ export function ShopScreen({
           </div>
         </Card>
       </div>
-    </SellerShell>
+      </div>
+    </>
   );
 }

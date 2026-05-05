@@ -2,7 +2,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { SellerShell } from "@/components/layout/seller-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import {
   getOrderTimelineIndex,
   getProductVisual,
@@ -11,11 +11,10 @@ import {
 } from "@/lib/ui/ui-config";
 import { fmtARS } from "@/lib/ui/format";
 import { nextOrderStatus } from "@/lib/data/orders";
-import type { BuyerInfo, Order, PaymentInfo, Product, Seller, ShippingInfo } from "@/types/domain";
+import type { BuyerInfo, Order, PaymentInfo, Product, ShippingInfo } from "@/types/domain";
 import { OrderActionButton } from "./order-action-button";
 
 export type OrderDetailScreenProps = {
-  seller: Seller;
   order: Order;
   product: Product;
   buyerInfo: BuyerInfo;
@@ -24,7 +23,6 @@ export type OrderDetailScreenProps = {
 };
 
 export function OrderDetailScreen({
-  seller,
   order,
   product,
   buyerInfo,
@@ -38,17 +36,17 @@ export function OrderDetailScreen({
   const showActionSlot = hasNextTransition || isWaitingExternal;
 
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="orders"
-      subtitle={`Pedido ${order.id}`}
-      title={`Para ${order.buyer}`}
-      action={
-        showActionSlot ? (
-          <OrderActionButton orderId={order.id} status={order.status} />
-        ) : undefined
-      }
-    >
+    <>
+      <PageHeader
+        subtitle={`Pedido ${order.id}`}
+        title={`Para ${order.buyer}`}
+        action={
+          showActionSlot ? (
+            <OrderActionButton orderId={order.id} status={order.status} />
+          ) : undefined
+        }
+      />
+      <div className={`p-4 lgx:px-7 lgx:py-6 ${showActionSlot ? "pb-32" : "pb-16"}`}>
       <div className="grid gap-4 grid-cols-1 min-[901px]:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <div className="flex flex-col gap-4">
           <Card padding={20}>
@@ -151,6 +149,7 @@ export function OrderDetailScreen({
           </Card>
         </div>
       </div>
-    </SellerShell>
+      </div>
+    </>
   );
 }

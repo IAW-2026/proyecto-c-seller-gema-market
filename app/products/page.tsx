@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ProductsScreen } from "@/components/screens/products-screen";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { countProductsByStatus, listProducts } from "@/lib/data/products";
 import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
 
@@ -32,7 +31,6 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
 }
 
 async function ProductsContent({ searchParams }: ProductsPageProps) {
-  const seller = await getCurrentSeller();
   const params = await searchParams;
   const q = params.q ?? "";
   const tab = params.tab ?? "active";
@@ -56,7 +54,6 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
 
   return (
     <ProductsScreen
-      seller={seller}
       products={result.items}
       page={result.page}
       pageSize={result.pageSize}

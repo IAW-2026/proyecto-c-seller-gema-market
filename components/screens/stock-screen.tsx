@@ -2,14 +2,13 @@ import { Card } from "@/components/ui/card";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { SellerShell } from "@/components/layout/seller-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual } from "@/lib/ui/ui-config";
 import { StockRowEditor } from "./stock-row-editor";
 import { StockToolbar } from "./stock-toolbar";
-import type { Product, Seller, StockSummary } from "@/types/domain";
+import type { Product, StockSummary } from "@/types/domain";
 
 export type StockScreenProps = {
-  seller: Seller;
   products: ReadonlyArray<Product>;
   page: number;
   pageSize: number;
@@ -19,7 +18,6 @@ export type StockScreenProps = {
 };
 
 export function StockScreen({
-  seller,
   products,
   page,
   pageSize,
@@ -28,12 +26,9 @@ export function StockScreen({
   summary,
 }: StockScreenProps) {
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="stock"
-      subtitle="Inventario"
-      title="Gestión de stock"
-    >
+    <>
+      <PageHeader subtitle="Inventario" title="Gestión de stock" />
+      <div className="p-4 pb-16 lgx:px-7 lgx:py-6">
       <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         <Card padding={20}>
           <div className="text-xs text-ink-3">Total unidades</div>
@@ -156,6 +151,7 @@ export function StockScreen({
         </div>
         <Pager page={page} pageSize={pageSize} total={total} basePath="/stock" />
       </Card>
-    </SellerShell>
+      </div>
+    </>
   );
 }
