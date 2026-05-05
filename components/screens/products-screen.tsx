@@ -6,14 +6,13 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import type { TabItem } from "@/components/ui/tabs";
-import { SellerShell } from "@/components/layout/seller-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { fmtARS } from "@/lib/ui/format";
 import { getProductVisual } from "@/lib/ui/ui-config";
-import type { Product, Seller } from "@/types/domain";
+import type { Product } from "@/types/domain";
 import { ProductsToolbar } from "./products-toolbar";
 
 export type ProductsScreenProps = {
-  seller: Seller;
   products: ReadonlyArray<Product>;
   page: number;
   pageSize: number;
@@ -24,7 +23,6 @@ export type ProductsScreenProps = {
 };
 
 export function ProductsScreen({
-  seller,
   products,
   page,
   pageSize,
@@ -39,17 +37,17 @@ export function ProductsScreen({
   ];
 
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="products"
-      subtitle="Catálogo"
-      title="Publicaciones"
-      action={
-        <Button href="/products/new" variant="accent" icon="plus">
-          Nueva
-        </Button>
-      }
-    >
+    <>
+      <PageHeader
+        subtitle="Catálogo"
+        title="Publicaciones"
+        action={
+          <Button href="/products/new" variant="accent" icon="plus">
+            Nueva
+          </Button>
+        }
+      />
+      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <ProductsToolbar
         initialQuery={query}
         activeTab={activeTab}
@@ -179,6 +177,7 @@ export function ProductsScreen({
           <Pager page={page} pageSize={pageSize} total={total} basePath="/products" />
         </Card>
       </div>
-    </SellerShell>
+      </div>
+    </>
   );
 }

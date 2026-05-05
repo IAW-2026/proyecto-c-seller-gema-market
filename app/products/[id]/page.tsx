@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { CATEGORIES } from "@/lib/data/categories";
 import { findProduct } from "@/lib/data/products";
 import { saveProductAction } from "@/app/products/actions";
@@ -35,10 +34,8 @@ async function ProductContent({ params }: ProductPageProps) {
   if (!product) {
     notFound();
   }
-  const seller = await getCurrentSeller();
   return (
     <ProductEditScreen
-      seller={seller}
       mode="edit"
       product={product}
       categories={CATEGORIES}

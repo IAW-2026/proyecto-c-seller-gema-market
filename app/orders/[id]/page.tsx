@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderDetailScreen } from "@/components/screens/order-detail-screen";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { findOrder } from "@/lib/data/orders";
 import { findProduct } from "@/lib/data/products";
 import { getOrderBuyerInfo, getOrderPaymentInfo, getOrderShippingInfo } from "@/lib/data/order-detail";
@@ -31,14 +30,12 @@ async function OrderContent({ params }: OrderPageProps) {
   const product = findProduct(order.productId);
   if (!product) notFound();
 
-  const seller = await getCurrentSeller();
   const buyerInfo = getOrderBuyerInfo(order);
   const shippingInfo = getOrderShippingInfo(order);
   const paymentInfo = getOrderPaymentInfo(order);
 
   return (
     <OrderDetailScreen
-      seller={seller}
       order={order}
       product={product}
       buyerInfo={buyerInfo}

@@ -8,10 +8,10 @@ import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { SellerShell } from "@/components/layout/seller-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/app/products/actions";
-import type { Category, CategoryId, Product, ProductInput, ProductStatus, Seller } from "@/types/domain";
+import type { Category, CategoryId, Product, ProductInput, ProductStatus } from "@/types/domain";
 
 type Mode = "new" | "edit";
 
@@ -52,7 +52,6 @@ function toFormState(product: Product | null): FormState {
 }
 
 export type ProductEditScreenProps = {
-  seller: Seller;
   mode: Mode;
   product: Product | null;
   categories: ReadonlyArray<Category>;
@@ -60,7 +59,6 @@ export type ProductEditScreenProps = {
 };
 
 export function ProductEditScreen({
-  seller,
   mode,
   product,
   categories,
@@ -127,22 +125,22 @@ export function ProductEditScreen({
   const visual = getProductVisual({ category: form.category });
 
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="products"
-      subtitle={isNew ? "Nueva publicación" : "Editar"}
-      title={isNew ? "Crear producto" : form.title || "Producto"}
-      action={
-        <div className="flex gap-2">
-          <Button href="/products" variant="secondary">
-            Cancelar
-          </Button>
-          <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
-            Guardar
-          </Button>
-        </div>
-      }
-    >
+    <>
+      <PageHeader
+        subtitle={isNew ? "Nueva publicación" : "Editar"}
+        title={isNew ? "Crear producto" : form.title || "Producto"}
+        action={
+          <div className="flex gap-2">
+            <Button href="/products" variant="secondary">
+              Cancelar
+            </Button>
+            <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
+              Guardar
+            </Button>
+          </div>
+        }
+      />
+      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <div className="grid gap-4 grid-cols-1 min-[901px]:grid-cols-[1fr_minmax(280px,360px)]">
         <div className="flex flex-col gap-4">
           <Card padding={24}>
@@ -355,6 +353,7 @@ export function ProductEditScreen({
           </Card>
         </div>
       </div>
-    </SellerShell>
+      </div>
+    </>
   );
 }
