@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { StockScreen } from "@/components/screens/stock-screen";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
@@ -15,7 +16,15 @@ type StockPageProps = {
   }>;
 };
 
-export default async function StockPage({ searchParams }: StockPageProps) {
+export default function StockPage({ searchParams }: StockPageProps) {
+  return (
+    <Suspense>
+      <StockContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function StockContent({ searchParams }: StockPageProps) {
   const seller = await getCurrentSeller();
   const params = await searchParams;
   const q = params.q ?? "";

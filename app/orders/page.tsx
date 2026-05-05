@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { OrdersScreen } from "@/components/screens/orders-screen";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
@@ -36,7 +37,15 @@ type OrdersPageProps = {
   }>;
 };
 
-export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+export default function OrdersPage({ searchParams }: OrdersPageProps) {
+  return (
+    <Suspense>
+      <OrdersContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function OrdersContent({ searchParams }: OrdersPageProps) {
   const seller = await getCurrentSeller();
   const params = await searchParams;
   const tab = params.tab ?? "todos";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
@@ -27,26 +27,25 @@ export function OrdersToolbar({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
-  const lastPushedRef = useRef(initialQuery);
+  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
 
-  useEffect(() => {
+  if (prevInitialQuery !== initialQuery) {
+    setPrevInitialQuery(initialQuery);
     setQuery(initialQuery);
-    lastPushedRef.current = initialQuery;
-  }, [initialQuery]);
+  }
 
   useEffect(() => {
-    if (query === lastPushedRef.current) return;
+    if (query === initialQuery) return;
     const id = setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
       if (query) params.set("q", query);
       else params.delete("q");
       params.delete("page");
-      lastPushedRef.current = query;
       const qs = params.toString();
       router.replace(qs ? `/orders?${qs}` : "/orders", { scroll: false });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
-  }, [query, router]);
+  }, [query, initialQuery, router]);
 
   const onTabChange = (next: string) => {
     const params = new URLSearchParams(searchParams.toString());

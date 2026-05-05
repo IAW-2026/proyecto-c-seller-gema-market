@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
@@ -20,7 +21,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default function ProductPage({ params }: ProductPageProps) {
+  return (
+    <Suspense>
+      <ProductContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductContent({ params }: ProductPageProps) {
   const { id } = await params;
   const product = findProduct(id);
   if (!product) {

@@ -32,8 +32,13 @@ export function ProductsToolbar({
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const lastPushedRef = useRef(initialQuery);
   const filterRef = useRef<HTMLDivElement>(null);
+  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
+
+  if (prevInitialQuery !== initialQuery) {
+    setPrevInitialQuery(initialQuery);
+    setQuery(initialQuery);
+  }
 
   const currentSort = searchParams.get("sort") ?? "";
   const currentStockFilter = searchParams.get("stockFilter") ?? "";
@@ -47,23 +52,17 @@ export function ProductsToolbar({
   const activeFilterCount = [currentSort, currentStockFilter].filter(Boolean).length;
 
   useEffect(() => {
-    setQuery(initialQuery);
-    lastPushedRef.current = initialQuery;
-  }, [initialQuery]);
-
-  useEffect(() => {
-    if (query === lastPushedRef.current) return;
+    if (query === initialQuery) return;
     const id = setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
       if (query) params.set("q", query);
       else params.delete("q");
       params.delete("page");
-      lastPushedRef.current = query;
       const qs = params.toString();
       router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
-  }, [query, router]);
+  }, [query, initialQuery, router]);
 
   useEffect(() => {
     if (!isFilterOpen) return;
