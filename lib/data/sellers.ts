@@ -31,8 +31,8 @@ export function findSeller(id: string): Seller | undefined {
 
   return {
     ...seller,
-    productsCount: countProductsByStatus().active,
-    salesCount: getActiveSellerOrders().length,
+    productsCount: countProductsByStatus(id).active,
+    salesCount: getActiveSellerOrders(id).length,
   };
 }
 

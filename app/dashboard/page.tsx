@@ -18,7 +18,7 @@ export default function DashboardPage() {
 
 async function DashboardContent() {
   const seller = await getCurrentSeller();
-  const dashboard = getDashboardData();
+  const dashboard = getDashboardData(seller.id);
   return (
     <DashboardScreen
       seller={seller}

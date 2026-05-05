@@ -56,6 +56,7 @@ export type SortBy =
 export type StockFilter = "all" | "low" | "out";
 
 export type ProductFilters = {
+  sellerId?: string;
   query?: string;
   status?: ProductStatus;
   sortBy?: SortBy;

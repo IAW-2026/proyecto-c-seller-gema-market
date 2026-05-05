@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { OrdersScreen } from "@/components/screens/orders-screen";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
   DEFAULT_ORDER_DATE_RANGE,
@@ -45,7 +46,7 @@ export default function OrdersPage({ searchParams }: OrdersPageProps) {
 }
 
 async function OrdersContent({ searchParams }: OrdersPageProps) {
-  const params = await searchParams;
+  const [seller, params] = await Promise.all([getCurrentSeller(), searchParams]);
   const tab = params.tab ?? "todos";
   const activeTab = TAB_TO_STATUS[tab] ? tab : "todos";
   const q = params.q ?? "";
@@ -54,13 +55,14 @@ async function OrdersContent({ searchParams }: OrdersPageProps) {
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
 
   const result = listSellerOrders({
+    sellerId: seller.id,
     status: TAB_TO_STATUS[activeTab],
     query: q,
     dateRange,
     page: Number.isFinite(pageNum) ? pageNum : 1,
     pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
   });
-  const rawCounts = countSellerOrdersByStatus();
+  const rawCounts = countSellerOrdersByStatus(seller.id);
 
   return (
     <OrdersScreen
