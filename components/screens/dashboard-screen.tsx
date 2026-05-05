@@ -6,8 +6,8 @@ import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui-config";
-import { fmtARS } from "@/lib/format";
+import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui/ui-config";
+import { fmtARS } from "@/lib/ui/format";
 import type { DashboardStat, DashboardStatId, Order, Product, Seller } from "@/types/domain";
 
 const DASHBOARD_STAT_META: Readonly<

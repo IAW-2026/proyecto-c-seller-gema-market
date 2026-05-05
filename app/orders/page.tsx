@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { OrdersScreen } from "@/components/screens/orders-screen";
-import { getCurrentSeller } from "@/lib/current-seller";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
   DEFAULT_ORDER_DATE_RANGE,

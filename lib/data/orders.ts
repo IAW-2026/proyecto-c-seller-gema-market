@@ -7,7 +7,7 @@ import type {
   PageSize,
 } from "@/types/domain";
 import { PAGE_SIZES } from "@/types/domain";
-import { fmtOrderDate } from "@/lib/format";
+import { fmtOrderDate } from "@/lib/ui/format";
 
 type OrderSeed = Omit<Order, "date">;
 

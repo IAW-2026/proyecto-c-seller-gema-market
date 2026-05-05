@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
-import { getCurrentSeller } from "@/lib/current-seller";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { CATEGORIES } from "@/lib/data/categories";
 import { saveProductAction } from "@/app/products/actions";
 

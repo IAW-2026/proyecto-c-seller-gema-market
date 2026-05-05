@@ -6,8 +6,8 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import type { TabItem } from "@/components/ui/tabs";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { ORDER_STATUS_META } from "@/lib/ui-config";
-import { fmtARS } from "@/lib/format";
+import { ORDER_STATUS_META } from "@/lib/ui/ui-config";
+import { fmtARS } from "@/lib/ui/format";
 import type { Order, OrderDateRange, Seller } from "@/types/domain";
 import { OrdersToolbar } from "./orders-toolbar";
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ProductsScreen } from "@/components/screens/products-screen";
-import { getCurrentSeller } from "@/lib/current-seller";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { countProductsByStatus, listProducts } from "@/lib/data/products";
 import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
 

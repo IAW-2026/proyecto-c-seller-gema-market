@@ -7,8 +7,8 @@ import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import type { TabItem } from "@/components/ui/tabs";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { fmtARS } from "@/lib/format";
-import { getProductVisual } from "@/lib/ui-config";
+import { fmtARS } from "@/lib/ui/format";
+import { getProductVisual } from "@/lib/ui/ui-config";
 import type { Product, Seller } from "@/types/domain";
 import { ProductsToolbar } from "./products-toolbar";
 

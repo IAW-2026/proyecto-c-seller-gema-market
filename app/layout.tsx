@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/branding";
+import { BRAND } from "@/lib/ui/branding";
 import { inter, jetbrainsMono } from "./fonts";
 import "./globals.css";
 

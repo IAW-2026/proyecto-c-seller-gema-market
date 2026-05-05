@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
-import { BRAND } from "@/lib/branding";
-import { SELLER_NAV, type NavId } from "@/lib/nav";
+import { BRAND } from "@/lib/ui/branding";
+import { SELLER_NAV, type NavId } from "@/lib/ui/nav";
 import type { Seller } from "@/types/domain";
 
 export type SellerShellProps = {
