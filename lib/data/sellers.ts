@@ -1,3 +1,4 @@
+import 'server-only';
 import { getActiveSellerOrders } from "@/lib/data/orders";
 import { countProductsByStatus } from "@/lib/data/products";
 import type { Seller, SellerInput } from "@/types/domain";
@@ -7,7 +8,8 @@ type SellerSeed = Omit<Seller, "productsCount" | "salesCount">;
 const SELLERS: ReadonlyArray<SellerSeed> = [
   {
     id: "s2",
-    name: "Carpintería Sur",
+    fullName: "Ana García",
+    shopName: "Carpintería Sur",
     city: "Bahía Blanca",
     bio: "Taller de muebles a medida en Bahía Blanca. Trabajamos con maderas locales desde 2008.",
     email: "hola@carpinteriasur.com.ar",
@@ -29,8 +31,8 @@ export function findSeller(id: string): Seller | undefined {
 
   return {
     ...seller,
-    productsCount: countProductsByStatus().active,
-    salesCount: getActiveSellerOrders().length,
+    productsCount: countProductsByStatus(id).active,
+    salesCount: getActiveSellerOrders(id).length,
   };
 }
 
@@ -46,7 +48,8 @@ export function getDefaultSeller(): Seller {
 
 export async function saveSeller(input: SellerInput): Promise<Seller> {
   // TODO: implementar con Prisma
-  // await prisma.usuario.update({ where: { id: currentSellerId }, data: { ... } })
+  // const seller = await requireSeller();
+  // await prisma.seller.update({ where: { id: seller.id }, data: { ... } })
   void input;
   throw new Error("saveSeller: backend no implementado aún");
 }

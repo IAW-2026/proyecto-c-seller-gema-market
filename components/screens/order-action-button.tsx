@@ -3,19 +3,11 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { advanceOrderStatusAction } from "@/app/orders/actions";
-import { nextOrderStatus } from "@/lib/data/orders";
-import { ORDER_TIMELINE } from "@/lib/ui-config";
-import type { OrderStatus } from "@/types/domain";
+import { ORDER_TIMELINE } from "@/lib/ui/ui-config";
+import { nextOrderStatus, type OrderStatus } from "@/types/domain";
 
-const NEXT_STATUS_LABEL: Readonly<Record<OrderStatus, string>> = {
-  pending_payment:  "",
-  paid:             "Marcar como despachado",
-  shipping:         "",
-  delivered:        "",
-  shipping_failed:  "",
-  cancelled:        "",
-  disputed:         "",
-  refunded:         "",
+const NEXT_STATUS_LABEL: Partial<Record<OrderStatus, string>> = {
+  paid: "Marcar como despachado",
 };
 
 export type OrderActionButtonProps = {

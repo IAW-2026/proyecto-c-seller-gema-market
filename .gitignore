@@ -16,3 +16,6 @@ next-env.d.ts
 .claude
 _legacy
 docs
+
+# Prisma generated client
+/lib/generated

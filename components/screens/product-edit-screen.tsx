@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,10 +9,10 @@ import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { SellerShell } from "@/components/layout/seller-shell";
-import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui-config";
+import { PageHeader } from "@/components/layout/page-header";
+import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/app/products/actions";
-import type { Category, CategoryId, Product, ProductInput, ProductStatus, Seller } from "@/types/domain";
+import type { Category, CategoryId, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
 
 type Mode = "new" | "edit";
 
@@ -27,7 +28,7 @@ type FormState = {
   depth: string;
   material: string;
   color: string;
-  condition: "Nuevo" | "Usado";
+  condition: ProductCondition;
   status: ProductStatus;
   images: ReadonlyArray<string>;
 };
@@ -45,14 +46,13 @@ function toFormState(product: Product | null): FormState {
     depth: product ? String(product.depth) : "",
     material: product?.material ?? "",
     color: product?.color ?? "",
-    condition: product?.condition.startsWith("Usado") ? "Usado" : "Nuevo",
+    condition: product?.condition ?? "nuevo",
     status: product?.status ?? "active",
     images: product?.images ?? [],
   };
 }
 
 export type ProductEditScreenProps = {
-  seller: Seller;
   mode: Mode;
   product: Product | null;
   categories: ReadonlyArray<Category>;
@@ -60,7 +60,6 @@ export type ProductEditScreenProps = {
 };
 
 export function ProductEditScreen({
-  seller,
   mode,
   product,
   categories,
@@ -68,29 +67,33 @@ export function ProductEditScreen({
 }: ProductEditScreenProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(product));
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleSave = async () => {
+    setSaveError(null);
     setIsSaving(true);
     try {
       await onSaveAction({
         id: product?.id,
         title: form.title,
         description: form.description,
-        price: parseFloat(form.price) || 0,
+        price: Number.parseFloat(form.price) || 0,
         category: form.category,
-        stock: parseInt(form.stock, 10) || 0,
-        weight: parseFloat(form.weight) || 0,
-        height: parseFloat(form.height) || 0,
-        width: parseFloat(form.width) || 0,
-        depth: parseFloat(form.depth) || 0,
+        stock: Number.parseInt(form.stock, 10) || 0,
+        weight: Number.parseFloat(form.weight) || 0,
+        height: Number.parseFloat(form.height) || 0,
+        width: Number.parseFloat(form.width) || 0,
+        depth: Number.parseFloat(form.depth) || 0,
         material: form.material,
         color: form.color,
         condition: form.condition,
         images: form.images,
         status: form.status,
       });
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Error al guardar");
     } finally {
       setIsSaving(false);
     }
@@ -127,22 +130,27 @@ export function ProductEditScreen({
   const visual = getProductVisual({ category: form.category });
 
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="products"
-      subtitle={isNew ? "Nueva publicación" : "Editar"}
-      title={isNew ? "Crear producto" : form.title || "Producto"}
-      action={
-        <div className="flex gap-2">
-          <Button href="/products" variant="secondary">
-            Cancelar
-          </Button>
-          <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
-            Guardar
-          </Button>
+    <>
+      <PageHeader
+        subtitle={isNew ? "Nueva publicación" : "Editar"}
+        title={isNew ? "Crear producto" : form.title || "Producto"}
+        action={
+          <div className="flex gap-2">
+            <Button href="/products" variant="secondary">
+              Cancelar
+            </Button>
+            <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
+              Guardar
+            </Button>
+          </div>
+        }
+      />
+      {saveError && (
+        <div className="mx-4 mt-4 lgx:mx-7 px-4 py-3 rounded-xl bg-danger/10 text-danger text-[13px]">
+          {saveError}
         </div>
-      }
-    >
+      )}
+      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <div className="grid gap-4 grid-cols-1 min-[901px]:grid-cols-[1fr_minmax(280px,360px)]">
         <div className="flex flex-col gap-4">
           <Card padding={24}>
@@ -183,14 +191,17 @@ export function ProductEditScreen({
               </Field>
               <Field label="Condición">
                 <div className="flex gap-1.5 flex-wrap">
-                  {(["Nuevo", "Usado"] as const).map((c) => (
+                  {([
+                    { value: "nuevo", label: "Nuevo" },
+                    { value: "usado", label: "Usado" },
+                  ] as const).map((c) => (
                     <Pill
-                      key={c}
-                      active={form.condition === c}
-                      onClick={() => setForm({ ...form, condition: c })}
+                      key={c.value}
+                      active={form.condition === c.value}
+                      onClick={() => setForm({ ...form, condition: c.value })}
                       size="lg"
                     >
-                      {c}
+                      {c.label}
                     </Pill>
                   ))}
                 </div>
@@ -238,11 +249,13 @@ export function ProductEditScreen({
                       key={`${url}-${i}`}
                       className="aspect-square rounded-r2 relative overflow-hidden bg-cream"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      {/* unoptimized: origin URL is user-supplied and unknown at build time */}
+                      <Image
+                        fill
+                        unoptimized
                         src={url}
                         alt={`Imagen ${i + 1}`}
-                        className="w-full h-full object-cover"
+                        className="object-cover"
                       />
                       <button
                         type="button"
@@ -356,6 +369,7 @@ export function ProductEditScreen({
           </Card>
         </div>
       </div>
-    </SellerShell>
+      </div>
+    </>
   );
 }

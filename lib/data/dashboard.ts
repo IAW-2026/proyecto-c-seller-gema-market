@@ -1,11 +1,12 @@
+import 'server-only';
 import { countProductsByStatus, getTopProducts } from "@/lib/data/products";
 import { getRecentSellerOrders, getActiveSellerOrders } from "@/lib/data/orders";
 import type { DashboardData } from "@/types/domain";
 
-export function getDashboardData(): DashboardData {
-  const orders = getActiveSellerOrders();
+export function getDashboardData(sellerId: string): DashboardData {
+  const orders = getActiveSellerOrders(sellerId);
   const monthlySales = orders.reduce((sum, order) => sum + order.total, 0);
-  const productCounts = countProductsByStatus();
+  const productCounts = countProductsByStatus(sellerId);
 
   return {
     stats: [
@@ -13,7 +14,7 @@ export function getDashboardData(): DashboardData {
       { id: "orders", value: orders.length, delta: 4, trend: "up" },
       { id: "activeProducts", value: productCounts.active, delta: null, trend: "flat" },
     ],
-    topProducts: getTopProducts(4),
-    recentOrders: getRecentSellerOrders(4),
+    topProducts: getTopProducts(4, sellerId),
+    recentOrders: getRecentSellerOrders(4, sellerId),
   };
 }

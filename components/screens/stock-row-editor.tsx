@@ -24,7 +24,7 @@ export function StockRowEditor({ productId, initialStock, productName }: Props) 
   };
 
   const confirm = () => {
-    const parsed = parseInt(inputVal, 10);
+    const parsed = Number.parseInt(inputVal, 10);
     const final = isNaN(parsed) ? 0 : Math.max(0, parsed);
     setError(null);
     startTransition(async () => {
@@ -39,7 +39,7 @@ export function StockRowEditor({ productId, initialStock, productName }: Props) 
   };
 
   const adjust = (delta: number) => {
-    const current = parseInt(inputVal, 10) || 0;
+    const current = Number.parseInt(inputVal, 10) || 0;
     setInputVal(String(Math.max(0, current + delta)));
   };
 

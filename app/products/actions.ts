@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireSeller } from "@/lib/auth/current-seller";
 import {
   saveProduct,
   updateProductStock,
@@ -9,6 +10,7 @@ import {
 import type { ProductInput } from "@/types/domain";
 
 export async function saveProductAction(input: ProductInput): Promise<void> {
+  await requireSeller();
   await saveProduct(input);
   revalidatePath("/products");
   if (input.id) {
@@ -20,6 +22,7 @@ export async function updateProductStockAction(
   productId: string,
   stock: number,
 ): Promise<void> {
+  await requireSeller();
   await updateProductStock(productId, stock);
   revalidatePath("/stock");
   revalidatePath("/products");
@@ -29,6 +32,7 @@ export async function updateProductStockAction(
 export async function uploadProductImageAction(
   formData: FormData,
 ): Promise<string> {
+  await requireSeller();
   const file = formData.get("file");
   if (!(file instanceof File)) {
     throw new Error("uploadProductImageAction: 'file' inválido");

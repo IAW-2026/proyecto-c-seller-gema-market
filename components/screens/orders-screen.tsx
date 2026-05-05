@@ -5,14 +5,13 @@ import { Icon } from "@/components/ui/icon";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import type { TabItem } from "@/components/ui/tabs";
-import { SellerShell } from "@/components/layout/seller-shell";
-import { ORDER_STATUS_META } from "@/lib/ui-config";
-import { fmtARS } from "@/lib/format";
-import type { Order, OrderDateRange, Seller } from "@/types/domain";
+import { PageHeader } from "@/components/layout/page-header";
+import { ORDER_STATUS_META } from "@/lib/ui/ui-config";
+import { fmtARS } from "@/lib/ui/format";
+import type { Order, OrderDateRange } from "@/types/domain";
 import { OrdersToolbar } from "./orders-toolbar";
 
 export type OrdersScreenProps = {
-  seller: Seller;
   orders: ReadonlyArray<Order>;
   page: number;
   pageSize: number;
@@ -30,7 +29,6 @@ export type OrdersScreenProps = {
 };
 
 export function OrdersScreen({
-  seller,
   orders,
   page,
   pageSize,
@@ -49,12 +47,9 @@ export function OrdersScreen({
   ];
 
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="orders"
-      subtitle="Operaciones"
-      title="Pedidos recibidos"
-    >
+    <>
+      <PageHeader subtitle="Operaciones" title="Pedidos recibidos" />
+      <div className="p-4 pb-16 lgx:px-7 lgx:py-6">
       <OrdersToolbar
         initialQuery={query}
         activeTab={activeTab}
@@ -168,6 +163,7 @@ export function OrdersScreen({
           <Pager page={page} pageSize={pageSize} total={total} basePath="/orders" />
         </Card>
       </div>
-    </SellerShell>
+      </div>
+    </>
   );
 }

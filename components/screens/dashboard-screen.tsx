@@ -5,9 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { SellerShell } from "@/components/layout/seller-shell";
-import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui-config";
-import { fmtARS } from "@/lib/format";
+import { PageHeader } from "@/components/layout/page-header";
+import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui/ui-config";
+import { fmtARS } from "@/lib/ui/format";
 import type { DashboardStat, DashboardStatId, Order, Product, Seller } from "@/types/domain";
 
 const DASHBOARD_STAT_META: Readonly<
@@ -46,17 +46,17 @@ export function DashboardScreen({
   recentOrders,
 }: DashboardScreenProps) {
   return (
-    <SellerShell
-      seller={seller}
-      activeNavId="dashboard"
-      subtitle="Resumen"
-      title={`Hola, ${seller.name}`}
-      action={
-        <Button href="/products/new" variant="accent" icon="plus">
-          Nueva publicación
-        </Button>
-      }
-    >
+    <>
+      <PageHeader
+        subtitle="Resumen"
+        title={`Hola, ${seller.shopName}`}
+        action={
+          <Button href="/products/new" variant="accent" icon="plus">
+            Nueva publicación
+          </Button>
+        }
+      />
+      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
         {stats.map((s) => (
           <Card key={s.id} padding={20}>
@@ -188,6 +188,7 @@ export function DashboardScreen({
           })}
         </div>
       </Card>
-    </SellerShell>
+      </div>
+    </>
   );
 }
