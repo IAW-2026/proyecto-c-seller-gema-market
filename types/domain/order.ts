@@ -20,6 +20,7 @@ export type OrderListStatus = OrderStatus | "todos";
 export type OrderDateRange = "7d" | "30d" | "90d" | "all";
 
 export type OrderFilters = {
+  sellerId?: string;
   status?: OrderListStatus;
   query?: string;
   dateRange?: OrderDateRange;
@@ -29,9 +30,11 @@ export type OrderFilters = {
 
 // Una Order en el frontend = una venta en el DB.
 // Cada venta corresponde a un producto; múltiples ventas pueden
-// compartir el mismo order_id del Buyer App.
+// compartir el mismo orderId del Buyer App.
 export type Order = {
-  id: string;
+  id: string;          // = venta.id (el ID de esta línea de venta)
+  orderId: string;     // = venta.order_id (FK lógica → Buyer App; agrupa ventas del mismo pedido)
+  sellerId: string;    // FK → usuario.id (el vendedor dueño de esta venta)
   createdAt: string;   // ISO 8601 — fuente: venta.created_at
   date: string;        // derivado: createdAt formateado para UI
   status: OrderStatus;

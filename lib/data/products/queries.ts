@@ -17,6 +17,7 @@ function filterAndSortProducts(filters: ProductFilters): ReadonlyArray<Product> 
   const normalizedQuery = filters.query?.trim().toLowerCase();
 
   let result = PRODUCTS.filter((product) => {
+    const matchesSeller = filters.sellerId ? product.sellerId === filters.sellerId : true;
     const matchesQuery = normalizedQuery
       ? product.title.toLowerCase().includes(normalizedQuery)
       : true;
@@ -27,7 +28,7 @@ function filterAndSortProducts(filters: ProductFilters): ReadonlyArray<Product> 
         : filters.stockFilter === "out"
           ? product.stock === 0
           : true;
-    return matchesQuery && matchesStatus && matchesStock;
+    return matchesSeller && matchesQuery && matchesStatus && matchesStock;
   });
 
   if (filters.sortBy) {
@@ -65,8 +66,9 @@ export function listProducts(filters: ProductFilters = {}): Page<Product> {
   return { items, total, page, pageSize };
 }
 
-export function countProductsByStatus(): Record<ProductStatus, number> {
-  return PRODUCTS.reduce<Record<ProductStatus, number>>(
+export function countProductsByStatus(sellerId?: string): Record<ProductStatus, number> {
+  const products = sellerId ? PRODUCTS.filter((p) => p.sellerId === sellerId) : PRODUCTS;
+  return products.reduce<Record<ProductStatus, number>>(
     (counts, product) => ({
       ...counts,
       [product.status]: counts[product.status] + 1,
@@ -75,19 +77,21 @@ export function countProductsByStatus(): Record<ProductStatus, number> {
   );
 }
 
-export function getStockSummary(): StockSummary {
-  return PRODUCTS.reduce<StockSummary>(
+export function getStockSummary(sellerId?: string): StockSummary {
+  const products = sellerId ? PRODUCTS.filter((p) => p.sellerId === sellerId) : PRODUCTS;
+  return products.reduce<StockSummary>(
     (acc, p) => ({
       totalUnits: acc.totalUnits + p.stock,
-      activeSkus: acc.activeSkus + 1,
+      activeSkus: acc.activeSkus + (p.status === "active" ? 1 : 0),
       outOfStock: acc.outOfStock + (p.stock === 0 ? 1 : 0),
     }),
     { totalUnits: 0, activeSkus: 0, outOfStock: 0 },
   );
 }
 
-export function getTopProducts(limit: number): ReadonlyArray<Product> {
-  return [...PRODUCTS]
+export function getTopProducts(limit: number, sellerId?: string): ReadonlyArray<Product> {
+  const products = sellerId ? PRODUCTS.filter((p) => p.sellerId === sellerId) : PRODUCTS;
+  return [...products]
     .sort((a, b) => b.salesCount - a.salesCount)
     .slice(0, limit);
 }

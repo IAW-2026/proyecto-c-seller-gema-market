@@ -14,11 +14,11 @@ type OrderSeed = Omit<Order, "date">;
 // createdAt es la fuente de verdad (fuente: venta.created_at).
 // `date` se computa a partir de createdAt en buildOrder.
 const ORDER_SEEDS: ReadonlyArray<OrderSeed> = [
-  { id: "OR-2841", createdAt: "2026-05-02T10:15:00Z", status: "shipping",        productId: "p1", amount: 1, total: 113500, fee: 6810, buyer: "Lucía M.",   buyerId: "buyer-001", address: "Av. Alem 1253, Bahía Blanca",    trackId: "TRK-9821", paymentId: "pay-001" },
-  { id: "OR-2840", createdAt: "2026-04-28T14:42:00Z", status: "paid",            productId: "p2", amount: 1, total:  24500, fee: 1470, buyer: "Mateo R.",   buyerId: "buyer-002", address: "Donado 845, B. Blanca",          trackId: "TRK-9820", paymentId: "pay-002" },
-  { id: "OR-2839", createdAt: "2026-04-20T09:05:00Z", status: "delivered",       productId: "p6", amount: 1, total:  67400, fee: 4044, buyer: "Sofía G.",   buyerId: "buyer-003", address: "Brown 510, B. Blanca",           trackId: "TRK-9819", paymentId: "pay-003" },
-  { id: "OR-2838", createdAt: "2026-04-18T18:21:00Z", status: "pending_payment", productId: "p3", amount: 1, total:  18900, fee: 1134, buyer: "Tomás P.",   buyerId: "buyer-004", address: "Soler 2230, B. Blanca",          trackId: "TRK-9818", paymentId: "pay-004" },
-  { id: "OR-2837", createdAt: "2026-02-10T11:30:00Z", status: "delivered",       productId: "p8", amount: 1, total:  41200, fee: 2472, buyer: "Camila V.",  buyerId: "buyer-005", address: "O'Higgins 1100, B. Blanca",      trackId: "TRK-9817", paymentId: "pay-005" },
+  { id: "OR-2841", orderId: "ord-001", sellerId: "s2", createdAt: "2026-05-02T10:15:00Z", status: "shipping",        productId: "p1", amount: 1, total: 113500, fee: 6810, buyer: "Lucía M.",   buyerId: "buyer-001", address: "Av. Alem 1253, Bahía Blanca",    trackId: "TRK-9821", paymentId: "pay-001" },
+  { id: "OR-2840", orderId: "ord-002", sellerId: "s2", createdAt: "2026-04-28T14:42:00Z", status: "paid",            productId: "p2", amount: 1, total:  24500, fee: 1470, buyer: "Mateo R.",   buyerId: "buyer-002", address: "Donado 845, B. Blanca",          trackId: "TRK-9820", paymentId: "pay-002" },
+  { id: "OR-2839", orderId: "ord-003", sellerId: "s2", createdAt: "2026-04-20T09:05:00Z", status: "delivered",       productId: "p6", amount: 1, total:  67400, fee: 4044, buyer: "Sofía G.",   buyerId: "buyer-003", address: "Brown 510, B. Blanca",           trackId: "TRK-9819", paymentId: "pay-003" },
+  { id: "OR-2838", orderId: "ord-004", sellerId: "s2", createdAt: "2026-04-18T18:21:00Z", status: "pending_payment", productId: "p3", amount: 1, total:  18900, fee: 1134, buyer: "Tomás P.",   buyerId: "buyer-004", address: "Soler 2230, B. Blanca",          trackId: "TRK-9818", paymentId: "pay-004" },
+  { id: "OR-2837", orderId: "ord-005", sellerId: "s2", createdAt: "2026-02-10T11:30:00Z", status: "delivered",       productId: "p8", amount: 1, total:  41200, fee: 2472, buyer: "Camila V.",  buyerId: "buyer-005", address: "O'Higgins 1100, B. Blanca",      trackId: "TRK-9817", paymentId: "pay-005" },
 ];
 
 function buildOrder(seed: OrderSeed): Order {
@@ -28,6 +28,7 @@ function buildOrder(seed: OrderSeed): Order {
 // Las mutaciones del mock (advanceOrderStatus) requieren un array mutable.
 // En el backend real, el data layer hará UPDATE en venta.
 const ORDERS: Order[] = ORDER_SEEDS.map(buildOrder);
+
 
 export function getOrders(): ReadonlyArray<Order> {
   return ORDERS;
@@ -39,8 +40,10 @@ export function findOrder(id: string): Order | undefined {
 
 // Excluye explícitamente las ventas que aún no fueron pagadas:
 // el seller sólo opera órdenes con pago confirmado.
-export function getActiveSellerOrders(): ReadonlyArray<Order> {
-  return ORDERS.filter((o) => o.status !== "pending_payment");
+export function getActiveSellerOrders(sellerId?: string): ReadonlyArray<Order> {
+  return ORDERS.filter(
+    (o) => o.status !== "pending_payment" && (sellerId === undefined || o.sellerId === sellerId),
+  );
 }
 
 export const DEFAULT_ORDERS_PAGE_SIZE: PageSize = 10;
@@ -79,7 +82,7 @@ function filterOrders(filters: OrderFilters): ReadonlyArray<Order> {
   const normalizedQuery = filters.query?.trim().toLowerCase();
   const now = new Date();
 
-  return getActiveSellerOrders().filter((order) => {
+  return getActiveSellerOrders(filters.sellerId).filter((order) => {
     const matchesStatus = status === "todos" ? true : order.status === status;
     if (!matchesStatus) return false;
     if (!isWithinRange(order.createdAt, dateRange, now)) return false;
@@ -110,11 +113,11 @@ export function listSellerOrders(filters: OrderFilters = {}): Page<Order> {
   return { items, total, page, pageSize };
 }
 
-export function countSellerOrdersByStatus(): Record<
+export function countSellerOrdersByStatus(sellerId?: string): Record<
   "todos" | "paid" | "shipping" | "delivered",
   number
 > {
-  const orders = getActiveSellerOrders();
+  const orders = getActiveSellerOrders(sellerId);
   return {
     todos:    orders.length,
     paid:     orders.filter((o) => o.status === "paid").length,
@@ -123,8 +126,8 @@ export function countSellerOrdersByStatus(): Record<
   };
 }
 
-export function getRecentSellerOrders(limit: number): ReadonlyArray<Order> {
-  return getActiveSellerOrders().slice(0, limit);
+export function getRecentSellerOrders(limit: number, sellerId?: string): ReadonlyArray<Order> {
+  return getActiveSellerOrders(sellerId).slice(0, limit);
 }
 
 // ─── Transición de estado ─────────────────────────────────────────────────
