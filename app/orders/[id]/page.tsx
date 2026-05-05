@@ -25,6 +25,7 @@ export default function OrderPage({ params }: OrderPageProps) {
 async function OrderContent({ params }: OrderPageProps) {
   const { id } = await params;
   const order = findOrder(id);
+  // El seller no opera órdenes sin pago confirmado; las ocultamos del detalle.
   if (!order || order.status === "pending_payment") notFound();
 
   const product = findProduct(order.productId);

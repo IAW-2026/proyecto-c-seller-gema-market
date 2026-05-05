@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
+import { useDebouncedSearchParam } from "@/lib/hooks/use-debounced-search-param";
 import type { OrderDateRange } from "@/types/domain";
-
-const SEARCH_DEBOUNCE_MS = 300;
 
 export type OrdersToolbarProps = {
   initialQuery: string;
@@ -25,27 +23,9 @@ export function OrdersToolbar({
   dateRangeOptions,
 }: OrdersToolbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState(initialQuery);
-  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
-
-  if (prevInitialQuery !== initialQuery) {
-    setPrevInitialQuery(initialQuery);
-    setQuery(initialQuery);
-  }
-
-  useEffect(() => {
-    if (query === initialQuery) return;
-    const id = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (query) params.set("q", query);
-      else params.delete("q");
-      params.delete("page");
-      const qs = params.toString();
-      router.replace(qs ? `/orders?${qs}` : "/orders", { scroll: false });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [query, initialQuery, router]);
+  const [query, setQuery] = useDebouncedSearchParam("q", initialQuery);
 
   const onTabChange = (next: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -53,7 +33,7 @@ export function OrdersToolbar({
     else params.set("tab", next);
     params.delete("page");
     const qs = params.toString();
-    router.replace(qs ? `/orders?${qs}` : "/orders", { scroll: false });
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const onRangeChange = (next: OrderDateRange) => {
@@ -61,7 +41,7 @@ export function OrdersToolbar({
     params.set("range", next);
     params.delete("page");
     const qs = params.toString();
-    router.replace(qs ? `/orders?${qs}` : "/orders", { scroll: false });
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   return (

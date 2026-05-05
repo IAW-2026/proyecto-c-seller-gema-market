@@ -1,13 +1,12 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
-
-const SEARCH_DEBOUNCE_MS = 300;
+import { useDebouncedSearchParam } from "@/lib/hooks/use-debounced-search-param";
 
 const SORT_FIELDS = [
   { value: "price", label: "Precio" },
@@ -29,40 +28,21 @@ export function ProductsToolbar({
   tabs,
 }: ProductsToolbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useDebouncedSearchParam("q", initialQuery);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
-  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
-
-  if (prevInitialQuery !== initialQuery) {
-    setPrevInitialQuery(initialQuery);
-    setQuery(initialQuery);
-  }
 
   const currentSort = searchParams.get("sort") ?? "";
   const currentStockFilter = searchParams.get("stockFilter") ?? "";
 
-  // Parse current sort into field + direction
   const currentField = (["price", "sales", "stock"].find((f) =>
     currentSort.startsWith(f),
   ) ?? "") as SortField | "";
   const currentDir = currentSort.endsWith("_asc") ? "asc" : currentSort.endsWith("_desc") ? "desc" : "";
 
   const activeFilterCount = [currentSort, currentStockFilter].filter(Boolean).length;
-
-  useEffect(() => {
-    if (query === initialQuery) return;
-    const id = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (query) params.set("q", query);
-      else params.delete("q");
-      params.delete("page");
-      const qs = params.toString();
-      router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [query, initialQuery, router]);
 
   useEffect(() => {
     if (!isFilterOpen) return;
@@ -81,7 +61,7 @@ export function ProductsToolbar({
     else params.set("tab", next);
     params.delete("page");
     const qs = params.toString();
-    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const pushParams = (updates: Record<string, string | null>) => {
@@ -92,7 +72,7 @@ export function ProductsToolbar({
     }
     params.delete("page");
     const qs = params.toString();
-    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const setField = (field: SortField) => {
