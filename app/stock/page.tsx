@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { StockScreen } from "@/components/screens/stock-screen";
-import { getCurrentSeller } from "@/lib/current-seller";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { getStockSummary, listProducts } from "@/lib/data/products";
 
 export const metadata: Metadata = {

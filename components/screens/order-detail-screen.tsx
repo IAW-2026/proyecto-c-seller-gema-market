@@ -8,8 +8,8 @@ import {
   getProductVisual,
   ORDER_STATUS_META,
   ORDER_TIMELINE,
-} from "@/lib/ui-config";
-import { fmtARS } from "@/lib/format";
+} from "@/lib/ui/ui-config";
+import { fmtARS } from "@/lib/ui/format";
 import { nextOrderStatus } from "@/lib/data/orders";
 import type { BuyerInfo, Order, PaymentInfo, Product, Seller, ShippingInfo } from "@/types/domain";
 import { OrderActionButton } from "./order-action-button";

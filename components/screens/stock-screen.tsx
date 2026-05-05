@@ -3,7 +3,7 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { getProductVisual } from "@/lib/ui-config";
+import { getProductVisual } from "@/lib/ui/ui-config";
 import { StockRowEditor } from "./stock-row-editor";
 import { StockToolbar } from "./stock-toolbar";
 import type { Product, Seller, StockSummary } from "@/types/domain";

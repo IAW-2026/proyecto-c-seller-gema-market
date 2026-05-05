@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ShopScreen } from "@/components/screens/shop-screen";
-import { getCurrentSeller } from "@/lib/current-seller";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { saveSellerAction, uploadSellerCoverAction } from "@/app/shop/actions";
 
 export const metadata: Metadata = {

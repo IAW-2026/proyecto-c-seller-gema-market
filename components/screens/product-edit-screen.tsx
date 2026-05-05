@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { SellerShell } from "@/components/layout/seller-shell";
-import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui-config";
+import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/app/products/actions";
 import type { Category, CategoryId, Product, ProductInput, ProductStatus, Seller } from "@/types/domain";
 

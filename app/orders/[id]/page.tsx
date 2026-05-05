@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderDetailScreen } from "@/components/screens/order-detail-screen";
-import { getCurrentSeller } from "@/lib/current-seller";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { findOrder } from "@/lib/data/orders";
 import { findProduct } from "@/lib/data/products";
 import { getOrderBuyerInfo, getOrderPaymentInfo, getOrderShippingInfo } from "@/lib/data/order-detail";
