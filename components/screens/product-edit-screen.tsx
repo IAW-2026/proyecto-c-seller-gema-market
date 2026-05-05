@@ -238,7 +238,6 @@ export function ProductEditScreen({
                       key={`${url}-${i}`}
                       className="aspect-square rounded-r2 relative overflow-hidden bg-cream"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
                         alt={`Imagen ${i + 1}`}
