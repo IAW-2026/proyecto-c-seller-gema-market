@@ -1,15 +1,22 @@
 // UniHousing — Seller App
 //
 // Schema base del bounded context Seller.
-// Decisiones de modelado deben quedar reflejadas en docs/04-modelo-de-datos.md.
+// Decisiones de modelado deben quedar reflejadas en docs/modelo-de-datos-seller.md.
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+  runtime  = "nodejs"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum SellerRole {
+  SELLER
 }
 
 enum ProductStatus {
@@ -22,54 +29,69 @@ enum ProductCondition {
   USED
 }
 
-enum OrderStatus {
-  PAYMENT_PENDING
-  PREPARING
-  READY_TO_SHIP
-  IN_TRANSIT
+// Alineado con venta.status del modelo de datos y con el tipo OrderStatus del dominio.
+enum SaleStatus {
+  PENDING_PAYMENT
+  PAID
+  SHIPPING
   DELIVERED
+  SHIPPING_FAILED
   CANCELLED
+  DISPUTED
+  REFUNDED
 }
 
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+// Caché local del usuario de Clerk. clerk_user_id es la fuente de verdad.
 model Seller {
-  id           String    @id @default(cuid())
-  clerkUserId  String?   @unique
-  name         String
-  city         String
-  bio          String
-  email        String    @unique
-  phone        String
-  street       String
-  number       String
-  apartment    String?
-  postalCode   String
-  verified     Boolean   @default(false)
-  products     Product[]
-  orders       Order[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String     @id @default(cuid())
+  clerkUserId String?    @unique
+  fullName    String
+  shopName    String
+  email       String     @unique
+  phone       String
+  bio         String?
+  role        SellerRole @default(SELLER)
+  city        String
+  street      String
+  number      String
+  apartment   String?
+  postalCode  String
+  products    Product[]
+  sales       Sale[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Categoria {
+  id       String    @id @default(cuid())
+  name     String
+  products Product[]
 }
 
 model Product {
   id          String           @id @default(cuid())
   sellerId    String
   title       String
-  price       Int
-  oldPrice    Int?
-  category    String
-  glyph       String
-  paletteFrom String
-  paletteTo   String
-  stock       Int
+  description String
+  weight      Int
+  height      Int
+  width       Int
+  depth       Int
   condition   ProductCondition @default(NEW)
-  location    String
-  shipping    Int
-  dimensions  String
+  material    String
+  color       String
+  price       Decimal          @db.Decimal(10, 2)
+  currency    String           @default("ARS") @db.Char(3)
+  categoryId  String
+  stock       Int              @default(0)
   status      ProductStatus    @default(ACTIVE)
-  rating      Float            @default(0)
-  reviews     Int              @default(0)
+  images      Json             @default("[]")
   seller      Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  orderItems  OrderItem[]
+  category    Categoria        @relation(fields: [categoryId], references: [id])
+  sales       Sale[]
+  reservations Reserva[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -77,30 +99,37 @@ model Product {
   @@index([title])
 }
 
-model Order {
-  id        String      @id
-  sellerId  String
-  buyerName String
-  address   String
-  trackId   String
-  status    OrderStatus
-  total     Int
-  items     OrderItem[]
-  seller    Seller      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@index([sellerId, status])
-}
-
-model OrderItem {
-  id        String  @id @default(cuid())
+// Una venta = una línea de pedido del Buyer App.
+// Múltiples ventas pueden compartir el mismo orderId (un pedido con varios productos).
+model Sale {
+  id        String     @id @default(cuid())
   orderId   String
   productId String
-  quantity  Int     @default(1)
-  unitPrice Int
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
+  sellerId  String
+  buyerId   String
+  paymentId String
+  amount    Int
+  total     Decimal    @db.Decimal(10, 2)
+  fee       Decimal    @db.Decimal(10, 2)
+  status    SaleStatus @default(PENDING_PAYMENT)
+  product   Product    @relation(fields: [productId], references: [id])
+  seller    Seller     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  @@unique([orderId, productId])
+  @@index([sellerId, status])
+  @@index([orderId])
+  @@index([sellerId, createdAt])
+}
+
+// Reserva temporal de stock durante el proceso de checkout del Buyer App.
+model Reserva {
+  id        String   @id @default(cuid())
+  productId String
+  orderId   String
+  buyerId   String
+  quantity  Int
+  expiresAt DateTime
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
 }

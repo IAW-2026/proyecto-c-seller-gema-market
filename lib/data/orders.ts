@@ -1,3 +1,4 @@
+import 'server-only';
 import type {
   Order,
   OrderDateRange,
@@ -6,7 +7,7 @@ import type {
   Page,
   PageSize,
 } from "@/types/domain";
-import { PAGE_SIZES } from "@/types/domain";
+import { nextOrderStatus, PAGE_SIZES } from "@/types/domain";
 import { fmtOrderDate } from "@/lib/ui/format";
 
 type OrderSeed = Omit<Order, "date">;
@@ -129,15 +130,7 @@ export function getRecentSellerOrders(limit: number): ReadonlyArray<Order> {
 
 // ─── Transición de estado ─────────────────────────────────────────────────
 
-// Flujo bajo control del seller: paid → shipping.
-// `delivered` lo setea otra app (Shipping) cuando confirma la entrega.
-const STATUS_FLOW: Readonly<Partial<Record<OrderStatus, OrderStatus>>> = {
-  paid: "shipping",
-};
-
-export function nextOrderStatus(current: OrderStatus): OrderStatus | null {
-  return STATUS_FLOW[current] ?? null;
-}
+export { nextOrderStatus };
 
 export async function advanceOrderStatus(orderId: string): Promise<Order> {
   const idx = ORDERS.findIndex((o) => o.id === orderId);
