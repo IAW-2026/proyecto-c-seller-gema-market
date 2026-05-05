@@ -3,7 +3,6 @@ import type {
   Order,
   OrderDateRange,
   OrderFilters,
-  OrderStatus,
   Page,
   PageSize,
 } from "@/types/domain";
