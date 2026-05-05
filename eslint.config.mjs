@@ -25,6 +25,7 @@ export default [
       ...nextPlugin.configs["core-web-vitals"].rules,
       ...reactHooksPlugin.configs.recommended.rules,
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@next/next/no-img-element": "error",
     },
   },
 ];

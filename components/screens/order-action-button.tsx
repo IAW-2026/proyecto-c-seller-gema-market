@@ -6,15 +6,8 @@ import { advanceOrderStatusAction } from "@/app/orders/actions";
 import { ORDER_TIMELINE } from "@/lib/ui/ui-config";
 import { nextOrderStatus, type OrderStatus } from "@/types/domain";
 
-const NEXT_STATUS_LABEL: Readonly<Record<OrderStatus, string>> = {
-  pending_payment:  "",
-  paid:             "Marcar como despachado",
-  shipping:         "",
-  delivered:        "",
-  shipping_failed:  "",
-  cancelled:        "",
-  disputed:         "",
-  refunded:         "",
+const NEXT_STATUS_LABEL: Partial<Record<OrderStatus, string>> = {
+  paid: "Marcar como despachado",
 };
 
 export type OrderActionButtonProps = {
