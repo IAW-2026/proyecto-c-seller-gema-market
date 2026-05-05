@@ -2,6 +2,8 @@
 
 import type { CategoryId } from "./catalog";
 
+export type ProductCondition = "nuevo" | "usado";
+
 export type Product = {
   id: string;
   title: string;
@@ -18,7 +20,7 @@ export type Product = {
   depth: number;       // cm
   material: string;
   color: string;
-  condition: string;              // ej: "Nuevo", "Usado · Como nuevo"
+  condition: ProductCondition;
   images: ReadonlyArray<string>; // URLs — producto.images (JSON)
   status: ProductStatus;
 };
@@ -38,7 +40,7 @@ export type ProductInput = {
   depth: number;
   material: string;
   color: string;
-  condition: string;
+  condition: ProductCondition;
   images: ReadonlyArray<string>;
   status: ProductStatus;
 };
