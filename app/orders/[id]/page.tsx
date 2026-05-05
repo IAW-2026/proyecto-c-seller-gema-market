@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderDetailScreen } from "@/components/screens/order-detail-screen";
@@ -14,7 +15,15 @@ export async function generateMetadata({ params }: OrderPageProps): Promise<Meta
   return { title: order ? `Pedido ${order.id}` : "Pedido no encontrado" };
 }
 
-export default async function OrderPage({ params }: OrderPageProps) {
+export default function OrderPage({ params }: OrderPageProps) {
+  return (
+    <Suspense>
+      <OrderContent params={params} />
+    </Suspense>
+  );
+}
+
+async function OrderContent({ params }: OrderPageProps) {
   const { id } = await params;
   const order = findOrder(id);
   if (!order || order.status === "pending_payment") notFound();

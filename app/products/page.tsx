@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ProductsScreen } from "@/components/screens/products-screen";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
@@ -22,9 +23,15 @@ type ProductsPageProps = {
   }>;
 };
 
-export default async function ProductsPage({
-  searchParams,
-}: ProductsPageProps) {
+export default function ProductsPage({ searchParams }: ProductsPageProps) {
+  return (
+    <Suspense>
+      <ProductsContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ProductsContent({ searchParams }: ProductsPageProps) {
   const seller = await getCurrentSeller();
   const params = await searchParams;
   const q = params.q ?? "";

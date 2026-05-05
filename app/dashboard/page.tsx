@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { DashboardScreen } from "@/components/screens/dashboard-screen";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
@@ -7,7 +8,15 @@ export const metadata: Metadata = {
   title: "Dashboard",
 };
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+async function DashboardContent() {
   const seller = await getCurrentSeller();
   const dashboard = getDashboardData();
   return (
