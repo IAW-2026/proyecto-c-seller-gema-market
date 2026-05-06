@@ -9,4 +9,5 @@ function required(key: string): string {
 // Extender aquí cuando se agreguen CLERK_SECRET_KEY, EXTERNAL_API_KEY, etc.
 export const env = {
   DATABASE_URL: required("DATABASE_URL"),
+  DIRECT_URL: required("DIRECT_URL"),
 } as const;
