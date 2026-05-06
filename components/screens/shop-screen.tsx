@@ -7,10 +7,10 @@ import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
-import type { Seller, SellerInput } from "@/types/domain";
+import type { SellerInput, SellerWithCounts } from "@/types/domain";
 
 export type ShopScreenProps = {
-  seller: Seller;
+  seller: SellerWithCounts;
   onSaveAction: (input: SellerInput) => Promise<void>;
   onUploadCoverAction: (formData: FormData) => Promise<string>;
 };
@@ -27,17 +27,17 @@ type FormState = {
   postalCode: string;
 };
 
-function toFormState(seller: Seller): FormState {
+function toFormState(seller: SellerWithCounts): FormState {
   return {
     shopName: seller.shopName,
     city: seller.city,
-    bio: seller.bio,
+    bio: seller.bio ?? "",
     email: seller.email,
     phone: seller.phone,
-    street: seller.address.street,
-    number: seller.address.number,
-    apartment: seller.address.apartment ?? "",
-    postalCode: seller.address.postalCode,
+    street: seller.street,
+    number: seller.number,
+    apartment: seller.apartment ?? "",
+    postalCode: seller.postalCode,
   };
 }
 
@@ -48,12 +48,10 @@ function toSellerInput(form: FormState): SellerInput {
     bio: form.bio,
     email: form.email,
     phone: form.phone,
-    address: {
-      street: form.street,
-      number: form.number,
-      apartment: form.apartment.trim() || undefined,
-      postalCode: form.postalCode,
-    },
+    street: form.street,
+    number: form.number,
+    apartment: form.apartment.trim() || undefined,
+    postalCode: form.postalCode,
   };
 }
 

@@ -6,8 +6,8 @@ import { saveSeller, uploadSellerCover } from "@/lib/data/sellers";
 import type { SellerInput } from "@/types/domain";
 
 export async function saveSellerAction(input: SellerInput): Promise<void> {
-  await requireSeller();
-  await saveSeller(input);
+  const seller = await requireSeller();
+  await saveSeller(seller.id, input);
   revalidatePath("/shop");
 }
 

@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { ShopScreen } from "@/components/screens/shop-screen";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
+import { findSellerWithCounts } from "@/lib/data/sellers";
 import { saveSellerAction, uploadSellerCoverAction } from "@/app/shop/actions";
 
 export const metadata: Metadata = {
@@ -17,7 +19,9 @@ export default function ShopPage() {
 }
 
 async function ShopContent() {
-  const seller = await getCurrentSeller();
+  const current = await getCurrentSeller();
+  const seller = await findSellerWithCounts(current.id);
+  if (!seller) notFound();
   return (
     <ShopScreen
       seller={seller}

@@ -1,9 +1,28 @@
 import 'server-only';
 import { prisma } from '@/lib/db';
-import type { Seller, SellerInput } from "@/types/domain";
+import type { Seller, SellerInput, SellerWithCounts } from "@/types/domain";
 
 export async function findSeller(id: string): Promise<Seller | null> {
   return prisma.seller.findUnique({ where: { id } });
+}
+
+export async function findSellerWithCounts(
+  id: string,
+): Promise<SellerWithCounts | null> {
+  const row = await prisma.seller.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          products: { where: { status: 'active' } },
+          sales: true,
+        },
+      },
+    },
+  });
+  if (!row) return null;
+  const { _count, ...rest } = row;
+  return { ...rest, productsCount: _count.products, salesCount: _count.sales };
 }
 
 // Helper temporal: devuelve el primer seller de la DB.
@@ -16,10 +35,24 @@ export async function getDefaultSeller(): Promise<Seller> {
   return seller;
 }
 
-export async function saveSeller(input: SellerInput): Promise<Seller> {
-  // TODO (Fase 2d): implementar con Prisma
-  void input;
-  throw new Error("saveSeller: backend no implementado aún");
+export async function saveSeller(
+  sellerId: string,
+  input: SellerInput,
+): Promise<Seller> {
+  return prisma.seller.update({
+    where: { id: sellerId },
+    data: {
+      shopName: input.shopName,
+      email: input.email,
+      phone: input.phone,
+      bio: input.bio || null,
+      city: input.city,
+      street: input.street,
+      number: input.number,
+      apartment: input.apartment ?? null,
+      postalCode: input.postalCode,
+    },
+  });
 }
 
 export async function uploadSellerCover(file: File): Promise<string> {
