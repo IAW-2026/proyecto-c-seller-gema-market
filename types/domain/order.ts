@@ -41,8 +41,8 @@ export type Order = {
   total: number;       // monto total cobrado al comprador
   fee: number;         // comisión de la plataforma
   status: OrderStatus;
-  createdAt: string;   // ISO 8601 (también la fuente para filtros por fecha)
-  updatedAt: string;   // ISO 8601
+  createdAt: Date;     // fuente para filtros por fecha
+  updatedAt: Date;
 };
 
 // Información adicional del comprador (fuente: Buyer App).

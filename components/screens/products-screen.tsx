@@ -9,11 +9,11 @@ import type { TabItem } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/page-header";
 import { fmtARS } from "@/lib/ui/format";
 import { getProductVisual } from "@/lib/ui/ui-config";
-import type { Product } from "@/types/domain";
+import type { ProductWithJoins } from "@/types/domain";
 import { ProductsToolbar } from "./products-toolbar";
 
 export type ProductsScreenProps = {
-  products: ReadonlyArray<Product>;
+  products: ReadonlyArray<ProductWithJoins>;
   page: number;
   pageSize: number;
   total: number;
@@ -68,7 +68,7 @@ export function ProductsScreen({
               </thead>
               <tbody>
                 {products.map((p) => {
-                  const visual = getProductVisual(p);
+                  const visual = getProductVisual(p.categoryName);
                   return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5">
@@ -123,7 +123,7 @@ export function ProductsScreen({
           </div>
           <div className="grid gap-3 p-3 lgx:hidden">
             {products.map((p) => {
-              const visual = getProductVisual(p);
+              const visual = getProductVisual(p.categoryName);
               return (
                 <Link
                   key={p.id}

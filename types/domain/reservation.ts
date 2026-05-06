@@ -11,8 +11,8 @@ export type Reserva = {
   orderId: string;   // FK lógica → Buyer App
   buyerId: string;   // FK lógica → Buyer App
   quantity: number;
-  expiresAt: string; // ISO 8601 — definido por el Buyer App
-  createdAt: string; // ISO 8601
+  expiresAt: Date;   // definido por el Buyer App
+  createdAt: Date;
 };
 
 export type ReservaInput = {
@@ -20,5 +20,5 @@ export type ReservaInput = {
   orderId: string;
   buyerId: string;
   quantity: number;
-  expiresAt: string; // ISO 8601
+  expiresAt: Date;
 };

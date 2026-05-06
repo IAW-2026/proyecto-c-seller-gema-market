@@ -1,7 +1,5 @@
 import type {
-  CategoryId,
   OrderStatus,
-  Product,
   ProductStatus,
 } from "@/types/domain";
 import type { GlyphKind, Palette, StatusMeta } from "@/types/ui";
@@ -16,19 +14,20 @@ const DEFAULT_PRODUCT_VISUAL: ProductVisual = {
   palette: ["#a4ac86", "#414833"],
 };
 
-export const PRODUCT_VISUALS_BY_CATEGORY: Readonly<Record<CategoryId, ProductVisual>> = {
-  living: { glyph: "living", palette: ["#a4ac86", "#414833"] },
-  dormitorio: { glyph: "dormitorio", palette: ["#936639", "#582f0e"] },
-  comedor: { glyph: "comedor", palette: ["#7f4f24", "#582f0e"] },
-  cocina: { glyph: "cocina", palette: ["#a68a64", "#414833"] },
-  bath: { glyph: "bath", palette: ["#a4ac86", "#333d29"] },
-  terraza: { glyph: "terraza", palette: ["#656d4a", "#a68a64"] },
-  decoracion: { glyph: "decoracion", palette: ["#b6ad90", "#7f4f24"] },
+// Mapeo por nombre de categoría tal como está en `Categoria.name` (DB).
+const PRODUCT_VISUALS_BY_CATEGORY_NAME: Readonly<Record<string, ProductVisual>> = {
+  Living:     { glyph: "living",     palette: ["#a4ac86", "#414833"] },
+  Dormitorio: { glyph: "dormitorio", palette: ["#936639", "#582f0e"] },
+  Comedor:    { glyph: "comedor",    palette: ["#7f4f24", "#582f0e"] },
+  Cocina:     { glyph: "cocina",     palette: ["#a68a64", "#414833"] },
+  Baño:       { glyph: "bath",       palette: ["#a4ac86", "#333d29"] },
+  Terraza:    { glyph: "terraza",    palette: ["#656d4a", "#a68a64"] },
+  Decoración: { glyph: "decoracion", palette: ["#b6ad90", "#7f4f24"] },
 };
 
-export function getProductVisual(product: Pick<Product, "category"> | null): ProductVisual {
-  if (!product) return DEFAULT_PRODUCT_VISUAL;
-  return PRODUCT_VISUALS_BY_CATEGORY[product.category];
+export function getProductVisual(categoryName: string | null | undefined): ProductVisual {
+  if (!categoryName) return DEFAULT_PRODUCT_VISUAL;
+  return PRODUCT_VISUALS_BY_CATEGORY_NAME[categoryName] ?? DEFAULT_PRODUCT_VISUAL;
 }
 
 export const ORDER_STATUS_META: Readonly<Record<OrderStatus, StatusMeta>> = {

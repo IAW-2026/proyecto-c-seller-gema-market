@@ -24,8 +24,8 @@ export type Product = {
   stock: number;
   status: ProductStatus;
   images: ReadonlyArray<string>;
-  createdAt: string; // ISO 8601
-  updatedAt: string; // ISO 8601
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 // Vista enriquecida con joins/agregaciones que el data layer compone.

@@ -14,7 +14,7 @@ export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
-  const product = findProduct(id);
+  const product = await findProduct(id);
   return {
     title: product ? `Editar — ${product.title}` : "Producto no encontrado",
   };
@@ -30,11 +30,13 @@ export default function ProductPage({ params }: ProductPageProps) {
 
 async function ProductContent({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = findProduct(id);
+  const [product, categories] = await Promise.all([
+    findProduct(id),
+    getCategories(),
+  ]);
   if (!product) {
     notFound();
   }
-  const categories = await getCategories();
   return (
     <ProductEditScreen
       mode="edit"

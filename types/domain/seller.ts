@@ -18,10 +18,10 @@ export type Seller = {
   city: string;
   street: string;
   number: string;
-  apartment?: string;
+  apartment: string | null;
   postalCode: string;
-  createdAt: string; // ISO 8601
-  updatedAt: string; // ISO 8601
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 // Vista enriquecida con agregaciones.

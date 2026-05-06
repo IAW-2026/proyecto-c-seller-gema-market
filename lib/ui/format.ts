@@ -7,8 +7,7 @@ const MONTHS_ES = [
   "jul", "ago", "sep", "oct", "nov", "dic",
 ];
 
-export function fmtOrderDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`;
+export function fmtOrderDate(date: Date): string {
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${MONTHS_ES[date.getMonth()]} ${date.getFullYear()}`;
 }
