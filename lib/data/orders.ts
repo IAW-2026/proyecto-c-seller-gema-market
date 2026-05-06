@@ -134,18 +134,6 @@ export async function getRecentSellerOrders(
   return rows.map(toOrder);
 }
 
-// Helper compartido con el dashboard (Fase 2e). Devuelve todas las órdenes
-// activas del seller — el dashboard agrega encima.
-export async function getActiveSellerOrders(
-  sellerId?: string,
-): Promise<ReadonlyArray<Order>> {
-  const rows = await prisma.sale.findMany({
-    where: { AND: [NON_PENDING, sellerId ? { sellerId } : {}] },
-    orderBy: { createdAt: "desc" },
-  });
-  return rows.map(toOrder);
-}
-
 export { nextOrderStatus };
 
 export async function advanceOrderStatus(orderId: string): Promise<Order> {

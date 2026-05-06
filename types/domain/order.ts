@@ -66,13 +66,6 @@ export type PaymentInfo = {
   approved: boolean;
 };
 
-// Vista de detalle: la venta + datos cross-app traídos por el data layer.
-export type OrderDetailView = Order & {
-  buyer?: BuyerInfo;
-  shipping?: ShippingInfo;
-  payment?: PaymentInfo;
-};
-
 // Flujo bajo control del seller: paid → shipping.
 // `delivered` lo setea otra app (Shipping) cuando confirma la entrega.
 const STATUS_FLOW: Readonly<Partial<Record<OrderStatus, OrderStatus>>> = {
