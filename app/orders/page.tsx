@@ -54,15 +54,17 @@ async function OrdersContent({ searchParams }: OrdersPageProps) {
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
 
-  const result = listSellerOrders({
-    sellerId: seller.id,
-    status: TAB_TO_STATUS[activeTab],
-    query: q,
-    dateRange,
-    page: Number.isFinite(pageNum) ? pageNum : 1,
-    pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-  });
-  const rawCounts = countSellerOrdersByStatus(seller.id);
+  const [result, rawCounts] = await Promise.all([
+    listSellerOrders({
+      sellerId: seller.id,
+      status: TAB_TO_STATUS[activeTab],
+      query: q,
+      dateRange,
+      page: Number.isFinite(pageNum) ? pageNum : 1,
+      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
+    }),
+    countSellerOrdersByStatus(seller.id),
+  ]);
 
   return (
     <OrdersScreen
