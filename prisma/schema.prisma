@@ -3,10 +3,9 @@
 // Schema base del bounded context Seller.
 // Decisiones de modelado deben quedar reflejadas en docs/modelo-de-datos-seller.md.
 //
-// IDs: se usa cuid() en lugar de ULID (que indica el modelo de datos) porque Prisma
-// no tiene generador ULID nativo. La forma del ID es opaca para la lógica de negocio;
-// se puede migrar a ULID con un generador externo en cualquier momento sin cambiar las
-// relaciones.
+// IDs: ULID con prefijo por modelo (`prd_`, `usr_`, `cat_`, `vnt_`, `rsv_`),
+// según el contrato definido en docs/apis.md. La generación se hace en la app
+// vía `lib/ids.ts` y la extensión de Prisma Client en `lib/db.ts`, no en el DB.
 
 generator client {
   provider = "prisma-client"
@@ -51,7 +50,7 @@ enum SaleStatus {
 
 // Caché local del usuario de Clerk. clerk_user_id es la fuente de verdad.
 model Seller {
-  id          String     @id @default(cuid())
+  id          String     @id
   clerkUserId String?    @unique
   fullName    String
   shopName    String
@@ -71,14 +70,14 @@ model Seller {
 }
 
 model Categoria {
-  id       String    @id @default(cuid())
+  id       String    @id
   slug     String    @unique
   name     String
   products Product[]
 }
 
 model Product {
-  id           String           @id @default(cuid())
+  id           String           @id
   sellerId     String
   title        String
   description  String
@@ -109,7 +108,7 @@ model Product {
 // Una venta = una línea de pedido del Buyer App.
 // Múltiples ventas pueden compartir el mismo orderId (un pedido con varios productos).
 model Sale {
-  id        String     @id @default(cuid())
+  id        String     @id
   orderId   String
   productId String
   sellerId  String
@@ -131,7 +130,7 @@ model Sale {
 
 // Reserva temporal de stock durante el proceso de checkout del Buyer App.
 model Reserva {
-  id        String   @id @default(cuid())
+  id        String   @id
   productId String
   orderId   String
   buyerId   String

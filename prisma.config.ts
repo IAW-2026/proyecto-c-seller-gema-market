@@ -8,6 +8,6 @@ export default defineConfig({
   },
   datasource: {
     // Used by `prisma migrate` — not required for `prisma generate`.
-    url: process.env.DATABASE_URL ?? '',
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '',
   },
 })
