@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
-import { CATEGORIES } from "@/lib/data/categories";
+import { getCategories } from "@/lib/data/categories";
 import { saveProductAction } from "@/app/products/actions";
 
 export const metadata: Metadata = {
@@ -17,11 +17,12 @@ export default function NewProductPage() {
 }
 
 async function NewProductContent() {
+  const categories = await getCategories();
   return (
     <ProductEditScreen
       mode="new"
       product={null}
-      categories={CATEGORIES}
+      categories={categories}
       onSaveAction={saveProductAction}
     />
   );

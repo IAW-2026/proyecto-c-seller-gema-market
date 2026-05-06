@@ -36,37 +36,29 @@ async function main() {
   });
 
   // ── Categorías ────────────────────────────────────────────────────────────
-  const categorySeeds = [
-    { slug: 'living',     name: 'Living' },
-    { slug: 'dormitorio', name: 'Dormitorio' },
-    { slug: 'comedor',    name: 'Comedor' },
-    { slug: 'cocina',     name: 'Cocina' },
-    { slug: 'bath',       name: 'Baño' },
-    { slug: 'terraza',    name: 'Terraza' },
-    { slug: 'decoracion', name: 'Decoración' },
-  ];
+  const categoryNames = ['Living', 'Dormitorio', 'Comedor', 'Cocina', 'Baño', 'Terraza', 'Decoración'];
 
-  const catIdBySlug = new Map<string, string>();
-  for (const c of categorySeeds) {
+  const catIdByName = new Map<string, string>();
+  for (const name of categoryNames) {
     const id = newId(PREFIXES.categoria);
-    catIdBySlug.set(c.slug, id);
-    await prisma.categoria.create({ data: { id, slug: c.slug, name: c.name } });
+    catIdByName.set(name, id);
+    await prisma.categoria.create({ data: { id, name } });
   }
 
   // ── Productos ─────────────────────────────────────────────────────────────
   const productSeeds = [
-    { key: 'p1',  title: 'Sillón de pana 2 cuerpos',    slug: 'living',     price: 89000, stock: 3,  condition: ProductCondition.usado, material: 'Pana',             color: 'Verde oliva', weight: 45, height: 90,  width: 180, depth: 85,  status: ProductStatus.active },
-    { key: 'p2',  title: 'Mesa de luz roble',           slug: 'dormitorio', price: 24500, stock: 8,  condition: ProductCondition.nuevo, material: 'Roble',            color: 'Natural',     weight: 12, height: 55,  width: 45,  depth: 40,  status: ProductStatus.active },
-    { key: 'p3',  title: 'Lámpara de pie mimbre',       slug: 'decoracion', price: 18900, stock: 5,  condition: ProductCondition.nuevo, material: 'Mimbre',           color: 'Natural',     weight:  3, height: 160, width: 40,  depth: 40,  status: ProductStatus.active },
-    { key: 'p4',  title: 'Juego de sábanas king',       slug: 'dormitorio', price: 32000, stock: 22, condition: ProductCondition.nuevo, material: 'Algodón',          color: 'Blanco',      weight:  1, height:  5,  width: 40,  depth: 30,  status: ProductStatus.active },
-    { key: 'p5',  title: 'Set de vajilla 12 pzs',       slug: 'cocina',     price: 15600, stock: 14, condition: ProductCondition.nuevo, material: 'Cerámica',         color: 'Blanco',      weight:  4, height: 25,  width: 40,  depth: 40,  status: ProductStatus.active },
-    { key: 'p6',  title: 'Mesa redonda 4 personas',     slug: 'comedor',    price: 67000, stock: 2,  condition: ProductCondition.nuevo, material: 'Madera',           color: 'Natural',     weight: 30, height: 75,  width: 100, depth: 100, status: ProductStatus.active },
-    { key: 'p7',  title: 'Cortina de baño bambú',       slug: 'bath',       price:  8400, stock: 30, condition: ProductCondition.nuevo, material: 'Bambú',            color: 'Natural',     weight:  1, height: 200, width: 180, depth:  1,  status: ProductStatus.paused },
-    { key: 'p8',  title: 'Reposera plegable lona',      slug: 'terraza',    price: 22500, stock: 6,  condition: ProductCondition.nuevo, material: 'Lona',             color: 'Beige',       weight:  8, height: 90,  width: 60,  depth: 80,  status: ProductStatus.active },
-    { key: 'p9',  title: 'Espejo redondo 60cm',         slug: 'decoracion', price: 16800, stock: 9,  condition: ProductCondition.nuevo, material: 'Vidrio',           color: 'Dorado',      weight:  3, height: 60,  width: 60,  depth:  5,  status: ProductStatus.active },
-    { key: 'p10', title: 'Estantería pino 4 niveles',   slug: 'living',     price: 38900, stock: 4,  condition: ProductCondition.nuevo, material: 'Pino',             color: 'Natural',     weight: 20, height: 160, width: 80,  depth: 30,  status: ProductStatus.active },
-    { key: 'p11', title: 'Pava eléctrica 1.7L',         slug: 'cocina',     price: 19200, stock: 18, condition: ProductCondition.nuevo, material: 'Acero inoxidable', color: 'Plateado',    weight:  1, height: 25,  width: 20,  depth: 20,  status: ProductStatus.paused },
-    { key: 'p12', title: 'Almohadón lino crudo',        slug: 'decoracion', price:  6800, stock: 40, condition: ProductCondition.nuevo, material: 'Lino',             color: 'Crudo',       weight:  1, height: 45,  width: 45,  depth: 15,  status: ProductStatus.active },
+    { key: 'p1',  title: 'Sillón de pana 2 cuerpos',    categoryName: 'Living',     price: 89000, stock: 3,  condition: ProductCondition.usado, material: 'Pana',             color: 'Verde oliva', weight: 45, height: 90,  width: 180, depth: 85,  status: ProductStatus.active },
+    { key: 'p2',  title: 'Mesa de luz roble',           categoryName: 'Dormitorio', price: 24500, stock: 8,  condition: ProductCondition.nuevo, material: 'Roble',            color: 'Natural',     weight: 12, height: 55,  width: 45,  depth: 40,  status: ProductStatus.active },
+    { key: 'p3',  title: 'Lámpara de pie mimbre',       categoryName: 'Decoración', price: 18900, stock: 5,  condition: ProductCondition.nuevo, material: 'Mimbre',           color: 'Natural',     weight:  3, height: 160, width: 40,  depth: 40,  status: ProductStatus.active },
+    { key: 'p4',  title: 'Juego de sábanas king',       categoryName: 'Dormitorio', price: 32000, stock: 22, condition: ProductCondition.nuevo, material: 'Algodón',          color: 'Blanco',      weight:  1, height:  5,  width: 40,  depth: 30,  status: ProductStatus.active },
+    { key: 'p5',  title: 'Set de vajilla 12 pzs',       categoryName: 'Cocina',     price: 15600, stock: 14, condition: ProductCondition.nuevo, material: 'Cerámica',         color: 'Blanco',      weight:  4, height: 25,  width: 40,  depth: 40,  status: ProductStatus.active },
+    { key: 'p6',  title: 'Mesa redonda 4 personas',     categoryName: 'Comedor',    price: 67000, stock: 2,  condition: ProductCondition.nuevo, material: 'Madera',           color: 'Natural',     weight: 30, height: 75,  width: 100, depth: 100, status: ProductStatus.active },
+    { key: 'p7',  title: 'Cortina de baño bambú',       categoryName: 'Baño',       price:  8400, stock: 30, condition: ProductCondition.nuevo, material: 'Bambú',            color: 'Natural',     weight:  1, height: 200, width: 180, depth:  1,  status: ProductStatus.paused },
+    { key: 'p8',  title: 'Reposera plegable lona',      categoryName: 'Terraza',    price: 22500, stock: 6,  condition: ProductCondition.nuevo, material: 'Lona',             color: 'Beige',       weight:  8, height: 90,  width: 60,  depth: 80,  status: ProductStatus.active },
+    { key: 'p9',  title: 'Espejo redondo 60cm',         categoryName: 'Decoración', price: 16800, stock: 9,  condition: ProductCondition.nuevo, material: 'Vidrio',           color: 'Dorado',      weight:  3, height: 60,  width: 60,  depth:  5,  status: ProductStatus.active },
+    { key: 'p10', title: 'Estantería pino 4 niveles',   categoryName: 'Living',     price: 38900, stock: 4,  condition: ProductCondition.nuevo, material: 'Pino',             color: 'Natural',     weight: 20, height: 160, width: 80,  depth: 30,  status: ProductStatus.active },
+    { key: 'p11', title: 'Pava eléctrica 1.7L',         categoryName: 'Cocina',     price: 19200, stock: 18, condition: ProductCondition.nuevo, material: 'Acero inoxidable', color: 'Plateado',    weight:  1, height: 25,  width: 20,  depth: 20,  status: ProductStatus.paused },
+    { key: 'p12', title: 'Almohadón lino crudo',        categoryName: 'Decoración', price:  6800, stock: 40, condition: ProductCondition.nuevo, material: 'Lino',             color: 'Crudo',       weight:  1, height: 45,  width: 45,  depth: 15,  status: ProductStatus.active },
   ];
 
   const productIdByKey = new Map<string, string>();
@@ -88,7 +80,7 @@ async function main() {
         color:       p.color,
         price:       p.price,
         currency:    'ARS',
-        categoryId:  catIdBySlug.get(p.slug)!,
+        categoryId:  catIdByName.get(p.categoryName)!,
         stock:       p.stock,
         status:      p.status,
         images:      [],
@@ -123,7 +115,7 @@ async function main() {
   }
 
   console.log(
-    `Seed completo: 1 seller, ${categorySeeds.length} categorías, ${productSeeds.length} productos, ${saleSeeds.length} ventas.`,
+    `Seed completo: 1 seller, ${categoryNames.length} categorías, ${productSeeds.length} productos, ${saleSeeds.length} ventas.`,
   );
 }
 

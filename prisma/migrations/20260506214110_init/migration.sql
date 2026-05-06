@@ -34,7 +34,6 @@ CREATE TABLE "Seller" (
 -- CreateTable
 CREATE TABLE "Categoria" (
     "id" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
 
     CONSTRAINT "Categoria_pkey" PRIMARY KEY ("id")
@@ -101,9 +100,6 @@ CREATE UNIQUE INDEX "Seller_clerkUserId_key" ON "Seller"("clerkUserId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Seller_email_key" ON "Seller"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Categoria_slug_key" ON "Categoria"("slug");
 
 -- CreateIndex
 CREATE INDEX "Product_sellerId_status_idx" ON "Product"("sellerId", "status");

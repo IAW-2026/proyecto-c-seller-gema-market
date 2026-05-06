@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
-import { CATEGORIES } from "@/lib/data/categories";
+import { getCategories } from "@/lib/data/categories";
 import { findProduct } from "@/lib/data/products";
 import { saveProductAction } from "@/app/products/actions";
 
@@ -34,11 +34,12 @@ async function ProductContent({ params }: ProductPageProps) {
   if (!product) {
     notFound();
   }
+  const categories = await getCategories();
   return (
     <ProductEditScreen
       mode="edit"
       product={product}
-      categories={CATEGORIES}
+      categories={categories}
       onSaveAction={saveProductAction}
     />
   );
