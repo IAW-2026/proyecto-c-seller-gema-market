@@ -1,6 +1,6 @@
 // ─── Dashboard ─────────────────────────────────────────────────────────────
 
-import type { Product } from "./product";
+import type { ProductWithJoins } from "./product";
 import type { Order } from "./order";
 
 export type DashboardStatId = "monthlySales" | "orders" | "activeProducts";
@@ -14,6 +14,6 @@ export type DashboardStat = {
 
 export type DashboardData = {
   stats: ReadonlyArray<DashboardStat>;
-  topProducts: ReadonlyArray<Product>;
+  topProducts: ReadonlyArray<ProductWithJoins>;
   recentOrders: ReadonlyArray<Order>;
 };

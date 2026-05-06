@@ -1,32 +1,45 @@
-// ─── Seller ────────────────────────────────────────────────────────────────
+// ─── Seller (cache de Clerk) ───────────────────────────────────────────────
+//
+// Refleja prisma `Seller` 1:1, con dirección plana (street, number, apartment,
+// postalCode) tal como está en la tabla. Las agregaciones viven en
+// `SellerWithCounts`.
 
-export type SellerAddress = {
+export type SellerRole = "seller";
+
+export type Seller = {
+  id: string;
+  clerkUserId: string | null;
+  fullName: string; // proviene de Clerk, no editable desde la app
+  shopName: string;
+  email: string;
+  phone: string;
+  bio: string | null;
+  role: SellerRole;
+  city: string;
+  street: string;
+  number: string;
+  apartment: string | null;
+  postalCode: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Vista enriquecida con agregaciones.
+export type SellerWithCounts = Seller & {
+  productsCount: number; // count(Product activos)
+  salesCount: number;    // count(Sale)
+};
+
+// Forma de entrada del formulario de perfil.
+// fullName proviene de Clerk y no es editable desde este formulario.
+export type SellerInput = {
+  shopName: string;
+  email: string;
+  phone: string;
+  bio: string;
+  city: string;
   street: string;
   number: string;
   apartment?: string;
   postalCode: string;
-};
-
-// Forma de entrada para actualizar el perfil del vendedor.
-// fullName proviene de Clerk y no es editable desde este formulario.
-export type SellerInput = {
-  shopName: string;
-  city: string;
-  bio: string;
-  email: string;
-  phone: string;
-  address: SellerAddress;
-};
-
-export type Seller = {
-  id: string;
-  fullName: string;   // nombre real del usuario — fuente: Clerk (sync)
-  shopName: string;   // nombre de la tienda — editable por el vendedor
-  city: string;
-  bio: string;
-  email: string;
-  phone: string;
-  address: SellerAddress;
-  productsCount: number; // computado: count(producto) activos
-  salesCount: number;    // computado: count(venta)
 };

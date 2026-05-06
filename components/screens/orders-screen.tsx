@@ -7,7 +7,7 @@ import { Pill } from "@/components/ui/pill";
 import type { TabItem } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/page-header";
 import { ORDER_STATUS_META } from "@/lib/ui/ui-config";
-import { fmtARS } from "@/lib/ui/format";
+import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
 import type { Order, OrderDateRange } from "@/types/domain";
 import { OrdersToolbar } from "./orders-toolbar";
 
@@ -86,11 +86,11 @@ export function OrdersScreen({
                           href={`/orders/${o.id}`}
                           className="flex items-center gap-2"
                         >
-                          <Avatar name={o.buyer} size={28} />
-                          {o.buyer}
+                          <Avatar name={o.buyerId} size={28} />
+                          {o.buyerId}
                         </Link>
                       </td>
-                      <td className="py-3.5 px-3 text-ink-3">{o.date}</td>
+                      <td className="py-3.5 px-3 text-ink-3">{fmtOrderDate(o.createdAt)}</td>
                       <td className="py-3.5 px-3">
                         <Pill tone={st.tone} size="sm">
                           {st.label}
@@ -134,7 +134,7 @@ export function OrdersScreen({
                     <div>
                       <div className="font-mono text-xs text-ink-3">{o.id}</div>
                       <div className="text-[15px] font-semibold mt-[3px]">
-                        {o.buyer}
+                        {o.buyerId}
                       </div>
                     </div>
                     <Pill tone={st.tone} size="sm">
@@ -144,7 +144,7 @@ export function OrdersScreen({
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-cream rounded-xl p-2.5">
                       <div className="text-[10px] text-ink-3">Fecha</div>
-                      <div className="text-xs font-semibold">{o.date}</div>
+                      <div className="text-xs font-semibold">{fmtOrderDate(o.createdAt)}</div>
                     </div>
                     <div className="bg-cream rounded-xl p-2.5">
                       <div className="text-[10px] text-ink-3">Total</div>

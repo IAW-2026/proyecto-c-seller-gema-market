@@ -43,16 +43,18 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
 
-  const result = listProducts({
-    sellerId: seller.id,
-    query: q,
-    status: activeTab,
-    sortBy,
-    stockFilter: stockFilterVal,
-    page: Number.isFinite(pageNum) ? pageNum : 1,
-    pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-  });
-  const counts = countProductsByStatus(seller.id);
+  const [result, counts] = await Promise.all([
+    listProducts({
+      sellerId: seller.id,
+      query: q,
+      status: activeTab,
+      sortBy,
+      stockFilter: stockFilterVal,
+      page: Number.isFinite(pageNum) ? pageNum : 1,
+      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
+    }),
+    countProductsByStatus(seller.id),
+  ]);
 
   return (
     <ProductsScreen

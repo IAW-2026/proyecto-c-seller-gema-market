@@ -10,7 +10,7 @@ type OrderPageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: OrderPageProps): Promise<Metadata> {
   const { id } = await params;
-  const order = findOrder(id);
+  const order = await findOrder(id);
   return { title: order ? `Pedido ${order.id}` : "Pedido no encontrado" };
 }
 
@@ -24,11 +24,11 @@ export default function OrderPage({ params }: OrderPageProps) {
 
 async function OrderContent({ params }: OrderPageProps) {
   const { id } = await params;
-  const order = findOrder(id);
+  const order = await findOrder(id);
   // El seller no opera órdenes sin pago confirmado; las ocultamos del detalle.
   if (!order || order.status === "pending_payment") notFound();
 
-  const product = findProduct(order.productId);
+  const product = await findProduct(order.productId);
   if (!product) notFound();
 
   const buyerInfo = getOrderBuyerInfo(order);

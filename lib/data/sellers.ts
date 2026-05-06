@@ -1,61 +1,62 @@
 import 'server-only';
-import { getActiveSellerOrders } from "@/lib/data/orders";
-import { countProductsByStatus } from "@/lib/data/products";
-import type { Seller, SellerInput } from "@/types/domain";
+import { prisma } from '@/lib/db';
+import type { Seller, SellerInput, SellerWithCounts } from "@/types/domain";
 
-type SellerSeed = Omit<Seller, "productsCount" | "salesCount">;
-
-const SELLERS: ReadonlyArray<SellerSeed> = [
-  {
-    id: "s2",
-    fullName: "Ana García",
-    shopName: "Carpintería Sur",
-    city: "Bahía Blanca",
-    bio: "Taller de muebles a medida en Bahía Blanca. Trabajamos con maderas locales desde 2008.",
-    email: "hola@carpinteriasur.com.ar",
-    phone: "+54 291 412 5678",
-    address: {
-      street: "Av. Alem",
-      number: "1200",
-      postalCode: "8000",
-    },
-  },
-];
-
-export function findSeller(id: string): Seller | undefined {
-  const seller = SELLERS.find((item) => item.id === id);
-
-  if (!seller) {
-    return undefined;
-  }
-
-  return {
-    ...seller,
-    productsCount: countProductsByStatus(id).active,
-    salesCount: getActiveSellerOrders(id).length,
-  };
+export async function findSeller(id: string): Promise<Seller | null> {
+  return prisma.seller.findUnique({ where: { id } });
 }
 
-export function getDefaultSeller(): Seller {
-  const seller = findSeller("s2");
+export async function findSellerWithCounts(
+  id: string,
+): Promise<SellerWithCounts | null> {
+  const row = await prisma.seller.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          products: { where: { status: 'active' } },
+          sales: true,
+        },
+      },
+    },
+  });
+  if (!row) return null;
+  const { _count, ...rest } = row;
+  return { ...rest, productsCount: _count.products, salesCount: _count.sales };
+}
 
+// Helper temporal: devuelve el primer seller de la DB.
+// Reemplazar por lookup vía Clerk en la Fase 3 (auth).
+export async function getDefaultSeller(): Promise<Seller> {
+  const seller = await prisma.seller.findFirst({ orderBy: { createdAt: 'asc' } });
   if (!seller) {
-    throw new Error("Default seller seed data is missing");
+    throw new Error("getDefaultSeller: no hay sellers en la DB. Corré `npx prisma db seed`.");
   }
-
   return seller;
 }
 
-export async function saveSeller(input: SellerInput): Promise<Seller> {
-  // TODO: implementar con Prisma
-  // const seller = await requireSeller();
-  // await prisma.seller.update({ where: { id: seller.id }, data: { ... } })
-  void input;
-  throw new Error("saveSeller: backend no implementado aún");
+export async function saveSeller(
+  sellerId: string,
+  input: SellerInput,
+): Promise<Seller> {
+  return prisma.seller.update({
+    where: { id: sellerId },
+    data: {
+      shopName: input.shopName,
+      email: input.email,
+      phone: input.phone,
+      bio: input.bio || null,
+      city: input.city,
+      street: input.street,
+      number: input.number,
+      apartment: input.apartment ?? null,
+      postalCode: input.postalCode,
+    },
+  });
 }
 
 export async function uploadSellerCover(file: File): Promise<string> {
-  // TODO: subir el archivo al storage y devolver la URL pública
+  // TODO (Fase 3): subir el archivo a Vercel Blob.
   void file;
-  throw new Error("uploadSellerCover: backend no implementado aún");
+  throw new Error("uploadSellerCover: storage no configurado todavía");
 }

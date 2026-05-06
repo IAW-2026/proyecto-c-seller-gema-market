@@ -71,7 +71,6 @@ model Seller {
 
 model Categoria {
   id       String    @id
-  slug     String    @unique
   name     String
   products Product[]
 }

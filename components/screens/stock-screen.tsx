@@ -6,10 +6,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual } from "@/lib/ui/ui-config";
 import { StockRowEditor } from "./stock-row-editor";
 import { StockToolbar } from "./stock-toolbar";
-import type { Product, StockSummary } from "@/types/domain";
+import type { ProductWithJoins, StockSummary } from "@/types/domain";
 
 export type StockScreenProps = {
-  products: ReadonlyArray<Product>;
+  products: ReadonlyArray<ProductWithJoins>;
   page: number;
   pageSize: number;
   total: number;
@@ -64,7 +64,7 @@ export function StockScreen({
             <tbody>
               {products.map((p) => {
                 const label = p.stock === 0 ? "Sin stock" : "Disponible";
-                const visual = getProductVisual(p);
+                const visual = getProductVisual(p.categoryName);
                 return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5 font-mono text-xs">
@@ -108,7 +108,7 @@ export function StockScreen({
         <div className="grid gap-3 p-3 lgx:hidden">
           {products.map((p) => {
             const label = p.stock === 0 ? "Sin stock" : "Disponible";
-            const visual = getProductVisual(p);
+            const visual = getProductVisual(p.categoryName);
             return (
               <div
                 key={p.id}

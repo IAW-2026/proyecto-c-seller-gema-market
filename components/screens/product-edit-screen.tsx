@@ -12,7 +12,7 @@ import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/app/products/actions";
-import type { Category, CategoryId, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
+import type { Category, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
 
 type Mode = "new" | "edit";
 
@@ -21,7 +21,7 @@ type FormState = {
   description: string;
   price: string;
   stock: string;
-  category: CategoryId;
+  categoryId: string;
   weight: string;
   height: string;
   width: string;
@@ -33,13 +33,13 @@ type FormState = {
   images: ReadonlyArray<string>;
 };
 
-function toFormState(product: Product | null): FormState {
+function toFormState(product: Product | null, defaultCategoryId: string): FormState {
   return {
     title: product?.title ?? "",
     description: product?.description ?? "",
     price: product ? String(product.price) : "",
     stock: product ? String(product.stock) : "1",
-    category: product?.category ?? "living",
+    categoryId: product?.categoryId ?? defaultCategoryId,
     weight: product ? String(product.weight) : "",
     height: product ? String(product.height) : "",
     width: product ? String(product.width) : "",
@@ -65,7 +65,9 @@ export function ProductEditScreen({
   categories,
   onSaveAction,
 }: ProductEditScreenProps) {
-  const [form, setForm] = useState<FormState>(() => toFormState(product));
+  const [form, setForm] = useState<FormState>(() =>
+    toFormState(product, categories[0]?.id ?? ""),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -80,7 +82,8 @@ export function ProductEditScreen({
         title: form.title,
         description: form.description,
         price: Number.parseFloat(form.price) || 0,
-        category: form.category,
+        currency: "ARS",
+        categoryId: form.categoryId,
         stock: Number.parseInt(form.stock, 10) || 0,
         weight: Number.parseFloat(form.weight) || 0,
         height: Number.parseFloat(form.height) || 0,
@@ -127,7 +130,8 @@ export function ProductEditScreen({
   };
 
   const isNew = mode === "new";
-  const visual = getProductVisual({ category: form.category });
+  const selectedCategory = categories.find((c) => c.id === form.categoryId);
+  const visual = getProductVisual(selectedCategory?.name);
 
   return (
     <>
@@ -176,14 +180,14 @@ export function ProductEditScreen({
               <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
               <Field label="Categoría">
                 <select
-                  value={form.category}
+                  value={form.categoryId}
                   onChange={(e) =>
-                    setForm({ ...form, category: e.target.value as CategoryId })
+                    setForm({ ...form, categoryId: e.target.value })
                   }
                   className="w-full h-[46px] border border-line-2 rounded-r2 px-3.5 bg-paper"
                 >
                   {categories.map((c) => (
-                    <option key={c.id} value={c.slug}>
+                    <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}

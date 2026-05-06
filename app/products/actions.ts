@@ -10,8 +10,8 @@ import {
 import type { ProductInput } from "@/types/domain";
 
 export async function saveProductAction(input: ProductInput): Promise<void> {
-  await requireSeller();
-  await saveProduct(input);
+  const seller = await requireSeller();
+  await saveProduct(seller.id, input);
   revalidatePath("/products");
   if (input.id) {
     revalidatePath(`/products/${input.id}`);

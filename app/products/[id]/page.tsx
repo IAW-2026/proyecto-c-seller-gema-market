@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
-import { CATEGORIES } from "@/lib/data/categories";
+import { getCategories } from "@/lib/data/categories";
 import { findProduct } from "@/lib/data/products";
 import { saveProductAction } from "@/app/products/actions";
 
@@ -14,7 +14,7 @@ export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
-  const product = findProduct(id);
+  const product = await findProduct(id);
   return {
     title: product ? `Editar — ${product.title}` : "Producto no encontrado",
   };
@@ -30,7 +30,10 @@ export default function ProductPage({ params }: ProductPageProps) {
 
 async function ProductContent({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = findProduct(id);
+  const [product, categories] = await Promise.all([
+    findProduct(id),
+    getCategories(),
+  ]);
   if (!product) {
     notFound();
   }
@@ -38,7 +41,7 @@ async function ProductContent({ params }: ProductPageProps) {
     <ProductEditScreen
       mode="edit"
       product={product}
-      categories={CATEGORIES}
+      categories={categories}
       onSaveAction={saveProductAction}
     />
   );

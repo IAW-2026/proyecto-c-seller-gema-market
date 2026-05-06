@@ -30,13 +30,15 @@ async function StockContent({ searchParams }: StockPageProps) {
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
 
-  const result = listProducts({
-    sellerId: seller.id,
-    query: q,
-    page: Number.isFinite(pageNum) ? pageNum : 1,
-    pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-  });
-  const summary = getStockSummary(seller.id);
+  const [result, summary] = await Promise.all([
+    listProducts({
+      sellerId: seller.id,
+      query: q,
+      page: Number.isFinite(pageNum) ? pageNum : 1,
+      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
+    }),
+    getStockSummary(seller.id),
+  ]);
 
   return (
     <StockScreen

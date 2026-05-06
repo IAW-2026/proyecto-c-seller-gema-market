@@ -7,8 +7,8 @@ import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui/ui-config";
-import { fmtARS } from "@/lib/ui/format";
-import type { DashboardStat, DashboardStatId, Order, Product, Seller } from "@/types/domain";
+import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
+import type { DashboardStat, DashboardStatId, Order, ProductWithJoins, Seller } from "@/types/domain";
 
 const DASHBOARD_STAT_META: Readonly<
   Record<DashboardStatId, { label: string; valueFormat: "currency" | "number"; deltaFormat: "percent" | "number" | "none" }>
@@ -35,7 +35,7 @@ function formatDashboardDelta(stat: DashboardStat): string {
 export type DashboardScreenProps = {
   seller: Seller;
   stats: ReadonlyArray<DashboardStat>;
-  topProducts: ReadonlyArray<Product>;
+  topProducts: ReadonlyArray<ProductWithJoins>;
   recentOrders: ReadonlyArray<Order>;
 };
 
@@ -78,7 +78,7 @@ export function DashboardScreen({
         <h3 className="m-0 mb-4 text-base font-semibold">Top productos</h3>
         <div className="flex flex-col">
           {topProducts.map((p, i) => {
-            const visual = getProductVisual(p);
+            const visual = getProductVisual(p.categoryName);
             return (
               <div
                 key={p.id}
@@ -140,11 +140,11 @@ export function DashboardScreen({
                         href={`/orders/${o.id}`}
                         className="flex items-center gap-2"
                       >
-                        <Avatar name={o.buyer} size={28} />
-                        {o.buyer}
+                        <Avatar name={o.buyerId} size={28} />
+                        {o.buyerId}
                       </Link>
                     </td>
-                    <td className="py-3 px-3 text-ink-3">{o.date}</td>
+                    <td className="py-3 px-3 text-ink-3">{fmtOrderDate(o.createdAt)}</td>
                     <td className="py-3 px-3">
                       <Pill tone={st.tone} size="sm">
                         {st.label}
@@ -172,7 +172,7 @@ export function DashboardScreen({
                   <div>
                     <div className="font-mono text-xs text-ink-3">{o.id}</div>
                     <div className="text-[15px] font-semibold mt-[3px]">
-                      {o.buyer}
+                      {o.buyerId}
                     </div>
                   </div>
                   <Pill tone={st.tone} size="sm">
@@ -180,7 +180,7 @@ export function DashboardScreen({
                   </Pill>
                 </div>
                 <div className="flex justify-between items-center text-ink-3 text-xs">
-                  <span>{o.date}</span>
+                  <span>{fmtOrderDate(o.createdAt)}</span>
                   <strong className="text-ink text-sm">{fmtARS(o.total)}</strong>
                 </div>
               </Link>

@@ -1,8 +1,10 @@
-// ─── Orden / Venta ─────────────────────────────────────────────────────────────
+// ─── Orden / Venta ─────────────────────────────────────────────────────────
+//
+// Una `Order` en el frontend = un registro de prisma `Sale` (una línea de
+// venta). Múltiples ventas pueden compartir el mismo `orderId` del Buyer App.
+// El filtro por rango de fechas opera sobre `createdAt`.
 
-// Valores alineados a venta.status del DB.
-// El data layer mapea de estos valores al modelo de datos;
-// ORDER_STATUS_META en lib/ui-config.ts mapea a etiquetas legibles.
+// Valores alineados a `SaleStatus` del schema y al modelo de datos.
 export type OrderStatus =
   | "pending_payment"
   | "paid"
@@ -28,25 +30,19 @@ export type OrderFilters = {
   pageSize?: number;
 };
 
-// Una Order en el frontend = una venta en el DB.
-// Cada venta corresponde a un producto; múltiples ventas pueden
-// compartir el mismo orderId del Buyer App.
 export type Order = {
-  id: string;          // = venta.id (el ID de esta línea de venta)
-  orderId: string;     // = venta.order_id (FK lógica → Buyer App; agrupa ventas del mismo pedido)
-  sellerId: string;    // FK → usuario.id (el vendedor dueño de esta venta)
-  createdAt: string;   // ISO 8601 — fuente: venta.created_at
-  date: string;        // derivado: createdAt formateado para UI
-  status: OrderStatus;
-  productId: string;   // FK → producto.id
-  amount: number;      // cantidad de unidades compradas
-  total: number;       // monto total cobrado al comprador (ARS)
-  fee: number;         // venta.fee — comisión de la plataforma
-  buyer: string;       // derivado: nombre del comprador (Buyer App JOIN)
+  id: string;          // Sale.id
+  orderId: string;     // FK lógica → Buyer App (agrupa ventas del mismo pedido)
+  productId: string;   // FK → Product.id
+  sellerId: string;    // FK → Seller.id
   buyerId: string;     // FK lógica → Buyer App
-  address: string;     // derivado: Shipping App
-  trackId: string;     // código de tracking (Shipping App)
   paymentId: string;   // FK lógica → Payments App
+  amount: number;      // cantidad de unidades compradas
+  total: number;       // monto total cobrado al comprador
+  fee: number;         // comisión de la plataforma
+  status: OrderStatus;
+  createdAt: Date;     // fuente para filtros por fecha
+  updatedAt: Date;
 };
 
 // Información adicional del comprador (fuente: Buyer App).

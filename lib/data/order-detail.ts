@@ -8,22 +8,23 @@ import type { BuyerInfo, Order, PaymentInfo, ShippingInfo } from "@/types/domain
 
 export function getOrderBuyerInfo(order: Order): BuyerInfo {
   return {
-    name: order.buyer,
-    previousPurchases: 3, // TODO: obtener del Buyer App via order.buyerId
+    name: order.buyerId, // placeholder hasta integrar Buyer App
+    previousPurchases: 0,
   };
 }
 
 export function getOrderShippingInfo(order: Order): ShippingInfo {
   return {
-    carrier: "Repartidor asignado", // TODO: obtener del Shipping App
-    trackingCode: order.trackId,
-    address: order.address,
+    carrier: "Repartidor asignado",
+    trackingCode: order.orderId, // placeholder hasta integrar Shipping App
+    address: "Dirección a confirmar",
   };
 }
 
-export function getOrderPaymentInfo(_order: Order): PaymentInfo {
+export function getOrderPaymentInfo(order: Order): PaymentInfo {
+  void order;
   return {
-    method: "Mercado Pago",  // TODO: obtener del Payments App via order.paymentId
+    method: "Mercado Pago",
     statusLabel: "Aprobado",
     approved: true,
   };
