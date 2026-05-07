@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
+import { ProductEditSkeleton } from "@/components/screens/skeletons/product-edit-skeleton";
 import { getCategories } from "@/lib/data/categories";
 import { findProduct } from "@/lib/data/products";
 import { saveProductAction } from "@/app/products/actions";
@@ -22,7 +23,7 @@ export async function generateMetadata({
 
 export default function ProductPage({ params }: ProductPageProps) {
   return (
-    <Suspense>
+    <Suspense fallback={<ProductEditSkeleton mode="edit" />}>
       <ProductContent params={params} />
     </Suspense>
   );

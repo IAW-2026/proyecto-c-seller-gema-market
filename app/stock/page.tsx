@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { StockScreen } from "@/components/screens/stock-screen";
+import { StockSkeleton } from "@/components/screens/skeletons/stock-skeleton";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { getStockSummary, listProducts } from "@/lib/data/products";
 
@@ -18,7 +19,7 @@ type StockPageProps = {
 
 export default function StockPage({ searchParams }: StockPageProps) {
   return (
-    <Suspense>
+    <Suspense fallback={<StockSkeleton />}>
       <StockContent searchParams={searchParams} />
     </Suspense>
   );

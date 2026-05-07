@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderDetailScreen } from "@/components/screens/order-detail-screen";
+import { OrderDetailSkeleton } from "@/components/screens/skeletons/order-detail-skeleton";
 import { findOrder } from "@/lib/data/orders";
 import { findProduct } from "@/lib/data/products";
 import { getOrderBuyerInfo, getOrderPaymentInfo, getOrderShippingInfo } from "@/lib/data/order-detail";
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: OrderPageProps): Promise<Meta
 
 export default function OrderPage({ params }: OrderPageProps) {
   return (
-    <Suspense>
+    <Suspense fallback={<OrderDetailSkeleton />}>
       <OrderContent params={params} />
     </Suspense>
   );

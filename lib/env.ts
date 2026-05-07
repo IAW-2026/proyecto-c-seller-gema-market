@@ -7,7 +7,14 @@ function required(key: string): string {
 }
 
 // Extender aquí cuando se agreguen CLERK_SECRET_KEY, EXTERNAL_API_KEY, etc.
+// Lazy getters: la validación corre cuando se accede a la variable, no al
+// importar el módulo. Esto permite que el build de Next.js (page data
+// collection) evalúe módulos del server sin necesitar las env vars reales.
 export const env = {
-  DATABASE_URL: required("DATABASE_URL"),
-  DIRECT_URL: required("DIRECT_URL"),
+  get DATABASE_URL() {
+    return required("DATABASE_URL");
+  },
+  get DIRECT_URL() {
+    return required("DIRECT_URL");
+  },
 } as const;

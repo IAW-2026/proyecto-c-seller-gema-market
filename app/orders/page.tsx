@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { OrdersScreen } from "@/components/screens/orders-screen";
+import { OrdersSkeleton } from "@/components/screens/skeletons/orders-skeleton";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
@@ -39,7 +40,7 @@ type OrdersPageProps = {
 
 export default function OrdersPage({ searchParams }: OrdersPageProps) {
   return (
-    <Suspense>
+    <Suspense fallback={<OrdersSkeleton />}>
       <OrdersContent searchParams={searchParams} />
     </Suspense>
   );

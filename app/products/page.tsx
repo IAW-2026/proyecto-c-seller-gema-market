@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ProductsScreen } from "@/components/screens/products-screen";
+import { ProductsSkeleton } from "@/components/screens/skeletons/products-skeleton";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { countProductsByStatus, listProducts } from "@/lib/data/products";
 import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
@@ -25,7 +26,7 @@ type ProductsPageProps = {
 
 export default function ProductsPage({ searchParams }: ProductsPageProps) {
   return (
-    <Suspense>
+    <Suspense fallback={<ProductsSkeleton />}>
       <ProductsContent searchParams={searchParams} />
     </Suspense>
   );
