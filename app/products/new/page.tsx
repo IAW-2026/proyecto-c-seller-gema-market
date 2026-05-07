@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
+import { ProductEditSkeleton } from "@/components/screens/skeletons/product-edit-skeleton";
 import { getCategories } from "@/lib/data/categories";
 import { saveProductAction } from "@/app/products/actions";
 
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function NewProductPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<ProductEditSkeleton mode="new" />}>
       <NewProductContent />
     </Suspense>
   );
