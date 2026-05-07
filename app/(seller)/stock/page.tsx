@@ -5,7 +5,7 @@ import { StockScreen } from "@/components/screens/stock-screen";
 import { StockToolbar } from "@/components/screens/stock-toolbar";
 import { StockSkeleton } from "@/components/screens/skeletons/stock-skeleton";
 import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
+import { requireSeller } from "@/lib/auth/current-seller";
 import { getStockSummary, listProducts } from "@/lib/data/products";
 
 export const metadata: Metadata = {
@@ -52,7 +52,7 @@ async function StockToolbarLoader({ searchParams }: { searchParams: SearchParams
 }
 
 async function StockContent({ searchParams }: { searchParams: SearchParams }) {
-  const [seller, params] = await Promise.all([getCurrentSeller(), searchParams]);
+  const [seller, params] = await Promise.all([requireSeller(), searchParams]);
   const q = params.q ?? "";
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);

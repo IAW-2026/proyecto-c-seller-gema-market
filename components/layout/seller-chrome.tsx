@@ -1,28 +1,8 @@
-import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
-import { Avatar } from "@/components/ui/avatar";
+import { UserButton } from "@clerk/nextjs";
 import { Icon } from "@/components/ui/icon";
 import { BRAND } from "@/lib/ui/branding";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { SellerNav } from "./seller-nav";
-
-async function SellerProfilePill() {
-  const seller = await getCurrentSeller();
-  return (
-    <Link
-      href="/shop"
-      className="mt-auto p-3 bg-bone rounded-r2 flex items-center gap-2.5 hover:bg-[#e8e2d9] transition-colors"
-    >
-      <Avatar name={seller.shopName} size={36} />
-      <div className="min-w-0">
-        <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
-          {seller.shopName}
-        </div>
-        <div className="text-[11px] text-ink-3">Vendedor</div>
-      </div>
-    </Link>
-  );
-}
 
 export function SellerChrome({ children }: { children: ReactNode }) {
   return (
@@ -40,7 +20,12 @@ export function SellerChrome({ children }: { children: ReactNode }) {
           </div>
         </div>
         <Suspense><SellerNav variant="sidebar" /></Suspense>
-        <Suspense><SellerProfilePill /></Suspense>
+        <div className="mt-auto p-3 bg-bone rounded-r2 flex items-center gap-2.5">
+          <UserButton
+            appearance={{ elements: { avatarBox: { width: 36, height: 36 } } }}
+            showName
+          />
+        </div>
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col lgx:ml-[240px] lgx:w-[calc(100%-240px)]">

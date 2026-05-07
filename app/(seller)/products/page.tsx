@@ -6,7 +6,7 @@ import { ProductsScreen } from "@/components/screens/products-screen";
 import { ProductsSkeleton } from "@/components/screens/skeletons/products-skeleton";
 import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { Button } from "@/components/ui/button";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
+import { requireSeller } from "@/lib/auth/current-seller";
 import { countProductsByStatus, listProducts } from "@/lib/data/products";
 import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
 
@@ -68,7 +68,7 @@ async function ProductsFiltersBarLoader({ searchParams }: { searchParams: Search
 }
 
 async function ProductsContent({ searchParams }: { searchParams: SearchParams }) {
-  const [seller, params] = await Promise.all([getCurrentSeller(), searchParams]);
+  const [seller, params] = await Promise.all([requireSeller(), searchParams]);
   const q = params.q ?? "";
   const tab = params.tab ?? "active";
   const activeTab: ProductStatus = tab === "paused" ? "paused" : "active";

@@ -5,7 +5,7 @@ import { DashboardScreen } from "@/components/screens/dashboard-screen";
 import { DashboardSkeleton } from "@/components/screens/skeletons/dashboard-skeleton";
 import { Button } from "@/components/ui/button";
 import { SkeletonText } from "@/components/ui/skeleton";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
+import { requireSeller } from "@/lib/auth/current-seller";
 import { getDashboardData } from "@/lib/data/dashboard";
 
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default function DashboardPage() {
 }
 
 async function DashboardTitle() {
-  const seller = await getCurrentSeller();
+  const seller = await requireSeller();
   return `Hola, ${seller.shopName}`;
 }
 
@@ -50,7 +50,7 @@ function DashboardTitleFallback() {
 }
 
 async function DashboardContent() {
-  const seller = await getCurrentSeller();
+  const seller = await requireSeller();
   const dashboard = await getDashboardData(seller.id);
   return (
     <DashboardScreen
