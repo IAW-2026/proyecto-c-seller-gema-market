@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import type { TabItem } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/layout/page-header";
 import { fmtARS } from "@/lib/ui/format";
 import { getProductVisual } from "@/lib/ui/ui-config";
 import type { ProductWithJoins } from "@/types/domain";
@@ -17,7 +15,6 @@ export type ProductsScreenProps = {
   page: number;
   pageSize: number;
   total: number;
-  query: string;
   activeTab: string;
   counts: { active: number; paused: number };
 };
@@ -27,7 +24,6 @@ export function ProductsScreen({
   page,
   pageSize,
   total,
-  query,
   activeTab,
   counts,
 }: ProductsScreenProps) {
@@ -38,21 +34,7 @@ export function ProductsScreen({
 
   return (
     <>
-      <PageHeader
-        subtitle="Catálogo"
-        title="Publicaciones"
-        action={
-          <Button href="/products/new" variant="accent" icon="plus">
-            Nueva
-          </Button>
-        }
-      />
-      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
-      <ProductsToolbar
-        initialQuery={query}
-        activeTab={activeTab}
-        tabs={tabs}
-      />
+      <ProductsToolbar activeTab={activeTab} tabs={tabs} />
       <div className="mt-4">
         <Card padding={0}>
           <div className="overflow-x-auto hidden lgx:block">
@@ -176,7 +158,6 @@ export function ProductsScreen({
           </div>
           <Pager page={page} pageSize={pageSize} total={total} basePath="/products" />
         </Card>
-      </div>
       </div>
     </>
   );

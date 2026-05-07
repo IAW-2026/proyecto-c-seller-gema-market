@@ -2,10 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual } from "@/lib/ui/ui-config";
 import { StockRowEditor } from "./stock-row-editor";
-import { StockToolbar } from "./stock-toolbar";
 import type { ProductWithJoins, StockSummary } from "@/types/domain";
 
 export type StockScreenProps = {
@@ -13,7 +11,6 @@ export type StockScreenProps = {
   page: number;
   pageSize: number;
   total: number;
-  query: string;
   summary: StockSummary;
 };
 
@@ -22,13 +19,10 @@ export function StockScreen({
   page,
   pageSize,
   total,
-  query,
   summary,
 }: StockScreenProps) {
   return (
     <>
-      <PageHeader subtitle="Inventario" title="Gestión de stock" />
-      <div className="p-4 pb-16 lgx:px-7 lgx:py-6">
       <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         <Card padding={20}>
           <div className="text-xs text-ink-3">Total unidades</div>
@@ -43,8 +37,6 @@ export function StockScreen({
           <div className="text-[26px] font-bold text-danger">{summary.outOfStock}</div>
         </Card>
       </div>
-
-      <StockToolbar initialQuery={query} />
 
       <Card padding={0}>
         <div className="p-5 border-b border-line flex justify-between items-center">
@@ -151,7 +143,6 @@ export function StockScreen({
         </div>
         <Pager page={page} pageSize={pageSize} total={total} basePath="/stock" />
       </Card>
-      </div>
     </>
   );
 }

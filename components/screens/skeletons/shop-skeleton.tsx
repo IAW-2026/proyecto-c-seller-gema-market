@@ -5,12 +5,11 @@ import {
   SkeletonRegion,
   SkeletonText,
 } from "@/components/ui/skeleton";
-import { FieldSkeleton, PageHeaderSkeleton, SectionTitleSkeleton } from "./skeleton-parts";
+import { FieldSkeleton, SectionTitleSkeleton } from "./skeleton-parts";
 
 export function ShopSkeleton() {
   return (
     <SkeletonRegion label="Cargando perfil de tienda">
-      <PageHeaderSkeleton withAction />
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
         <Card padding={0} className="mb-4 overflow-hidden">
           <Skeleton
