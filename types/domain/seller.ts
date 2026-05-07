@@ -3,13 +3,15 @@
 // Refleja prisma `Seller` 1:1, con dirección plana (street, number, apartment,
 // postalCode) tal como está en la tabla. Las agregaciones viven en
 // `SellerWithCounts`.
+//
+// El nombre real del usuario (first_name/last_name) NO se persiste acá: vive
+// en Clerk y se lee con `currentUser()` cuando la UI lo necesite.
 
 export type SellerRole = "seller";
 
 export type Seller = {
   id: string;
-  clerkUserId: string | null;
-  fullName: string; // proviene de Clerk, no editable desde la app
+  clerkUserId: string;
   shopName: string;
   email: string;
   phone: string;
@@ -30,8 +32,7 @@ export type SellerWithCounts = Seller & {
   salesCount: number;    // count(Sale)
 };
 
-// Forma de entrada del formulario de perfil.
-// fullName proviene de Clerk y no es editable desde este formulario.
+// Forma de entrada del formulario de perfil de tienda (/shop).
 export type SellerInput = {
   shopName: string;
   email: string;

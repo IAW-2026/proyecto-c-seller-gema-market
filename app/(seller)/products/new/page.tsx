@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
 import { ProductEditSkeleton } from "@/components/screens/skeletons/product-edit-skeleton";
 import { getCategories } from "@/lib/data/categories";
-import { saveProductAction } from "@/app/products/actions";
+import { saveProductAction } from "@/lib/actions/products";
 
 export const metadata: Metadata = {
   title: "Nueva publicación",

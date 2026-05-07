@@ -19,11 +19,15 @@ async function main() {
   await prisma.seller.deleteMany();
 
   // ── Seller ────────────────────────────────────────────────────────────────
+  // `clerkUserId` usa un sentinel local: este seller existe solo para datos de
+  // dev y no corresponde a ninguna cuenta real de Clerk. Los sellers reales se
+  // crean al loguearse (auto-provision en `getCurrentSeller`) y completan el
+  // flujo de /onboarding.
   const sellerId = newId(PREFIXES.seller);
   await prisma.seller.create({
     data: {
       id: sellerId,
-      fullName: 'Ana García',
+      clerkUserId: 'seed_dev_seller',
       shopName: 'Carpintería Sur',
       email: 'hola@carpinteriasur.com.ar',
       phone: '+54 291 412 5678',

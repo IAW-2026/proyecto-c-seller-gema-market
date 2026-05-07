@@ -5,7 +5,7 @@ import { OrdersFiltersBar } from "@/components/screens/orders-filters-bar";
 import { OrdersScreen } from "@/components/screens/orders-screen";
 import { OrdersSkeleton } from "@/components/screens/skeletons/orders-skeleton";
 import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
+import { requireSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
   DEFAULT_ORDER_DATE_RANGE,
@@ -79,7 +79,7 @@ async function OrdersFiltersBarLoader({ searchParams }: { searchParams: SearchPa
 }
 
 async function OrdersContent({ searchParams }: { searchParams: SearchParams }) {
-  const [seller, params] = await Promise.all([getCurrentSeller(), searchParams]);
+  const [seller, params] = await Promise.all([requireSeller(), searchParams]);
   const tab = params.tab ?? "todos";
   const activeTab = TAB_TO_STATUS[tab] ? tab : "todos";
   const q = params.q ?? "";

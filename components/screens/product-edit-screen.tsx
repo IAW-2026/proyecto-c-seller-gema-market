@@ -11,7 +11,7 @@ import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
-import { uploadProductImageAction } from "@/app/products/actions";
+import { uploadProductImageAction } from "@/lib/actions/products";
 import type { Category, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
 
 type Mode = "new" | "edit";

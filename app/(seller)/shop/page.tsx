@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { ShopScreen } from "@/components/screens/shop-screen";
 import { ShopSkeleton } from "@/components/screens/skeletons/shop-skeleton";
-import { getCurrentSeller } from "@/lib/auth/current-seller";
+import { requireSeller } from "@/lib/auth/current-seller";
 import { findSellerWithCounts } from "@/lib/data/sellers";
-import { saveSellerAction, uploadSellerCoverAction } from "@/app/shop/actions";
+import { saveSellerAction, uploadSellerCoverAction } from "@/lib/actions/shop";
 
 export const metadata: Metadata = {
   title: "Mi tienda",
@@ -30,7 +30,7 @@ function ShopFallback() {
 }
 
 async function ShopContent() {
-  const current = await getCurrentSeller();
+  const current = await requireSeller();
   const seller = await findSellerWithCounts(current.id);
   if (!seller) notFound();
   return (

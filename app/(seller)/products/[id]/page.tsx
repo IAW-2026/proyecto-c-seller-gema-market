@@ -5,7 +5,7 @@ import { ProductEditScreen } from "@/components/screens/product-edit-screen";
 import { ProductEditSkeleton } from "@/components/screens/skeletons/product-edit-skeleton";
 import { getCategories } from "@/lib/data/categories";
 import { findProduct } from "@/lib/data/products";
-import { saveProductAction } from "@/app/products/actions";
+import { saveProductAction } from "@/lib/actions/products";
 
 type ProductPageProps = {
   params: Promise<{ id: string }>;

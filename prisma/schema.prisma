@@ -48,13 +48,20 @@ enum SaleStatus {
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
-// Caché local del usuario de Clerk. clerk_user_id es la fuente de verdad.
+// Caché local del usuario de Clerk. `clerkUserId` es la única fuente de
+// identidad — `email`/`phone` son denormalizaciones del usuario de Clerk y
+// NO se usan como clave: Clerk ya asegura unicidad de email a nivel de cuenta,
+// y duplicar el constraint acá generaría conflictos al re-provisionar.
+//
+// `shopName` se completa en /onboarding (no viene de Clerk). Mientras esté
+// vacío, el gate de `(seller)/layout.tsx` redirige al onboarding. El nombre
+// real del usuario vive solo en Clerk (`first_name`/`last_name`) y se lee con
+// `currentUser()` cuando la UI lo necesita — no se denormaliza acá.
 model Seller {
   id          String     @id
-  clerkUserId String?    @unique
-  fullName    String
+  clerkUserId String     @unique
   shopName    String
-  email       String     @unique
+  email       String
   phone       String
   bio         String?
   role        SellerRole @default(seller)
@@ -117,7 +124,7 @@ model Sale {
   total     Decimal    @db.Decimal(10, 2)
   fee       Decimal    @db.Decimal(10, 2)
   status    SaleStatus @default(pending_payment)
-  product   Product    @relation(fields: [productId], references: [id])
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   seller    Seller     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -135,6 +142,6 @@ model Reserva {
   buyerId   String
   quantity  Int
   expiresAt DateTime
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }

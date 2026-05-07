@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { BRAND } from "@/lib/ui/branding";
-import { SellerChrome } from "@/components/layout/seller-chrome";
 import { inter, jetbrainsMono } from "./fonts";
 import "./globals.css";
 
@@ -20,7 +20,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
-        <SellerChrome>{children}</SellerChrome>
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/dashboard"
+          signUpFallbackRedirectUrl="/dashboard"
+        >
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

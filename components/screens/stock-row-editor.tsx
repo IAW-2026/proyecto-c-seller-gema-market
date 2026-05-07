@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Icon } from "@/components/ui/icon";
-import { updateProductStockAction } from "@/app/products/actions";
+import { updateProductStockAction } from "@/lib/actions/products";
 
 type Props = {
   productId: string;

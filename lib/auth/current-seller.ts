@@ -1,21 +1,30 @@
 import 'server-only';
 import { cache } from "react";
-import { connection } from "next/server";
-import { getDefaultSeller } from "@/lib/data/sellers";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/db";
+import { identityFromCurrentUser, upsertSellerFromIdentity } from "@/lib/auth/sync-seller";
 import type { Seller } from "@/types/domain";
 
-// Devuelve el vendedor autenticado para la request actual.
-// TODO: reemplazar con `await currentUser()` de @clerk/nextjs una vez
-// que se configure Clerk. La firma debe permanecer igual.
-export const getCurrentSeller = cache(async (): Promise<Seller> => {
-  // Marca la request como dinámica antes de tocar la DB. Cuando se cablee
-  // Clerk, `currentUser()` leerá cookies/headers y reemplazará a `connection()`.
-  await connection();
-  return getDefaultSeller();
+// Devuelve el Seller asociado al usuario autenticado de Clerk.
+// Si la sesión existe pero el row aún no fue creado (el webhook no llegó a
+// tiempo, falló, o el evento user.created se perdió), lo provisiona on-demand
+// a partir de `currentUser()`. El webhook sigue siendo el sync canónico para
+// updates posteriores.
+export const getCurrentSeller = cache(async (): Promise<Seller | null> => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const existing = await prisma.seller.findUnique({ where: { clerkUserId: userId } });
+  if (existing) return existing;
+
+  const user = await currentUser();
+  if (!user) return null;
+
+  return upsertSellerFromIdentity(identityFromCurrentUser(user));
 });
 
-// Variante que garantiza autenticación: lanza si no hay sesión activa.
-// Usar en Server Actions y rutas que requieren login.
+// Variante que garantiza autenticación. Úsese en server actions y server
+// components que requieren login. Lanza si no hay sesión activa.
 export async function requireSeller(): Promise<Seller> {
   const seller = await getCurrentSeller();
   if (!seller) {
