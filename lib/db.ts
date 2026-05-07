@@ -38,27 +38,8 @@ function buildClient() {
   });
 }
 
-type Client = ReturnType<typeof buildClient>;
+const globalForPrisma = globalThis as unknown as { prisma: ReturnType<typeof buildClient> | undefined };
 
-const globalForPrisma = globalThis as unknown as { prisma: Client | undefined };
+export const prisma = globalForPrisma.prisma ?? buildClient();
 
-// Lazy: el cliente se construye en el primer acceso real, no al importar.
-// Esto evita evaluar env.DATABASE_URL durante "Collecting page data" del build.
-let cachedClient: Client | undefined;
-
-function getClient(): Client {
-  if (cachedClient) return cachedClient;
-  cachedClient = globalForPrisma.prisma ?? buildClient();
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = cachedClient;
-  }
-  return cachedClient;
-}
-
-export const prisma = new Proxy({} as Client, {
-  get(_target, prop) {
-    const client = getClient();
-    const value = Reflect.get(client, prop, client);
-    return typeof value === 'function' ? value.bind(client) : value;
-  },
-}) as Client;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
