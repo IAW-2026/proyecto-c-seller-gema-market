@@ -5,10 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
-import { PageHeader } from "@/components/layout/page-header";
 import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui/ui-config";
 import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
-import type { DashboardStat, DashboardStatId, Order, ProductWithJoins, Seller } from "@/types/domain";
+import type { DashboardStat, DashboardStatId, Order, ProductWithJoins } from "@/types/domain";
 
 const DASHBOARD_STAT_META: Readonly<
   Record<DashboardStatId, { label: string; valueFormat: "currency" | "number"; deltaFormat: "percent" | "number" | "none" }>
@@ -33,30 +32,18 @@ function formatDashboardDelta(stat: DashboardStat): string {
 }
 
 export type DashboardScreenProps = {
-  seller: Seller;
   stats: ReadonlyArray<DashboardStat>;
   topProducts: ReadonlyArray<ProductWithJoins>;
   recentOrders: ReadonlyArray<Order>;
 };
 
 export function DashboardScreen({
-  seller,
   stats,
   topProducts,
   recentOrders,
 }: DashboardScreenProps) {
   return (
-    <>
-      <PageHeader
-        subtitle="Resumen"
-        title={`Hola, ${seller.shopName}`}
-        action={
-          <Button href="/products/new" variant="accent" icon="plus">
-            Nueva publicación
-          </Button>
-        }
-      />
-      <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
+    <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
         {stats.map((s) => (
           <Card key={s.id} padding={20}>
@@ -188,7 +175,6 @@ export function DashboardScreen({
           })}
         </div>
       </Card>
-      </div>
-    </>
+    </div>
   );
 }

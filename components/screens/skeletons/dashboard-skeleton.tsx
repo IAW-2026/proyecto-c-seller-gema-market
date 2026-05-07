@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { Skeleton, SkeletonRegion, SkeletonText } from "@/components/ui/skeleton";
 import {
   AvatarRowSkeleton,
-  PageHeaderSkeleton,
   StatCardSkeleton,
   TableSkeleton,
 } from "./skeleton-parts";
@@ -18,7 +17,6 @@ const RECENT_ORDERS_COLS = [
 export function DashboardSkeleton() {
   return (
     <SkeletonRegion label="Cargando dashboard">
-      <PageHeaderSkeleton withAction />
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
         <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
           {Array.from({ length: 3 }).map((_, i) => (

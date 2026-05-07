@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/layout/page-header";
+import { OrdersFiltersBar } from "@/components/screens/orders-filters-bar";
 import { OrdersScreen } from "@/components/screens/orders-screen";
 import { OrdersSkeleton } from "@/components/screens/skeletons/orders-skeleton";
+import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
@@ -28,25 +31,54 @@ function parseDateRange(value: string | undefined): OrderDateRange {
     : DEFAULT_ORDER_DATE_RANGE;
 }
 
+type SearchParams = Promise<{
+  tab?: string;
+  q?: string;
+  range?: string;
+  page?: string;
+  pageSize?: string;
+}>;
+
 type OrdersPageProps = {
-  searchParams: Promise<{
-    tab?: string;
-    q?: string;
-    range?: string;
-    page?: string;
-    pageSize?: string;
-  }>;
+  searchParams: SearchParams;
 };
 
 export default function OrdersPage({ searchParams }: OrdersPageProps) {
   return (
-    <Suspense fallback={<OrdersSkeleton />}>
-      <OrdersContent searchParams={searchParams} />
-    </Suspense>
+    <>
+      <PageHeader subtitle="Operaciones" title="Pedidos recibidos" />
+      <div className="p-4 pb-16 lgx:px-7 lgx:py-6">
+        <Suspense fallback={<FiltersFallback />}>
+          <OrdersFiltersBarLoader searchParams={searchParams} />
+        </Suspense>
+        <Suspense fallback={<OrdersSkeleton />}>
+          <OrdersContent searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </>
   );
 }
 
-async function OrdersContent({ searchParams }: OrdersPageProps) {
+function FiltersFallback() {
+  return (
+    <div className="mb-4">
+      <ToolbarSkeleton withSearch withSecondary />
+    </div>
+  );
+}
+
+async function OrdersFiltersBarLoader({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  return (
+    <OrdersFiltersBar
+      initialQuery={params.q ?? ""}
+      dateRange={parseDateRange(params.range)}
+      dateRangeOptions={ORDER_DATE_RANGE_OPTIONS}
+    />
+  );
+}
+
+async function OrdersContent({ searchParams }: { searchParams: SearchParams }) {
   const [seller, params] = await Promise.all([getCurrentSeller(), searchParams]);
   const tab = params.tab ?? "todos";
   const activeTab = TAB_TO_STATUS[tab] ? tab : "todos";
@@ -73,10 +105,7 @@ async function OrdersContent({ searchParams }: OrdersPageProps) {
       page={result.page}
       pageSize={result.pageSize}
       total={result.total}
-      query={q}
       activeTab={activeTab}
-      dateRange={dateRange}
-      dateRangeOptions={ORDER_DATE_RANGE_OPTIONS}
       counts={{
         todos: rawCounts.todos,
         preparando: rawCounts.paid,

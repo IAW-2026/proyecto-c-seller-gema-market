@@ -5,10 +5,9 @@ import { Icon } from "@/components/ui/icon";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import type { TabItem } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/layout/page-header";
 import { ORDER_STATUS_META } from "@/lib/ui/ui-config";
 import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
-import type { Order, OrderDateRange } from "@/types/domain";
+import type { Order } from "@/types/domain";
 import { OrdersToolbar } from "./orders-toolbar";
 
 export type OrdersScreenProps = {
@@ -16,10 +15,7 @@ export type OrdersScreenProps = {
   page: number;
   pageSize: number;
   total: number;
-  query: string;
   activeTab: string;
-  dateRange: OrderDateRange;
-  dateRangeOptions: ReadonlyArray<{ id: OrderDateRange; label: string }>;
   counts: {
     todos: number;
     preparando: number;
@@ -33,10 +29,7 @@ export function OrdersScreen({
   page,
   pageSize,
   total,
-  query,
   activeTab,
-  dateRange,
-  dateRangeOptions,
   counts,
 }: OrdersScreenProps) {
   const tabs: ReadonlyArray<TabItem> = [
@@ -48,15 +41,7 @@ export function OrdersScreen({
 
   return (
     <>
-      <PageHeader subtitle="Operaciones" title="Pedidos recibidos" />
-      <div className="p-4 pb-16 lgx:px-7 lgx:py-6">
-      <OrdersToolbar
-        initialQuery={query}
-        activeTab={activeTab}
-        tabs={tabs}
-        dateRange={dateRange}
-        dateRangeOptions={dateRangeOptions}
-      />
+      <OrdersToolbar activeTab={activeTab} tabs={tabs} />
       <div className="mt-4">
         <Card padding={0}>
           <div className="overflow-x-auto hidden lgx:block">
@@ -162,7 +147,6 @@ export function OrdersScreen({
           </div>
           <Pager page={page} pageSize={pageSize} total={total} basePath="/orders" />
         </Card>
-      </div>
       </div>
     </>
   );
