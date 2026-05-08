@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@clerk/nextjs";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { isOnboarded } from "@/lib/auth/onboarding";
 import type { OnboardingValues } from "@/lib/actions/onboarding";
 import { OnboardingForm } from "./onboarding-form";
+import { SignOutLink } from "./sign-out-link";
 
 export const metadata: Metadata = {
   title: "Bienvenido",
@@ -30,14 +30,7 @@ export default function OnboardingPage() {
         </Suspense>
 
         <footer className="mt-6 pt-4 border-t border-line text-center">
-          <SignOutButton>
-            <button
-              type="button"
-              className="text-xs text-ink-3 hover:text-ink underline-offset-2 hover:underline cursor-pointer"
-            >
-              Cerrar sesión
-            </button>
-          </SignOutButton>
+          <SignOutLink />
         </footer>
       </div>
     </div>
