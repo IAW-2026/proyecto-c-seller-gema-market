@@ -154,8 +154,17 @@ export async function getTopProducts(
   return rows.map(toProductWithJoins);
 }
 
-export async function findProduct(id: string): Promise<ProductWithJoins | null> {
-  const row = await prisma.product.findUnique({ where: { id }, select: productSelect });
+// Lookup scopeado al seller dueño. Es la única forma de leer un producto
+// en el panel: nunca queremos exponer detalles de un producto ajeno por
+// adivinar su `id` en la URL.
+export async function findOwnedProduct(
+  id: string,
+  sellerId: string,
+): Promise<ProductWithJoins | null> {
+  const row = await prisma.product.findFirst({
+    where: { id, sellerId },
+    select: productSelect,
+  });
   return row ? toProductWithJoins(row) : null;
 }
 
@@ -164,7 +173,6 @@ export async function saveProduct(
   input: ProductInput,
 ): Promise<ProductWithJoins> {
   const data = {
-    sellerId,
     title: input.title,
     description: input.description,
     weight: input.weight,
@@ -181,24 +189,42 @@ export async function saveProduct(
     status: input.status,
     images: [...input.images],
   };
-  const row = input.id
-    ? await prisma.product.update({
-        where: { id: input.id },
-        data,
-        select: productSelect,
-      })
-    : await prisma.product.create({
-        data: { id: newId(PREFIXES.product), ...data },
-        select: productSelect,
-      });
+  if (input.id) {
+    // Verificamos ownership antes de tocar el row. `sellerId` no entra al
+    // `data` — un seller no puede reasignarse productos ajenos.
+    const owned = await prisma.product.findFirst({
+      where: { id: input.id, sellerId },
+      select: { id: true },
+    });
+    if (!owned) throw new Error("Producto no encontrado.");
+    const row = await prisma.product.update({
+      where: { id: input.id },
+      data,
+      select: productSelect,
+    });
+    return toProductWithJoins(row);
+  }
+  const row = await prisma.product.create({
+    data: { id: newId(PREFIXES.product), sellerId, ...data },
+    select: productSelect,
+  });
   return toProductWithJoins(row);
 }
 
 export async function updateProductStock(
   productId: string,
+  sellerId: string,
   stock: number,
 ): Promise<void> {
-  await prisma.product.update({ where: { id: productId }, data: { stock } });
+  // `updateMany` con filtro por `sellerId` evita modificar stock ajeno: si el
+  // producto no es del seller, `count` queda en 0 y tiramos error.
+  const result = await prisma.product.updateMany({
+    where: { id: productId, sellerId },
+    data: { stock },
+  });
+  if (result.count === 0) {
+    throw new Error("Producto no encontrado.");
+  }
 }
 
 export async function uploadProductImage(file: File): Promise<string> {

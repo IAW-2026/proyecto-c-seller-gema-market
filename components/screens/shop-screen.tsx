@@ -7,20 +7,27 @@ import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
+import { saveSellerAction, uploadSellerCoverAction } from "@/lib/actions/shop";
+import type { IconName } from "@/types/ui";
 import type { SellerInput, SellerWithCounts } from "@/types/domain";
+
+function ReadonlyField({ icon, value }: { icon: IconName; value: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-r2 border border-line-2 bg-bone text-sm text-ink">
+      <Icon name={icon} size={14} />
+      <span className="truncate">{value || "—"}</span>
+    </div>
+  );
+}
 
 export type ShopScreenProps = {
   seller: SellerWithCounts;
-  onSaveAction: (input: SellerInput) => Promise<void>;
-  onUploadCoverAction: (formData: FormData) => Promise<string>;
 };
 
 type FormState = {
   shopName: string;
   city: string;
   bio: string;
-  email: string;
-  phone: string;
   street: string;
   number: string;
   apartment: string;
@@ -32,8 +39,6 @@ function toFormState(seller: SellerWithCounts): FormState {
     shopName: seller.shopName,
     city: seller.city,
     bio: seller.bio ?? "",
-    email: seller.email,
-    phone: seller.phone,
     street: seller.street,
     number: seller.number,
     apartment: seller.apartment ?? "",
@@ -46,8 +51,6 @@ function toSellerInput(form: FormState): SellerInput {
     shopName: form.shopName,
     city: form.city,
     bio: form.bio,
-    email: form.email,
-    phone: form.phone,
     street: form.street,
     number: form.number,
     apartment: form.apartment.trim() || undefined,
@@ -55,11 +58,7 @@ function toSellerInput(form: FormState): SellerInput {
   };
 }
 
-export function ShopScreen({
-  seller,
-  onSaveAction,
-  onUploadCoverAction,
-}: ShopScreenProps) {
+export function ShopScreen({ seller }: ShopScreenProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(seller));
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -75,7 +74,7 @@ export function ShopScreen({
     setError(null);
     startTransition(async () => {
       try {
-        await onSaveAction(toSellerInput(form));
+        await saveSellerAction(toSellerInput(form));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al guardar");
       }
@@ -89,7 +88,7 @@ export function ShopScreen({
     try {
       const fd = new FormData();
       fd.set("file", file);
-      const url = await onUploadCoverAction(fd);
+      const url = await uploadSellerCoverAction(fd);
       setCoverUrl(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir portada");
@@ -204,19 +203,14 @@ export function ShopScreen({
         <Card padding={24}>
           <h3 className="m-0 mb-4 text-[15px] font-semibold">Contacto y operación</h3>
           <div className="flex flex-col gap-3.5">
-            <Field label="Email">
-              <Input
-                icon="mail"
-                value={form.email}
-                onChange={(e) => updateField("email", e.target.value)}
-              />
+            <Field
+              label="Email"
+              hint="Para cambiarlo, usá tu menú de cuenta arriba a la izquierda."
+            >
+              <ReadonlyField icon="mail" value={seller.email} />
             </Field>
             <Field label="WhatsApp">
-              <Input
-                icon="phone"
-                value={form.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-              />
+              <ReadonlyField icon="phone" value={seller.phone} />
             </Field>
           </div>
         </Card>

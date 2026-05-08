@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { ShopFieldsFieldset } from "@/components/forms/shop-fields-fieldset";
+import { clerkErrorMessage } from "@/lib/auth/clerk-error-messages";
 import {
   SHOP_FIELD_RULES,
   validateShopFields,
@@ -46,21 +48,16 @@ export function SignUpForm() {
   const pending = fetchStatus === "fetching";
   const redirectUrl = searchParams.get("redirect_url") ?? DEFAULT_REDIRECT;
 
-  // Helpers para no repetir el patrón controlado en cada `<Input>`.
-  const setShopField = useMemo(
-    () => (name: ShopFieldName) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const next = e.target.value;
-      setShop((prev) => ({ ...prev, [name]: next }));
-      // Limpiar el error del campo apenas el usuario tipea.
-      setShopErrors((prev) => {
-        if (!prev[name]) return prev;
-        const next = { ...prev };
-        delete next[name];
-        return next;
-      });
-    },
-    [],
-  );
+  function handleShopChange(name: ShopFieldName, value: string) {
+    setShop((prev) => ({ ...prev, [name]: value }));
+    // Limpiar el error del campo apenas el usuario tipea.
+    setShopErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  }
 
   async function handleDetailsSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -88,14 +85,17 @@ export function SignUpForm() {
     });
 
     if (error) {
-      setFormError(error.message ?? "No pudimos crear la cuenta.");
+      setFormError(clerkErrorMessage(error, "No pudimos crear la cuenta."));
       return;
     }
 
     const { error: sendError } = await signUp.verifications.sendEmailCode();
     if (sendError) {
       setFormError(
-        sendError.message ?? "No pudimos enviar el código de verificación.",
+        clerkErrorMessage(
+          sendError,
+          "No pudimos enviar el código de verificación.",
+        ),
       );
       return;
     }
@@ -110,17 +110,26 @@ export function SignUpForm() {
     setFormError(null);
     const { error } = await signUp.verifications.verifyEmailCode({ code });
     if (error) {
-      setFormError(error.message ?? "Código inválido.");
+      setFormError(clerkErrorMessage(error, "Código inválido."));
       return;
     }
 
     if (signUp.status === "complete") {
       const { error: finalizeError } = await signUp.finalize({
-        navigate: ({ decorateUrl }) => router.push(decorateUrl(redirectUrl)),
+        navigate: ({ session, decorateUrl }) => {
+          // Si Clerk activa un session task obligatorio, no forzamos el
+          // redirect a /dashboard — caemos a la home y dejamos que Clerk
+          // resuelva el task.
+          if (session?.currentTask) {
+            router.push("/");
+            return;
+          }
+          router.push(decorateUrl(redirectUrl));
+        },
       });
       if (finalizeError) {
         setFormError(
-          finalizeError.message ?? "No pudimos completar el registro.",
+          clerkErrorMessage(finalizeError, "No pudimos completar el registro."),
         );
       }
       return;
@@ -136,7 +145,7 @@ export function SignUpForm() {
     setFormError(null);
     const { error } = await signUp.verifications.sendEmailCode();
     if (error) {
-      setFormError(error.message ?? "No pudimos reenviar el código.");
+      setFormError(clerkErrorMessage(error, "No pudimos reenviar el código."));
     }
   }
 
@@ -240,111 +249,12 @@ export function SignUpForm() {
           desde tu panel.
         </div>
 
-        <div className="flex flex-col gap-5">
-          <Field
-            label={SHOP_FIELD_RULES.shopName.label}
-            error={shopErrors.shopName}
-          >
-            <Input
-              name="shopName"
-              icon="tag"
-              placeholder="Ej: Carpintería Sur"
-              required
-              minLength={SHOP_FIELD_RULES.shopName.min}
-              maxLength={SHOP_FIELD_RULES.shopName.max}
-              autoComplete="off"
-              value={shop.shopName}
-              onChange={setShopField("shopName")}
-            />
-          </Field>
-
-          <Field label={SHOP_FIELD_RULES.phone.label} error={shopErrors.phone}>
-            <Input
-              name="phone"
-              type="tel"
-              placeholder="+54 11 5555 5555"
-              required
-              minLength={SHOP_FIELD_RULES.phone.min}
-              maxLength={SHOP_FIELD_RULES.phone.max}
-              autoComplete="tel"
-              value={shop.phone}
-              onChange={setShopField("phone")}
-            />
-          </Field>
-
-          <Field label={SHOP_FIELD_RULES.city.label} error={shopErrors.city}>
-            <Input
-              name="city"
-              placeholder="Ej: Buenos Aires"
-              required
-              maxLength={SHOP_FIELD_RULES.city.max}
-              autoComplete="address-level2"
-              value={shop.city}
-              onChange={setShopField("city")}
-            />
-          </Field>
-
-          <div className="grid grid-cols-[1fr_120px] gap-3">
-            <Field
-              label={SHOP_FIELD_RULES.street.label}
-              error={shopErrors.street}
-            >
-              <Input
-                name="street"
-                placeholder="Av. Corrientes"
-                required
-                maxLength={SHOP_FIELD_RULES.street.max}
-                autoComplete="address-line1"
-                value={shop.street}
-                onChange={setShopField("street")}
-              />
-            </Field>
-            <Field
-              label={SHOP_FIELD_RULES.number.label}
-              error={shopErrors.number}
-            >
-              <Input
-                name="number"
-                placeholder="1234"
-                required
-                maxLength={SHOP_FIELD_RULES.number.max}
-                value={shop.number}
-                onChange={setShopField("number")}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={SHOP_FIELD_RULES.apartment.label}
-              optional
-              error={shopErrors.apartment}
-            >
-              <Input
-                name="apartment"
-                placeholder="3°B"
-                maxLength={SHOP_FIELD_RULES.apartment.max}
-                autoComplete="address-line2"
-                value={shop.apartment}
-                onChange={setShopField("apartment")}
-              />
-            </Field>
-            <Field
-              label={SHOP_FIELD_RULES.postalCode.label}
-              error={shopErrors.postalCode}
-            >
-              <Input
-                name="postalCode"
-                placeholder="1414"
-                required
-                maxLength={SHOP_FIELD_RULES.postalCode.max}
-                autoComplete="postal-code"
-                value={shop.postalCode}
-                onChange={setShopField("postalCode")}
-              />
-            </Field>
-          </div>
-        </div>
+        <ShopFieldsFieldset
+          mode="controlled"
+          values={shop}
+          onChange={handleShopChange}
+          errors={shopErrors}
+        />
       </div>
 
       {/* Necesario para que Clerk pueda inyectar su widget de bot detection. */}

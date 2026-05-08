@@ -6,6 +6,7 @@ import { useSignIn } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { clerkErrorMessage } from "@/lib/auth/clerk-error-messages";
 
 const DEFAULT_REDIRECT =
   process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL ?? "/dashboard";
@@ -27,10 +28,24 @@ export function SignInForm() {
 
   async function finalizeAndRedirect() {
     const finalizeRes = await signIn.finalize({
-      navigate: ({ decorateUrl }) => router.push(decorateUrl(redirectUrl)),
+      navigate: ({ session, decorateUrl }) => {
+        // Si Clerk activa un session task obligatorio (ej. enroll MFA, reset
+        // password) la app no se mete: lo deja para que Clerk lo resuelva en
+        // su propio flujo. Caemos a la home.
+        if (session?.currentTask) {
+          router.push("/");
+          return;
+        }
+        router.push(decorateUrl(redirectUrl));
+      },
     });
     if (finalizeRes.error) {
-      setError(finalizeRes.error.message ?? "No pudimos completar el inicio de sesión.");
+      setError(
+        clerkErrorMessage(
+          finalizeRes.error,
+          "No pudimos completar el inicio de sesión.",
+        ),
+      );
     }
   }
 
@@ -41,7 +56,7 @@ export function SignInForm() {
     setError(null);
     const passwordRes = await signIn.password({ identifier, password });
     if (passwordRes.error) {
-      setError(passwordRes.error.message ?? "No pudimos iniciar sesión.");
+      setError(clerkErrorMessage(passwordRes.error, "No pudimos iniciar sesión."));
       return;
     }
 
@@ -62,7 +77,7 @@ export function SignInForm() {
       setStage("second_factor");
       const sendRes = await signIn.mfa.sendEmailCode();
       if (sendRes.error) {
-        setError(sendRes.error.message ?? "No pudimos enviar el código.");
+        setError(clerkErrorMessage(sendRes.error, "No pudimos enviar el código."));
       }
       return;
     }
@@ -79,7 +94,7 @@ export function SignInForm() {
     setError(null);
     const verifyRes = await signIn.mfa.verifyEmailCode({ code });
     if (verifyRes.error) {
-      setError(verifyRes.error.message ?? "Código inválido.");
+      setError(clerkErrorMessage(verifyRes.error, "Código inválido."));
       return;
     }
 
@@ -96,7 +111,7 @@ export function SignInForm() {
     setError(null);
     const sendRes = await signIn.mfa.sendEmailCode();
     if (sendRes.error) {
-      setError(sendRes.error.message ?? "No pudimos reenviar el código.");
+      setError(clerkErrorMessage(sendRes.error, "No pudimos reenviar el código."));
     }
   }
 

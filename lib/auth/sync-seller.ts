@@ -42,37 +42,58 @@ export function identityFromCurrentUser(user: User): SellerIdentity {
   return { clerkUserId: user.id, email, phone, shopFields };
 }
 
-// Upsert idempotente del Seller. Usado por `getCurrentSeller()` para
-// auto-provisionar en la primera request autenticada que llega a una ruta
-// protegida de esta app.
+// Crea el row `Seller` la primera vez que un usuario autenticado de Clerk
+// toca una ruta protegida de esta app. Es idempotente respecto a la carrera
+// concurrente: si dos requests intentan crear el row al mismo tiempo, la
+// segunda recibe `P2002` y reintenta el `findUnique`.
 //
-// Si `shopFields` viene del sign-up y pasa validación, se usa en el `create`
-// para que el seller entre directo al panel sin pasar por `/onboarding`.
-// Si no, los campos quedan vacíos y el gate de onboarding actúa.
-export async function upsertSellerFromIdentity(identity: SellerIdentity): Promise<Seller> {
+// Si `shopFields` viene del sign-up y pasa validación, se usa para que el
+// seller entre directo al panel sin pasar por `/onboarding`. Si no, los
+// campos quedan vacíos y el gate de onboarding actúa.
+//
+// `email` y `phone` solo se setean en la creación. La fuente de verdad
+// post-creación es Clerk (gestionada con `<UserButton />`); no se sincronizan
+// hacia la DB en cada request — el caller que la necesite debe leerla con
+// `currentUser()`.
+export async function createSellerFromIdentity(identity: SellerIdentity): Promise<Seller> {
   const { clerkUserId, email, phone, shopFields } = identity;
   const validShopFields =
     shopFields && Object.keys(validateShopFields(shopFields)).length === 0
       ? shopFields
       : undefined;
 
-  return prisma.seller.upsert({
-    where: { clerkUserId },
-    update: {
-      email,
-      ...(phone ? { phone } : {}),
-    },
-    create: {
-      id: newId(PREFIXES.seller),
-      clerkUserId,
-      email,
-      phone,
-      shopName: validShopFields?.shopName ?? '',
-      city: validShopFields?.city ?? '',
-      street: validShopFields?.street ?? '',
-      number: validShopFields?.number ?? '',
-      postalCode: validShopFields?.postalCode ?? '',
-      apartment: validShopFields?.apartment || null,
-    },
-  });
+  try {
+    return await prisma.seller.create({
+      data: {
+        id: newId(PREFIXES.seller),
+        clerkUserId,
+        email,
+        phone,
+        shopName: validShopFields?.shopName ?? '',
+        city: validShopFields?.city ?? '',
+        street: validShopFields?.street ?? '',
+        number: validShopFields?.number ?? '',
+        postalCode: validShopFields?.postalCode ?? '',
+        apartment: validShopFields?.apartment || null,
+      },
+    });
+  } catch (err) {
+    // P2002 = unique constraint violation. Ocurre solo si dos requests del
+    // mismo usuario crean el row a la vez. La segunda request se conforma
+    // con leer el row creado por la primera.
+    if (isUniqueConstraintError(err)) {
+      const existing = await prisma.seller.findUnique({ where: { clerkUserId } });
+      if (existing) return existing;
+    }
+    throw err;
+  }
+}
+
+function isUniqueConstraintError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code?: unknown }).code === 'P2002'
+  );
 }

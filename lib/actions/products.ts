@@ -22,8 +22,8 @@ export async function updateProductStockAction(
   productId: string,
   stock: number,
 ): Promise<void> {
-  await requireSeller();
-  await updateProductStock(productId, stock);
+  const seller = await requireSeller();
+  await updateProductStock(productId, seller.id, stock);
   revalidatePath("/stock");
   revalidatePath("/products");
   revalidatePath(`/products/${productId}`);

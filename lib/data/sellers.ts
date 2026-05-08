@@ -25,16 +25,6 @@ export async function findSellerWithCounts(
   return { ...rest, productsCount: _count.products, salesCount: _count.sales };
 }
 
-// Helper temporal: devuelve el primer seller de la DB.
-// Reemplazar por lookup vía Clerk en la Fase 3 (auth).
-export async function getDefaultSeller(): Promise<Seller> {
-  const seller = await prisma.seller.findFirst({ orderBy: { createdAt: 'asc' } });
-  if (!seller) {
-    throw new Error("getDefaultSeller: no hay sellers en la DB. Corré `npx prisma db seed`.");
-  }
-  return seller;
-}
-
 export async function saveSeller(
   sellerId: string,
   input: SellerInput,
@@ -43,8 +33,6 @@ export async function saveSeller(
     where: { id: sellerId },
     data: {
       shopName: input.shopName,
-      email: input.email,
-      phone: input.phone,
       bio: input.bio || null,
       city: input.city,
       street: input.street,

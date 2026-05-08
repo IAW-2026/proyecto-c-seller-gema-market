@@ -3,15 +3,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderDetailScreen } from "@/components/screens/order-detail-screen";
 import { OrderDetailSkeleton } from "@/components/screens/skeletons/order-detail-skeleton";
-import { findOrder } from "@/lib/data/orders";
-import { findProduct } from "@/lib/data/products";
+import { requireSeller } from "@/lib/auth/current-seller";
+import { findOwnedOrder } from "@/lib/data/orders";
+import { findOwnedProduct } from "@/lib/data/products";
 import { getOrderBuyerInfo, getOrderPaymentInfo, getOrderShippingInfo } from "@/lib/data/order-detail";
 
 type OrderPageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: OrderPageProps): Promise<Metadata> {
-  const { id } = await params;
-  const order = await findOrder(id);
+  const [{ id }, seller] = await Promise.all([params, requireSeller()]);
+  const order = await findOwnedOrder(id, seller.id);
   return { title: order ? `Pedido ${order.id}` : "Pedido no encontrado" };
 }
 
@@ -24,12 +25,12 @@ export default function OrderPage({ params }: OrderPageProps) {
 }
 
 async function OrderContent({ params }: OrderPageProps) {
-  const { id } = await params;
-  const order = await findOrder(id);
+  const [{ id }, seller] = await Promise.all([params, requireSeller()]);
+  const order = await findOwnedOrder(id, seller.id);
   // El seller no opera órdenes sin pago confirmado; las ocultamos del detalle.
   if (!order || order.status === "pending_payment") notFound();
 
-  const product = await findProduct(order.productId);
+  const product = await findOwnedProduct(order.productId, seller.id);
   if (!product) notFound();
 
   const buyerInfo = getOrderBuyerInfo(order);
