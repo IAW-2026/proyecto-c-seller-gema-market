@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
+import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
 import { saveSellerAction, uploadSellerCoverAction } from "@/lib/actions/shop";
 import type { IconName } from "@/types/ui";
 import type { SellerInput, SellerWithCounts } from "@/types/domain";
@@ -28,6 +29,7 @@ type FormState = {
   shopName: string;
   city: string;
   bio: string;
+  phone: string;
   street: string;
   number: string;
   apartment: string;
@@ -39,6 +41,7 @@ function toFormState(seller: SellerWithCounts): FormState {
     shopName: seller.shopName,
     city: seller.city,
     bio: seller.bio ?? "",
+    phone: seller.phone,
     street: seller.street,
     number: seller.number,
     apartment: seller.apartment ?? "",
@@ -51,6 +54,7 @@ function toSellerInput(form: FormState): SellerInput {
     shopName: form.shopName,
     city: form.city,
     bio: form.bio,
+    phone: form.phone.trim(),
     street: form.street,
     number: form.number,
     apartment: form.apartment.trim() || undefined,
@@ -62,8 +66,8 @@ export function ShopScreen({ seller }: ShopScreenProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(seller));
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const save = useActionFeedback();
 
   const stats = [
     { label: "Productos", value: String(seller.productsCount) },
@@ -71,19 +75,13 @@ export function ShopScreen({ seller }: ShopScreenProps) {
   ] as const;
 
   const handleSave = () => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await saveSellerAction(toSellerInput(form));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al guardar");
-      }
-    });
+    setCoverError(null);
+    save.run(() => saveSellerAction(toSellerInput(form)));
   };
 
   const handleCoverChange = async (file: File | undefined) => {
     if (!file) return;
-    setError(null);
+    setCoverError(null);
     setIsUploadingCover(true);
     try {
       const fd = new FormData();
@@ -91,11 +89,18 @@ export function ShopScreen({ seller }: ShopScreenProps) {
       const url = await uploadSellerCoverAction(fd);
       setCoverUrl(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir portada");
+      setCoverError(err instanceof Error ? err.message : "Error al subir portada");
     } finally {
       setIsUploadingCover(false);
     }
   };
+
+  const displayError = save.error ?? coverError;
+  const saveLabel = save.isSuccess
+    ? "Guardado correctamente"
+    : save.isPending
+      ? "Guardando…"
+      : "Guardar cambios";
 
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -107,12 +112,14 @@ export function ShopScreen({ seller }: ShopScreenProps) {
         title="Perfil de tienda"
         action={
           <Button
-            variant="accent"
+            variant={save.isSuccess ? "success" : "accent"}
             icon="check"
             onClick={handleSave}
-            disabled={isPending}
+            disabled={save.isPending}
+            className={save.isSuccess ? "pointer-events-none" : ""}
+            aria-live="polite"
           >
-            {isPending ? "Guardando…" : "Guardar cambios"}
+            {saveLabel}
           </Button>
         }
       />
@@ -174,9 +181,9 @@ export function ShopScreen({ seller }: ShopScreenProps) {
         </div>
       </Card>
 
-      {error && (
+      {displayError && (
         <div className="mb-4 p-3 rounded-r2 bg-danger/10 text-danger text-[13px]">
-          {error}
+          {displayError}
         </div>
       )}
 
@@ -209,8 +216,14 @@ export function ShopScreen({ seller }: ShopScreenProps) {
             >
               <ReadonlyField icon="mail" value={seller.email} />
             </Field>
-            <Field label="WhatsApp">
-              <ReadonlyField icon="phone" value={seller.phone} />
+            <Field label="WhatsApp" hint="Visible para los compradores que quieran contactarte.">
+              <Input
+                icon="phone"
+                type="tel"
+                placeholder="+54 11 1234-5678"
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+              />
             </Field>
           </div>
         </Card>

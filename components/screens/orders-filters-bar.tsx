@@ -35,10 +35,10 @@ export function OrdersFiltersBar({
       <div className="flex-1 min-w-[200px]">
         <Input
           icon="search"
-          placeholder="Buscar por ID, comprador o tracking…"
+          placeholder="Buscar por título o comprador…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          aria-label="Buscar pedidos"
+          aria-label="Buscar pedidos por título o comprador"
         />
       </div>
       <label className="relative inline-flex items-center">

@@ -10,6 +10,7 @@ export type Reserva = {
   productId: string; // FK → producto.id
   orderId: string;   // FK lógica → Buyer App
   buyerId: string;   // FK lógica → Buyer App
+  buyerName: string; // denormalizado de Buyer App al momento de reservar
   quantity: number;
   expiresAt: Date;   // definido por el Buyer App
   createdAt: Date;
@@ -19,6 +20,7 @@ export type ReservaInput = {
   productId: string;
   orderId: string;
   buyerId: string;
+  buyerName: string;
   quantity: number;
   expiresAt: Date;
 };

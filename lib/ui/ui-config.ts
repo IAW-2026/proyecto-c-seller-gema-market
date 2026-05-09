@@ -31,14 +31,10 @@ export function getProductVisual(categoryName: string | null | undefined): Produ
 }
 
 export const ORDER_STATUS_META: Readonly<Record<OrderStatus, StatusMeta>> = {
-  pending_payment: { label: "Pago pendiente", tone: "warn" },
   paid:            { label: "Preparando",    tone: "sand" },
   shipping:        { label: "En camino",     tone: "forest" },
   delivered:       { label: "Entregado",     tone: "success" },
   shipping_failed: { label: "Error en envío", tone: "danger" },
-  cancelled:       { label: "Cancelado",     tone: "danger" },
-  disputed:        { label: "En disputa",    tone: "warn" },
-  refunded:        { label: "Reembolsado",   tone: "neutral" },
 };
 
 export type ProductStatusOption = {

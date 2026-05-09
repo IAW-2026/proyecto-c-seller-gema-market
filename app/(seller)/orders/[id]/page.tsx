@@ -6,7 +6,7 @@ import { OrderDetailSkeleton } from "@/components/screens/skeletons/order-detail
 import { requireSeller } from "@/lib/auth/current-seller";
 import { findOwnedOrder } from "@/lib/data/orders";
 import { findOwnedProduct } from "@/lib/data/products";
-import { getOrderBuyerInfo, getOrderPaymentInfo, getOrderShippingInfo } from "@/lib/data/order-detail";
+import { getOrderBuyerInfo, getOrderPaymentInfo } from "@/lib/data/order-detail";
 
 type OrderPageProps = { params: Promise<{ id: string }> };
 
@@ -27,14 +27,12 @@ export default function OrderPage({ params }: OrderPageProps) {
 async function OrderContent({ params }: OrderPageProps) {
   const [{ id }, seller] = await Promise.all([params, requireSeller()]);
   const order = await findOwnedOrder(id, seller.id);
-  // El seller no opera órdenes sin pago confirmado; las ocultamos del detalle.
-  if (!order || order.status === "pending_payment") notFound();
+  if (!order) notFound();
 
   const product = await findOwnedProduct(order.productId, seller.id);
   if (!product) notFound();
 
-  const buyerInfo = getOrderBuyerInfo(order);
-  const shippingInfo = getOrderShippingInfo(order);
+  const buyerInfo = await getOrderBuyerInfo(order);
   const paymentInfo = getOrderPaymentInfo(order);
 
   return (
@@ -42,7 +40,6 @@ async function OrderContent({ params }: OrderPageProps) {
       order={order}
       product={product}
       buyerInfo={buyerInfo}
-      shippingInfo={shippingInfo}
       paymentInfo={paymentInfo}
     />
   );

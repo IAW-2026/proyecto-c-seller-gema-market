@@ -7,11 +7,11 @@ import {
 } from "./skeleton-parts";
 
 const RECENT_ORDERS_COLS = [
-  { width: "20%" },
-  { width: "26%" },
-  { width: "20%" },
+  { width: "34%" },
+  { width: "22%" },
   { width: "16%" },
-  { width: "18%", align: "right" as const },
+  { width: "14%" },
+  { width: "14%", align: "right" as const },
 ];
 
 export function DashboardSkeleton() {
@@ -20,7 +20,7 @@ export function DashboardSkeleton() {
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
         <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
           {Array.from({ length: 3 }).map((_, i) => (
-            <StatCardSkeleton key={i} withTrend />
+            <StatCardSkeleton key={i} />
           ))}
         </div>
 

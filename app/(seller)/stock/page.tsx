@@ -7,6 +7,7 @@ import { StockSkeleton } from "@/components/screens/skeletons/stock-skeleton";
 import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { requireSeller } from "@/lib/auth/current-seller";
 import { getStockSummary, listProducts } from "@/lib/data/products";
+import type { ProductStatus, SortBy } from "@/types/domain";
 
 export const metadata: Metadata = {
   title: "Stock",
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<{
   q?: string;
+  sort?: string;
+  status?: string;
   page?: string;
   pageSize?: string;
 }>;
@@ -21,6 +24,19 @@ type SearchParams = Promise<{
 type StockPageProps = {
   searchParams: SearchParams;
 };
+
+const STOCK_SORTS: ReadonlyArray<SortBy> = ["stock_asc", "stock_desc"];
+const STATUS_FILTERS: ReadonlyArray<ProductStatus> = ["active", "paused"];
+
+function parseSort(value: string | undefined): SortBy | undefined {
+  return STOCK_SORTS.includes(value as SortBy) ? (value as SortBy) : undefined;
+}
+
+function parseStatusFilter(value: string | undefined): ProductStatus | undefined {
+  return STATUS_FILTERS.includes(value as ProductStatus)
+    ? (value as ProductStatus)
+    : undefined;
+}
 
 export default function StockPage({ searchParams }: StockPageProps) {
   return (
@@ -41,7 +57,7 @@ export default function StockPage({ searchParams }: StockPageProps) {
 function FiltersFallback() {
   return (
     <div className="mb-4">
-      <ToolbarSkeleton withSearch />
+      <ToolbarSkeleton withSearch withSecondary />
     </div>
   );
 }
@@ -54,6 +70,8 @@ async function StockToolbarLoader({ searchParams }: { searchParams: SearchParams
 async function StockContent({ searchParams }: { searchParams: SearchParams }) {
   const [seller, params] = await Promise.all([requireSeller(), searchParams]);
   const q = params.q ?? "";
+  const sortBy = parseSort(params.sort);
+  const statusFilter = parseStatusFilter(params.status);
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
 
@@ -61,6 +79,8 @@ async function StockContent({ searchParams }: { searchParams: SearchParams }) {
     listProducts({
       sellerId: seller.id,
       query: q,
+      status: statusFilter,
+      sortBy,
       page: Number.isFinite(pageNum) ? pageNum : 1,
       pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
     }),

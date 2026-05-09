@@ -5,10 +5,11 @@ import type {
   Order,
   OrderDateRange,
   OrderFilters,
+  OrderWithJoins,
   Page,
   PageSize,
 } from "@/types/domain";
-import { nextOrderStatus, PAGE_SIZES } from "@/types/domain";
+import { DEFAULT_PAGE_SIZE, nextOrderStatus, PAGE_SIZES } from "@/types/domain";
 
 type SaleRow = Prisma.SaleGetPayload<Record<string, never>>;
 
@@ -17,7 +18,36 @@ function toOrder(row: SaleRow): Order {
   return { ...rest, total: total.toNumber(), fee: fee.toNumber() };
 }
 
-export const DEFAULT_ORDERS_PAGE_SIZE: PageSize = 10;
+const saleWithProductSelect = {
+  id: true,
+  orderId: true,
+  productId: true,
+  sellerId: true,
+  buyerId: true,
+  buyerName: true,
+  paymentId: true,
+  amount: true,
+  total: true,
+  fee: true,
+  status: true,
+  trackingCode: true,
+  createdAt: true,
+  updatedAt: true,
+  product: { select: { title: true } },
+} satisfies Prisma.SaleSelect;
+
+type SaleWithProductRow = Prisma.SaleGetPayload<{ select: typeof saleWithProductSelect }>;
+
+function toOrderWithJoins(row: SaleWithProductRow): OrderWithJoins {
+  const { product, total, fee, ...rest } = row;
+  return {
+    ...rest,
+    total: total.toNumber(),
+    fee: fee.toNumber(),
+    productTitle: product.title,
+  };
+}
+
 
 // ─── Filtros temporales ────────────────────────────────────────────────────
 
@@ -44,27 +74,20 @@ function dateRangeCutoff(range: OrderDateRange): Date | undefined {
   return new Date(Date.now() - RANGE_TO_DAYS[range] * 24 * 60 * 60 * 1000);
 }
 
-// El seller solo opera órdenes con pago confirmado.
-const NON_PENDING: Prisma.SaleWhereInput = {
-  status: { not: "pending_payment" },
-};
-
 function buildWhere(filters: OrderFilters): Prisma.SaleWhereInput {
   const status = filters.status ?? "todos";
   const cutoff = dateRangeCutoff(filters.dateRange ?? DEFAULT_ORDER_DATE_RANGE);
   const query = filters.query?.trim();
 
-  const conditions: Prisma.SaleWhereInput[] = [
-    status === "todos" ? NON_PENDING : { status },
-  ];
+  const conditions: Prisma.SaleWhereInput[] = [];
+  if (status !== "todos") conditions.push({ status });
   if (filters.sellerId) conditions.push({ sellerId: filters.sellerId });
   if (cutoff) conditions.push({ createdAt: { gte: cutoff } });
   if (query) {
     conditions.push({
       OR: [
-        { id: { contains: query, mode: "insensitive" } },
-        { orderId: { contains: query, mode: "insensitive" } },
-        { buyerId: { contains: query, mode: "insensitive" } },
+        { product: { title: { contains: query, mode: "insensitive" } } },
+        { buyerName: { contains: query, mode: "insensitive" } },
       ],
     });
   }
@@ -90,9 +113,9 @@ export async function findOwnedOrder(
 
 export async function listSellerOrders(
   filters: OrderFilters = {},
-): Promise<Page<Order>> {
+): Promise<Page<OrderWithJoins>> {
   const where = buildWhere(filters);
-  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_ORDERS_PAGE_SIZE);
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PAGE_SIZE);
   const requested = Math.max(1, Math.floor(filters.page ?? 1));
   const total = await prisma.sale.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -103,19 +126,17 @@ export async function listSellerOrders(
     orderBy: { createdAt: "desc" },
     skip: offset,
     take: pageSize,
+    select: saleWithProductSelect,
   });
-  return { items: rows.map(toOrder), total, page, pageSize };
+  return { items: rows.map(toOrderWithJoins), total, page, pageSize };
 }
 
 export async function countSellerOrdersByStatus(
   sellerId?: string,
 ): Promise<Record<"todos" | "paid" | "shipping" | "delivered", number>> {
-  const where: Prisma.SaleWhereInput = {
-    AND: [NON_PENDING, sellerId ? { sellerId } : {}],
-  };
   const groups = await prisma.sale.groupBy({
     by: ["status"],
-    where,
+    where: sellerId ? { sellerId } : undefined,
     _count: { _all: true },
   });
   const out = { todos: 0, paid: 0, shipping: 0, delivered: 0 };
@@ -131,13 +152,14 @@ export async function countSellerOrdersByStatus(
 export async function getRecentSellerOrders(
   limit: number,
   sellerId?: string,
-): Promise<ReadonlyArray<Order>> {
+): Promise<ReadonlyArray<OrderWithJoins>> {
   const rows = await prisma.sale.findMany({
-    where: { AND: [NON_PENDING, sellerId ? { sellerId } : {}] },
+    where: sellerId ? { sellerId } : undefined,
     orderBy: { createdAt: "desc" },
     take: limit,
+    select: saleWithProductSelect,
   });
-  return rows.map(toOrder);
+  return rows.map(toOrderWithJoins);
 }
 
 export { nextOrderStatus };

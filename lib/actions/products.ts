@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
+  deleteProduct,
   saveProduct,
   updateProductStock,
   uploadProductImage,
@@ -27,6 +28,14 @@ export async function updateProductStockAction(
   revalidatePath("/stock");
   revalidatePath("/products");
   revalidatePath(`/products/${productId}`);
+}
+
+export async function deleteProductAction(productId: string): Promise<void> {
+  const seller = await requireSeller();
+  await deleteProduct(productId, seller.id);
+  revalidatePath("/products");
+  revalidatePath("/stock");
+  revalidatePath("/dashboard");
 }
 
 export async function uploadProductImageAction(

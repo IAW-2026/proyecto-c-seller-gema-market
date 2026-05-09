@@ -81,12 +81,11 @@ export function ToolbarSkeleton({
   );
 }
 
-export function StatCardSkeleton({ withTrend = false }: { withTrend?: boolean }) {
+export function StatCardSkeleton() {
   return (
     <Card padding={20}>
       <SkeletonText width={110} height={11} className="mb-3" />
-      <SkeletonText width={140} height={26} className="mb-3" />
-      {withTrend && <Skeleton className="h-[20px] w-[58px]" rounded="full" />}
+      <SkeletonText width={140} height={26} />
     </Card>
   );
 }

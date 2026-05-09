@@ -35,15 +35,13 @@ enum ProductCondition {
 }
 
 // Alineado con venta.status del modelo de datos y con el tipo OrderStatus del dominio.
+// El flujo en esta app empieza una vez aprobado el pago: la venta nace en `paid`
+// y avanza linealmente. `shipping_failed` lo setea Shipping App si el envío rebota.
 enum SaleStatus {
-  pending_payment
   paid
   shipping
   delivered
   shipping_failed
-  cancelled
-  disputed
-  refunded
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -100,6 +98,11 @@ model Product {
   stock        Int              @default(0)
   status       ProductStatus    @default(active)
   images       Json             @default("[]")
+  // Soft delete: null mientras la publicación esté viva. Cuando el seller la
+  // elimina, se setea con timestamp y la publicación deja de aparecer en el
+  // catálogo, pero el row sobrevive para preservar las ventas/reservas
+  // históricas que la referencian.
+  deletedAt    DateTime?
   seller       Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   category     Categoria        @relation(fields: [categoryId], references: [id])
   sales        Sale[]
@@ -108,6 +111,7 @@ model Product {
   updatedAt    DateTime         @updatedAt
 
   @@index([sellerId, status])
+  @@index([sellerId, deletedAt])
   @@index([title])
 }
 
@@ -119,11 +123,16 @@ model Sale {
   productId String
   sellerId  String
   buyerId   String
+  buyerName String
   paymentId String
   amount    Int
   total     Decimal    @db.Decimal(10, 2)
   fee       Decimal    @db.Decimal(10, 2)
-  status    SaleStatus @default(pending_payment)
+  status    SaleStatus @default(paid)
+  // Lo devuelve la Shipping App al pasar de `paid` → `shipping`. Null mientras
+  // la venta esté en `paid`. Se conserva en `delivered`/`shipping_failed`
+  // aunque la UI solo lo muestre durante `shipping`.
+  trackingCode String?
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   seller    Seller     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
@@ -140,6 +149,7 @@ model Reserva {
   productId String
   orderId   String
   buyerId   String
+  buyerName String
   quantity  Int
   expiresAt DateTime
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)

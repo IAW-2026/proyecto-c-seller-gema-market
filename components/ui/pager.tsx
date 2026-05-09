@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "./icon";
-import { PAGE_SIZES } from "@/types/domain";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from "@/types/domain";
 
 export type PagerProps = {
   page: number;
@@ -37,7 +37,7 @@ export function Pager({ page, pageSize, total, basePath }: PagerProps) {
 
   const onPageSizeChange = (next: number) => {
     navigate({
-      pageSize: next === 20 ? null : String(next),
+      pageSize: next === DEFAULT_PAGE_SIZE ? null : String(next),
       page: null,
     });
   };

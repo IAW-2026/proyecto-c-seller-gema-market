@@ -2,19 +2,23 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui/ui-config";
 import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
-import type { DashboardStat, DashboardStatId, Order, ProductWithJoins } from "@/types/domain";
+import type {
+  DashboardStat,
+  DashboardStatId,
+  OrderWithJoins,
+  ProductWithJoins,
+} from "@/types/domain";
 
 const DASHBOARD_STAT_META: Readonly<
-  Record<DashboardStatId, { label: string; valueFormat: "currency" | "number"; deltaFormat: "percent" | "number" | "none" }>
+  Record<DashboardStatId, { label: string; valueFormat: "currency" | "number" }>
 > = {
-  monthlySales: { label: "Ventas del mes", valueFormat: "currency", deltaFormat: "percent" },
-  orders: { label: "Pedidos", valueFormat: "number", deltaFormat: "number" },
-  activeProducts: { label: "Productos activos", valueFormat: "number", deltaFormat: "none" },
+  monthlySales: { label: "Ventas (últimos 30 días)", valueFormat: "currency" },
+  orders: { label: "Pedidos (últimos 30 días)", valueFormat: "number" },
+  activeProducts: { label: "Productos activos", valueFormat: "number" },
 };
 
 function formatDashboardValue(stat: DashboardStat): string {
@@ -22,19 +26,10 @@ function formatDashboardValue(stat: DashboardStat): string {
   return meta.valueFormat === "currency" ? fmtARS(stat.value) : String(stat.value);
 }
 
-function formatDashboardDelta(stat: DashboardStat): string {
-  const meta = DASHBOARD_STAT_META[stat.id];
-  if (stat.delta === null || meta.deltaFormat === "none") return "-";
-  const sign = stat.delta > 0 ? "+" : "";
-  return meta.deltaFormat === "percent"
-    ? `${sign}${stat.delta}%`
-    : `${sign}${stat.delta}`;
-}
-
 export type DashboardScreenProps = {
   stats: ReadonlyArray<DashboardStat>;
   topProducts: ReadonlyArray<ProductWithJoins>;
-  recentOrders: ReadonlyArray<Order>;
+  recentOrders: ReadonlyArray<OrderWithJoins>;
 };
 
 export function DashboardScreen({
@@ -48,14 +43,8 @@ export function DashboardScreen({
         {stats.map((s) => (
           <Card key={s.id} padding={20}>
             <div className="text-xs text-ink-3 mb-2">{DASHBOARD_STAT_META[s.id].label}</div>
-            <div className="text-[26px] font-bold tracking-[-0.02em] mb-2">
+            <div className="text-[26px] font-bold tracking-[-0.02em]">
               {formatDashboardValue(s)}
-            </div>
-            <div
-              className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-full text-[11px] font-semibold ${s.trend === "up" ? "bg-[#d8e3c8] text-success" : "bg-bone text-ink-3"}`}
-            >
-              {s.trend === "up" && <Icon name="arrowUp" size={11} />}
-              {formatDashboardDelta(s)}
             </div>
           </Card>
         ))}
@@ -66,9 +55,11 @@ export function DashboardScreen({
         <div className="flex flex-col">
           {topProducts.map((p, i) => {
             const visual = getProductVisual(p.categoryName);
+            const stockTone = p.stock === 0 ? "danger" : p.stock < 5 ? "warn" : "sage";
             return (
-              <div
+              <Link
                 key={p.id}
+                href={`/products/${p.id}`}
                 className={`flex items-center gap-3 py-3 ${i < topProducts.length - 1 ? "border-b border-line" : ""}`}
               >
                 <div className="w-5 font-mono text-[11px] text-ink-3 shrink-0 text-center">
@@ -86,9 +77,17 @@ export function DashboardScreen({
                   <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                     {p.title}
                   </div>
-                  <div className="text-[11px] text-ink-3">{p.salesCount} ventas</div>
+                  <div className="text-[11px] text-ink-3">{p.categoryName}</div>
                 </div>
-              </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[12px] font-semibold tabular-nums">
+                    {p.salesCount} <span className="text-ink-3 font-normal">{p.salesCount === 1 ? "venta" : "ventas"}</span>
+                  </span>
+                  <Pill tone={stockTone} size="sm">
+                    {p.stock === 0 ? "Sin stock" : `${p.stock} en stock`}
+                  </Pill>
+                </div>
+              </Link>
             );
           })}
         </div>
@@ -102,14 +101,14 @@ export function DashboardScreen({
           </Button>
         </div>
         <div className="overflow-x-auto hidden lgx:block">
-          <table className="w-full border-collapse text-[13px] min-w-[600px]">
+          <table className="w-full border-collapse text-[13px] min-w-[640px] table-fixed">
             <thead className="bg-cream">
               <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
-                <th className="py-2.5 px-5">ID</th>
-                <th className="py-2.5 px-3">Comprador</th>
-                <th className="py-2.5 px-3">Fecha</th>
-                <th className="py-2.5 px-3">Estado</th>
-                <th className="py-2.5 px-5 text-right">Total</th>
+                <th className="py-2.5 px-5">Producto</th>
+                <th className="py-2.5 px-3 w-44">Comprador</th>
+                <th className="py-2.5 px-3 w-32">Fecha</th>
+                <th className="py-2.5 px-3 w-32">Estado</th>
+                <th className="py-2.5 px-5 w-32 text-right">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -117,18 +116,19 @@ export function DashboardScreen({
                 const st = ORDER_STATUS_META[o.status];
                 return (
                   <tr key={o.id} className="border-b border-line">
-                    <td className="py-3 px-5 font-mono text-xs">
+                    <td className="py-3 px-5">
                       <Link href={`/orders/${o.id}`} className="block">
-                        {o.id}
+                        <div className="font-medium truncate">{o.productTitle}</div>
+                        <div className="text-[11px] text-ink-3">{o.amount} {o.amount === 1 ? "unidad" : "unidades"}</div>
                       </Link>
                     </td>
                     <td className="py-3 px-3">
                       <Link
                         href={`/orders/${o.id}`}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 min-w-0"
                       >
-                        <Avatar name={o.buyerId} size={28} />
-                        {o.buyerId}
+                        <Avatar name={o.buyerName} size={28} />
+                        <span className="truncate">{o.buyerName}</span>
                       </Link>
                     </td>
                     <td className="py-3 px-3 text-ink-3">{fmtOrderDate(o.createdAt)}</td>
@@ -156,10 +156,12 @@ export function DashboardScreen({
                 className="w-full text-left bg-paper border border-line rounded-2xl p-3.5 block"
               >
                 <div className="flex justify-between gap-2.5 items-start mb-2.5">
-                  <div>
-                    <div className="font-mono text-xs text-ink-3">{o.id}</div>
-                    <div className="text-[15px] font-semibold mt-[3px]">
-                      {o.buyerId}
+                  <div className="min-w-0">
+                    <div className="text-[15px] font-semibold truncate">
+                      {o.productTitle}
+                    </div>
+                    <div className="text-[11px] text-ink-3 mt-[3px]">
+                      {o.buyerName} · {o.amount} {o.amount === 1 ? "unidad" : "unidades"}
                     </div>
                   </div>
                   <Pill tone={st.tone} size="sm">

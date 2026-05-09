@@ -12,9 +12,7 @@ import type {
   SortBy,
   StockSummary,
 } from '@/types/domain';
-import { PAGE_SIZES } from '@/types/domain';
-
-export const DEFAULT_PRODUCTS_PAGE_SIZE: PageSize = 10;
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '@/types/domain';
 
 const productSelect = {
   id: true,
@@ -62,6 +60,8 @@ function buildWhere(filters: ProductFilters): Prisma.ProductWhereInput {
   return {
     sellerId: filters.sellerId,
     status: filters.status,
+    // Soft delete: las publicaciones eliminadas nunca aparecen en el catálogo.
+    deletedAt: null,
     title: query ? { contains: query, mode: 'insensitive' } : undefined,
     stock:
       filters.stockFilter === 'low'
@@ -82,6 +82,8 @@ function buildOrderBy(
     case 'sales_desc': return { sales: { _count: 'desc' } };
     case 'stock_asc':  return { stock: 'asc' };
     case 'stock_desc': return { stock: 'desc' };
+    case 'created_asc':  return { createdAt: 'asc' };
+    case 'created_desc': return { createdAt: 'desc' };
     default:           return { createdAt: 'desc' };
   }
 }
@@ -96,7 +98,7 @@ export async function listProducts(
   filters: ProductFilters = {},
 ): Promise<Page<ProductWithJoins>> {
   const where = buildWhere(filters);
-  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PRODUCTS_PAGE_SIZE);
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PAGE_SIZE);
   const requested = Math.max(1, Math.floor(filters.page ?? 1));
   const total = await prisma.product.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -117,7 +119,7 @@ export async function countProductsByStatus(
 ): Promise<Record<ProductStatus, number>> {
   const groups = await prisma.product.groupBy({
     by: ['status'],
-    where: sellerId ? { sellerId } : undefined,
+    where: { sellerId, deletedAt: null },
     _count: { _all: true },
   });
   const out: Record<ProductStatus, number> = { active: 0, paused: 0 };
@@ -128,7 +130,7 @@ export async function countProductsByStatus(
 }
 
 export async function getStockSummary(sellerId?: string): Promise<StockSummary> {
-  const where: Prisma.ProductWhereInput = sellerId ? { sellerId } : {};
+  const where: Prisma.ProductWhereInput = { sellerId, deletedAt: null };
   const [agg, activeSkus, outOfStock] = await Promise.all([
     prisma.product.aggregate({ where, _sum: { stock: true } }),
     prisma.product.count({ where: { ...where, status: 'active' } }),
@@ -146,7 +148,7 @@ export async function getTopProducts(
   sellerId?: string,
 ): Promise<ReadonlyArray<ProductWithJoins>> {
   const rows = await prisma.product.findMany({
-    where: sellerId ? { sellerId } : undefined,
+    where: { sellerId, deletedAt: null },
     orderBy: { sales: { _count: 'desc' } },
     take: limit,
     select: productSelect,
@@ -162,7 +164,7 @@ export async function findOwnedProduct(
   sellerId: string,
 ): Promise<ProductWithJoins | null> {
   const row = await prisma.product.findFirst({
-    where: { id, sellerId },
+    where: { id, sellerId, deletedAt: null },
     select: productSelect,
   });
   return row ? toProductWithJoins(row) : null;
@@ -191,9 +193,10 @@ export async function saveProduct(
   };
   if (input.id) {
     // Verificamos ownership antes de tocar el row. `sellerId` no entra al
-    // `data` — un seller no puede reasignarse productos ajenos.
+    // `data` — un seller no puede reasignarse productos ajenos. El filtro por
+    // `deletedAt: null` impide editar publicaciones soft-deleted.
     const owned = await prisma.product.findFirst({
-      where: { id: input.id, sellerId },
+      where: { id: input.id, sellerId, deletedAt: null },
       select: { id: true },
     });
     if (!owned) throw new Error("Producto no encontrado.");
@@ -216,11 +219,27 @@ export async function updateProductStock(
   sellerId: string,
   stock: number,
 ): Promise<void> {
-  // `updateMany` con filtro por `sellerId` evita modificar stock ajeno: si el
-  // producto no es del seller, `count` queda en 0 y tiramos error.
+  // `updateMany` con filtro por `sellerId` evita modificar stock ajeno y
+  // `deletedAt: null` impide tocar publicaciones soft-deleted.
   const result = await prisma.product.updateMany({
-    where: { id: productId, sellerId },
+    where: { id: productId, sellerId, deletedAt: null },
     data: { stock },
+  });
+  if (result.count === 0) {
+    throw new Error("Producto no encontrado.");
+  }
+}
+
+export async function deleteProduct(
+  productId: string,
+  sellerId: string,
+): Promise<void> {
+  // Soft delete: el row sobrevive para preservar el historial de ventas y
+  // reservas. El filtro por `sellerId` evita borrar productos ajenos y
+  // `deletedAt: null` hace la operación idempotente.
+  const result = await prisma.product.updateMany({
+    where: { id: productId, sellerId, deletedAt: null },
+    data: { deletedAt: new Date() },
   });
   if (result.count === 0) {
     throw new Error("Producto no encontrado.");

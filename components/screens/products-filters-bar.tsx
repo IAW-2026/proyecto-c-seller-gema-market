@@ -11,6 +11,7 @@ const SORT_FIELDS = [
   { value: "price", label: "Precio" },
   { value: "sales", label: "Ventas" },
   { value: "stock", label: "Stock" },
+  { value: "created", label: "Fecha" },
 ] as const;
 
 type SortField = (typeof SORT_FIELDS)[number]["value"];
@@ -30,7 +31,7 @@ export function ProductsFiltersBar({ initialQuery }: ProductsFiltersBarProps) {
   const currentSort = searchParams.get("sort") ?? "";
   const currentStockFilter = searchParams.get("stockFilter") ?? "";
 
-  const currentField = (["price", "sales", "stock"].find((f) =>
+  const currentField = (SORT_FIELDS.map((f) => f.value).find((f) =>
     currentSort.startsWith(f),
   ) ?? "") as SortField | "";
   const currentDir = currentSort.endsWith("_asc") ? "asc" : currentSort.endsWith("_desc") ? "desc" : "";

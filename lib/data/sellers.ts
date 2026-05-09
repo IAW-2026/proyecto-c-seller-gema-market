@@ -34,6 +34,7 @@ export async function saveSeller(
     data: {
       shopName: input.shopName,
       bio: input.bio || null,
+      phone: input.phone,
       city: input.city,
       street: input.street,
       number: input.number,
