@@ -127,8 +127,8 @@ export function DashboardScreen({
                         href={`/orders/${o.id}`}
                         className="flex items-center gap-2 min-w-0"
                       >
-                        <Avatar name={o.buyerId} size={28} />
-                        <span className="truncate">{o.buyerId}</span>
+                        <Avatar name={o.buyerName} size={28} />
+                        <span className="truncate">{o.buyerName}</span>
                       </Link>
                     </td>
                     <td className="py-3 px-3 text-ink-3">{fmtOrderDate(o.createdAt)}</td>
@@ -161,7 +161,7 @@ export function DashboardScreen({
                       {o.productTitle}
                     </div>
                     <div className="text-[11px] text-ink-3 mt-[3px]">
-                      {o.buyerId} · {o.amount} {o.amount === 1 ? "unidad" : "unidades"}
+                      {o.buyerName} · {o.amount} {o.amount === 1 ? "unidad" : "unidades"}
                     </div>
                   </div>
                   <Pill tone={st.tone} size="sm">

@@ -11,14 +11,13 @@ import {
 } from "@/lib/ui/ui-config";
 import { fmtARS } from "@/lib/ui/format";
 import { nextOrderStatus } from "@/lib/data/orders";
-import type { BuyerInfo, Order, PaymentInfo, ProductWithJoins, ShippingInfo } from "@/types/domain";
+import type { BuyerInfo, Order, PaymentInfo, ProductWithJoins } from "@/types/domain";
 import { OrderActionButton } from "./order-action-button";
 
 export type OrderDetailScreenProps = {
   order: Order;
   product: ProductWithJoins;
   buyerInfo: BuyerInfo;
-  shippingInfo: ShippingInfo;
   paymentInfo: PaymentInfo;
 };
 
@@ -26,7 +25,6 @@ export function OrderDetailScreen({
   order,
   product,
   buyerInfo,
-  shippingInfo,
   paymentInfo,
 }: OrderDetailScreenProps) {
   const status = ORDER_STATUS_META[order.status];
@@ -112,20 +110,21 @@ export function OrderDetailScreen({
               <Avatar name={buyerInfo.name} size={44} />
               <div>
                 <div className="font-semibold">{buyerInfo.name}</div>
-                <div className="text-xs text-ink-3">{buyerInfo.previousPurchases} compras previas</div>
+                <div className="text-xs text-ink-3">{buyerInfo.effectivePurchases} compras</div>
               </div>
             </div>
           </Card>
 
-          <Card padding={20}>
-            <h4 className="m-0 mb-3 text-[13px] font-semibold text-ink-3 uppercase tracking-[0.06em] font-mono">
-              Envío
-            </h4>
-            <div className="text-sm mb-1.5">{shippingInfo.address}</div>
-            <div className="text-xs text-ink-3">
-              Tracking: <span className="font-mono">{shippingInfo.trackingCode}</span>
-            </div>
-          </Card>
+          {order.status === "shipping" && order.trackingCode && (
+            <Card padding={20}>
+              <h4 className="m-0 mb-3 text-[13px] font-semibold text-ink-3 uppercase tracking-[0.06em] font-mono">
+                Envío
+              </h4>
+              <div className="text-xs text-ink-3">
+                Tracking: <span className="font-mono">{order.trackingCode}</span>
+              </div>
+            </Card>
+          )}
 
           <Card padding={20}>
             <h4 className="m-0 mb-3 text-[13px] font-semibold text-ink-3 uppercase tracking-[0.06em] font-mono">

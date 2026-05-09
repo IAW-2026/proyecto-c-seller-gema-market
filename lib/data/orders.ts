@@ -24,11 +24,13 @@ const saleWithProductSelect = {
   productId: true,
   sellerId: true,
   buyerId: true,
+  buyerName: true,
   paymentId: true,
   amount: true,
   total: true,
   fee: true,
   status: true,
+  trackingCode: true,
   createdAt: true,
   updatedAt: true,
   product: { select: { title: true } },
@@ -72,27 +74,20 @@ function dateRangeCutoff(range: OrderDateRange): Date | undefined {
   return new Date(Date.now() - RANGE_TO_DAYS[range] * 24 * 60 * 60 * 1000);
 }
 
-// El seller solo opera órdenes con pago confirmado.
-const NON_PENDING: Prisma.SaleWhereInput = {
-  status: { not: "pending_payment" },
-};
-
 function buildWhere(filters: OrderFilters): Prisma.SaleWhereInput {
   const status = filters.status ?? "todos";
   const cutoff = dateRangeCutoff(filters.dateRange ?? DEFAULT_ORDER_DATE_RANGE);
   const query = filters.query?.trim();
 
-  const conditions: Prisma.SaleWhereInput[] = [
-    status === "todos" ? NON_PENDING : { status },
-  ];
+  const conditions: Prisma.SaleWhereInput[] = [];
+  if (status !== "todos") conditions.push({ status });
   if (filters.sellerId) conditions.push({ sellerId: filters.sellerId });
   if (cutoff) conditions.push({ createdAt: { gte: cutoff } });
   if (query) {
     conditions.push({
       OR: [
-        { id: { contains: query, mode: "insensitive" } },
-        { orderId: { contains: query, mode: "insensitive" } },
-        { buyerId: { contains: query, mode: "insensitive" } },
+        { product: { title: { contains: query, mode: "insensitive" } } },
+        { buyerName: { contains: query, mode: "insensitive" } },
       ],
     });
   }
@@ -139,12 +134,9 @@ export async function listSellerOrders(
 export async function countSellerOrdersByStatus(
   sellerId?: string,
 ): Promise<Record<"todos" | "paid" | "shipping" | "delivered", number>> {
-  const where: Prisma.SaleWhereInput = {
-    AND: [NON_PENDING, sellerId ? { sellerId } : {}],
-  };
   const groups = await prisma.sale.groupBy({
     by: ["status"],
-    where,
+    where: sellerId ? { sellerId } : undefined,
     _count: { _all: true },
   });
   const out = { todos: 0, paid: 0, shipping: 0, delivered: 0 };
@@ -162,7 +154,7 @@ export async function getRecentSellerOrders(
   sellerId?: string,
 ): Promise<ReadonlyArray<OrderWithJoins>> {
   const rows = await prisma.sale.findMany({
-    where: { AND: [NON_PENDING, sellerId ? { sellerId } : {}] },
+    where: sellerId ? { sellerId } : undefined,
     orderBy: { createdAt: "desc" },
     take: limit,
     select: saleWithProductSelect,

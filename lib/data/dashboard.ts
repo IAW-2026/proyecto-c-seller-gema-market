@@ -11,7 +11,6 @@ export async function getDashboardData(sellerId: string): Promise<DashboardData>
   const salesWindowCutoff = new Date(Date.now() - SALES_WINDOW_DAYS * DAY_MS);
   const recentOrdersWhere = {
     sellerId,
-    status: { not: "pending_payment" as const },
     createdAt: { gte: salesWindowCutoff },
   };
 

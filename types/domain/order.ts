@@ -5,15 +5,14 @@
 // El filtro por rango de fechas opera sobre `createdAt`.
 
 // Valores alineados a `SaleStatus` del schema y al modelo de datos.
+// La venta nace en `paid` (el pago ya está aprobado cuando llega a esta app),
+// avanza a `shipping` por acción del seller, y termina en `delivered`
+// o `shipping_failed` (ambos seteados por Shipping App).
 export type OrderStatus =
-  | "pending_payment"
   | "paid"
   | "shipping"
   | "delivered"
-  | "shipping_failed"
-  | "cancelled"
-  | "disputed"
-  | "refunded";
+  | "shipping_failed";
 
 export type OrderListStatus = OrderStatus | "todos";
 
@@ -36,11 +35,13 @@ export type Order = {
   productId: string;   // FK → Product.id
   sellerId: string;    // FK → Seller.id
   buyerId: string;     // FK lógica → Buyer App
+  buyerName: string;   // denormalizado de Buyer App al momento de la venta
   paymentId: string;   // FK lógica → Payments App
   amount: number;      // cantidad de unidades compradas
   total: number;       // monto total cobrado al comprador
   fee: number;         // comisión de la plataforma
   status: OrderStatus;
+  trackingCode: string | null; // lo emite Shipping App al despachar
   createdAt: Date;     // fuente para filtros por fecha
   updatedAt: Date;
 };
@@ -50,18 +51,12 @@ export type OrderWithJoins = Order & {
   productTitle: string; // Product.title
 };
 
-// Información adicional del comprador (fuente: Buyer App).
-// Stub hasta implementar la integración inter-app.
+// Información adicional del comprador.
+// `name` viene de Buyer App (stub por ahora). `effectivePurchases` se calcula
+// local a partir de la tabla `Sale`.
 export type BuyerInfo = {
   name: string;
-  previousPurchases: number;
-};
-
-// Información de envío (fuente: Shipping App).
-export type ShippingInfo = {
-  carrier: string;
-  trackingCode: string;
-  address: string;
+  effectivePurchases: number;
 };
 
 // Información de pago (fuente: Payments App).
