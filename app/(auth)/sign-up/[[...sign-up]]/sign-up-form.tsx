@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ShopFieldsFieldset } from "@/components/forms/shop-fields-fieldset";
+import { VerificationCodeStep } from "@/app/(auth)/_components/verification-code-step";
 import { clerkErrorMessage } from "@/lib/auth/clerk-error-messages";
+import { finalizeWithRedirect } from "@/lib/auth/finalize-redirect";
 import {
   SHOP_FIELD_RULES,
   validateShopFields,
@@ -59,8 +61,7 @@ export function SignUpForm() {
     });
   }
 
-  async function handleDetailsSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleDetailsSubmit() {
     if (pending) return;
 
     setFormError(null);
@@ -103,8 +104,7 @@ export function SignUpForm() {
     setStage("verify");
   }
 
-  async function handleVerifySubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleVerifySubmit() {
     if (pending) return;
 
     setFormError(null);
@@ -115,18 +115,11 @@ export function SignUpForm() {
     }
 
     if (signUp.status === "complete") {
-      const { error: finalizeError } = await signUp.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          // Si Clerk activa un session task obligatorio, no forzamos el
-          // redirect a /dashboard — caemos a la home y dejamos que Clerk
-          // resuelva el task.
-          if (session?.currentTask) {
-            router.push("/");
-            return;
-          }
-          router.push(decorateUrl(redirectUrl));
-        },
-      });
+      const { error: finalizeError } = await finalizeWithRedirect(
+        signUp,
+        router,
+        redirectUrl,
+      );
       if (finalizeError) {
         setFormError(
           clerkErrorMessage(finalizeError, "No pudimos completar el registro."),
@@ -151,69 +144,25 @@ export function SignUpForm() {
 
   if (stage === "verify") {
     return (
-      <form onSubmit={handleVerifySubmit} className="flex flex-col gap-5">
-        <div className="text-sm text-ink-2">
-          Te enviamos un código a{" "}
-          <span className="font-medium text-ink">{email}</span>. Ingresalo para
-          terminar de crear la cuenta.
-        </div>
-
-        <Field label="Código de verificación">
-          <Input
-            name="code"
-            icon="mail"
-            placeholder="123456"
-            inputMode="numeric"
-            pattern="\d*"
-            autoComplete="one-time-code"
-            autoFocus
-            required
-            maxLength={6}
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          />
-        </Field>
-
-        {formError && (
-          <div
-            role="alert"
-            className="text-xs text-danger bg-danger/5 border border-danger/20 rounded-r2 px-3 py-2"
-          >
-            {formError}
-          </div>
-        )}
-
-        <Button type="submit" full disabled={pending}>
-          {pending ? "Verificando…" : "Verificar y entrar"}
-        </Button>
-
-        <div className="flex justify-between text-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setStage("details");
-              setCode("");
-              setFormError(null);
-            }}
-            className="text-ink-3 hover:text-ink underline-offset-2 hover:underline cursor-pointer"
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            onClick={handleResendCode}
-            disabled={pending}
-            className="text-olive font-medium hover:underline underline-offset-2 cursor-pointer disabled:opacity-50"
-          >
-            Reenviar código
-          </button>
-        </div>
-      </form>
+      <VerificationCodeStep
+        identifier={email}
+        code={code}
+        onCodeChange={setCode}
+        onSubmit={handleVerifySubmit}
+        onResend={handleResendCode}
+        onBack={() => {
+          setStage("details");
+          setCode("");
+          setFormError(null);
+        }}
+        error={formError}
+        pending={pending}
+      />
     );
   }
 
   return (
-    <form onSubmit={handleDetailsSubmit} className="flex flex-col gap-5">
+    <form action={handleDetailsSubmit} className="flex flex-col gap-5">
       <Field label="Email">
         <Input
           name="email"
