@@ -77,8 +77,14 @@ function resolvePageSize(value: number | undefined, fallback: PageSize): PageSiz
     : fallback;
 }
 
-export async function findOrder(id: string): Promise<Order | null> {
-  const row = await prisma.sale.findUnique({ where: { id } });
+// Lookup scopeado al seller dueño. Es la única forma de leer un pedido en
+// el panel: nunca queremos exponer datos del comprador (envío, pago) por
+// adivinar el `id` en la URL.
+export async function findOwnedOrder(
+  id: string,
+  sellerId: string,
+): Promise<Order | null> {
+  const row = await prisma.sale.findFirst({ where: { id, sellerId } });
   return row ? toOrder(row) : null;
 }
 
@@ -136,10 +142,14 @@ export async function getRecentSellerOrders(
 
 export { nextOrderStatus };
 
-export async function advanceOrderStatus(orderId: string): Promise<Order> {
-  const current = await prisma.sale.findUnique({ where: { id: orderId } });
+export async function advanceOrderStatus(
+  orderId: string,
+  sellerId: string,
+): Promise<Order> {
+  // El check por `sellerId` previene que un seller avance pedidos ajenos.
+  const current = await prisma.sale.findFirst({ where: { id: orderId, sellerId } });
   if (!current) {
-    throw new Error(`advanceOrderStatus: orden ${orderId} no existe`);
+    throw new Error(`advanceOrderStatus: pedido ${orderId} no encontrado`);
   }
   const next = nextOrderStatus(current.status);
   if (!next) {

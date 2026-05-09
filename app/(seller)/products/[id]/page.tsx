@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductEditScreen } from "@/components/screens/product-edit-screen";
 import { ProductEditSkeleton } from "@/components/screens/skeletons/product-edit-skeleton";
+import { requireSeller } from "@/lib/auth/current-seller";
 import { getCategories } from "@/lib/data/categories";
-import { findProduct } from "@/lib/data/products";
+import { findOwnedProduct } from "@/lib/data/products";
 import { saveProductAction } from "@/lib/actions/products";
 
 type ProductPageProps = {
@@ -14,8 +15,8 @@ type ProductPageProps = {
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
-  const { id } = await params;
-  const product = await findProduct(id);
+  const [{ id }, seller] = await Promise.all([params, requireSeller()]);
+  const product = await findOwnedProduct(id, seller.id);
   return {
     title: product ? `Editar — ${product.title}` : "Producto no encontrado",
   };
@@ -30,9 +31,9 @@ export default function ProductPage({ params }: ProductPageProps) {
 }
 
 async function ProductContent({ params }: ProductPageProps) {
-  const { id } = await params;
+  const [{ id }, seller] = await Promise.all([params, requireSeller()]);
   const [product, categories] = await Promise.all([
-    findProduct(id),
+    findOwnedProduct(id, seller.id),
     getCategories(),
   ]);
   if (!product) {

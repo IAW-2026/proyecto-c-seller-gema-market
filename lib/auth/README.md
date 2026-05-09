@@ -10,9 +10,9 @@ La autenticación del proyecto se gestiona con Clerk. La fuente de verdad del us
 - El form de sign-up es de dos pasos en una sola card: (1) email + password + datos de tienda; (2) verificación por código de email. Los datos de tienda viajan en `unsafeMetadata` y se persisten en el `Seller` la primera vez que el usuario toca una ruta protegida.
 - `components/layout/seller-chrome.tsx` muestra el sidebar y `<UserButton />` cuando hay sesión.
 - `lib/auth/current-seller.ts`:
-  - `getCurrentSeller()` → `Seller | null`. Lee `auth().userId` de Clerk y busca `Seller` por `clerkUserId`. Si no existe, lo **autoprovisiona** llamando a `currentUser()` y haciendo `upsertSellerFromIdentity` (ver `sync-seller.ts`).
+  - `getCurrentSeller()` → `Seller | null`. Lee `auth().userId` de Clerk y busca `Seller` por `clerkUserId`. Si no existe, lo **autoprovisiona** llamando a `currentUser()` y haciendo `createSellerFromIdentity` (ver `sync-seller.ts`).
   - `requireSeller()` → `Seller`. Lanza si no hay sesión activa.
-- `lib/auth/sync-seller.ts` expone `upsertSellerFromIdentity({ clerkUserId, email, phone })`.
+- `lib/auth/sync-seller.ts` expone `createSellerFromIdentity({ clerkUserId, email, phone, shopFields? })`. Es idempotente respecto a la carrera: si dos requests crean el row a la vez, una de las dos cae a `findUnique` y devuelve el row creado por la otra.
 
 ## Estrategia: lazy registration (sin webhook)
 
@@ -24,10 +24,10 @@ En su lugar, la creación del row `Seller` ocurre **on-demand** la primera vez q
 
 Para evitar el doble paso (sign-up → /onboarding) en cuentas creadas desde esta app, el form de sign-up adjunta los campos de tienda al `unsafeMetadata` de Clerk vía `signUp.password({ ..., unsafeMetadata })`. Esos datos viajan con la cuenta hasta que la sesión queda activa.
 
-`identityFromCurrentUser()` los lee con `parseShopFieldsFromMetadata()` (ver `lib/auth/shop-fields.ts`). Si pasan `validateShopFields()`, `upsertSellerFromIdentity()` los usa para inicializar el `Seller` en el `create`. El gate de `/onboarding` ve `isOnboarded() === true` y deja pasar al panel directo. Si el `unsafeMetadata` está vacío o inválido (ej. usuario que ya existía en Clerk por otra app), el row se crea con campos en blanco y el gate redirige a `/onboarding` como antes.
+`identityFromCurrentUser()` los lee con `parseShopFieldsFromMetadata()` (ver `lib/auth/shop-fields.ts`). Si pasan `validateShopFields()`, `createSellerFromIdentity()` los usa para inicializar el `Seller` en el `create`. El gate de `/onboarding` ve `isOnboarded() === true` y deja pasar al panel directo. Si el `unsafeMetadata` está vacío o inválido (ej. usuario que ya existía en Clerk por otra app), el row se crea con campos en blanco y el gate redirige a `/onboarding` como antes.
 
 Consecuencias:
-- Si el email/teléfono cambian en Clerk, el sync canónico es la próxima request del usuario al panel (el `upsert` actualiza esos campos en cada hit hasta que el row exista; después solo se vuelve a actualizar si pasa por el path de auto-provision).
+- `email` y `phone` se setean **solo** en la creación del row. La fuente de verdad post-creación es Clerk: en `/shop` los mostramos readonly y los cambios se gestionan desde `<UserButton />`. La UI lee el dato actual con `currentUser()` cuando corresponde.
 - Una vez creado el `Seller`, los campos de tienda se editan desde el panel: ya no se vuelven a leer del `unsafeMetadata`.
 - Borrados de cuenta en Clerk no se reflejan automáticamente — si hace falta limpieza, hay que hacerla aparte.
 

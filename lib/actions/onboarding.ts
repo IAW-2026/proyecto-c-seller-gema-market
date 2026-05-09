@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
-  SHOP_FIELD_RULES,
   validateShopFields,
   type ShopFieldErrors,
   type ShopFieldName,
@@ -62,7 +61,3 @@ export async function completeOnboardingAction(
   revalidatePath("/", "layout");
   redirect("/");
 }
-
-// Re-exportamos para que la página `/onboarding` no tenga que conocer la
-// ubicación del módulo de reglas.
-export { SHOP_FIELD_RULES };

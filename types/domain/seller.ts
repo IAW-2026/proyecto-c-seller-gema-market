@@ -33,10 +33,12 @@ export type SellerWithCounts = Seller & {
 };
 
 // Forma de entrada del formulario de perfil de tienda (/shop).
+//
+// `email` y `phone` no entran acá: son fuente de verdad de Clerk y se
+// gestionan desde `<UserButton />`. La DB los mantiene como caché informativo
+// pero no se editan desde este form.
 export type SellerInput = {
   shopName: string;
-  email: string;
-  phone: string;
   bio: string;
   city: string;
   street: string;

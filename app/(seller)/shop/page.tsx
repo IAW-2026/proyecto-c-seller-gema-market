@@ -6,7 +6,6 @@ import { ShopScreen } from "@/components/screens/shop-screen";
 import { ShopSkeleton } from "@/components/screens/skeletons/shop-skeleton";
 import { requireSeller } from "@/lib/auth/current-seller";
 import { findSellerWithCounts } from "@/lib/data/sellers";
-import { saveSellerAction, uploadSellerCoverAction } from "@/lib/actions/shop";
 
 export const metadata: Metadata = {
   title: "Mi tienda",
@@ -33,11 +32,5 @@ async function ShopContent() {
   const current = await requireSeller();
   const seller = await findSellerWithCounts(current.id);
   if (!seller) notFound();
-  return (
-    <ShopScreen
-      seller={seller}
-      onSaveAction={saveSellerAction}
-      onUploadCoverAction={uploadSellerCoverAction}
-    />
-  );
+  return <ShopScreen seller={seller} />;
 }
