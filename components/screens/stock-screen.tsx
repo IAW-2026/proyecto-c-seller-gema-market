@@ -43,42 +43,43 @@ export function StockScreen({
           <h3 className="m-0 text-base font-semibold">Inventario por producto</h3>
         </div>
         <div className="overflow-x-auto hidden lgx:block">
-          <table className="w-full border-collapse text-[13px] min-w-[760px] table-fixed">
+          <table className="w-full border-collapse text-[13px] min-w-[680px] table-fixed">
             <thead className="bg-cream">
               <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
-                <th className="py-2.5 px-5 w-28">ID</th>
-                <th className="py-2.5 px-3">Producto</th>
-                <th className="py-2.5 px-3 w-20 text-center">Stock</th>
+                <th className="py-2.5 px-5">Producto</th>
+                <th className="py-2.5 px-3 w-24 text-center">Stock</th>
                 <th className="py-2.5 px-3 w-28">Estado</th>
                 <th className="py-2.5 px-3 w-[152px]"></th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => {
-                const label = p.stock === 0 ? "Sin stock" : "Disponible";
                 const visual = getProductVisual(p.categoryName);
+                const isActive = p.status === "active";
                 return (
                   <tr key={p.id} className="border-b border-line">
-                    <td className="py-3 px-5 font-mono text-xs">
-                      {p.id.toUpperCase()}
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2.5">
+                    <td className="py-3 px-5">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                          className="w-9 h-9 rounded-[9px] flex items-center justify-center"
+                          className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
                           style={{
                             background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
                           }}
                         >
                           <ProductGlyph kind={visual.glyph} palette={visual.palette} size={22} />
                         </div>
-                        <span className="font-medium">{p.title}</span>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{p.title}</div>
+                          <div className="text-[11px] text-ink-3">{p.categoryName}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-center font-semibold">{p.stock}</td>
+                    <td className={`py-3 px-3 text-center font-semibold ${p.stock === 0 ? "text-danger" : ""}`}>
+                      {p.stock}
+                    </td>
                     <td className="py-3 px-3">
-                      <Pill tone={p.stock === 0 ? "danger" : "sage"} size="sm">
-                        {label}
+                      <Pill tone={isActive ? "sage" : "warn"} size="sm">
+                        {isActive ? "Activo" : "Pausado"}
                       </Pill>
                     </td>
                     <td className="py-3 px-3">
@@ -89,7 +90,7 @@ export function StockScreen({
               })}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-12 px-5 text-center text-ink-3">
+                  <td colSpan={4} className="py-12 px-5 text-center text-ink-3">
                     No hay productos que coincidan con tu búsqueda.
                   </td>
                 </tr>
@@ -99,8 +100,8 @@ export function StockScreen({
         </div>
         <div className="grid gap-3 p-3 lgx:hidden">
           {products.map((p) => {
-            const label = p.stock === 0 ? "Sin stock" : "Disponible";
             const visual = getProductVisual(p.categoryName);
+            const isActive = p.status === "active";
             return (
               <div
                 key={p.id}
@@ -116,19 +117,19 @@ export function StockScreen({
                     <ProductGlyph kind={visual.glyph} palette={visual.palette} size={30} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold">{p.title}</div>
-                    <div className="text-[11px] text-ink-3 font-mono mt-0.5">
-                      {p.id.toUpperCase()}
-                    </div>
+                    <div className="text-sm font-semibold truncate">{p.title}</div>
+                    <div className="text-[11px] text-ink-3 mt-0.5">{p.categoryName}</div>
                   </div>
-                  <Pill tone={p.stock === 0 ? "danger" : "sage"} size="sm">
-                    {label}
+                  <Pill tone={isActive ? "sage" : "warn"} size="sm">
+                    {isActive ? "Activo" : "Pausado"}
                   </Pill>
                 </div>
                 <div className="flex items-center justify-between bg-cream rounded-xl p-2.5">
                   <div>
                     <div className="text-[10px] text-ink-3">Stock</div>
-                    <div className="text-base font-bold">{p.stock}</div>
+                    <div className={`text-base font-bold ${p.stock === 0 ? "text-danger" : ""}`}>
+                      {p.stock}
+                    </div>
                   </div>
                   <StockRowEditor productId={p.id} initialStock={p.stock} productName={p.title} />
                 </div>

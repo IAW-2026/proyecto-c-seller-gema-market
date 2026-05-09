@@ -7,11 +7,10 @@ import {
 } from "./skeleton-parts";
 
 const STOCK_COLS = [
-  { width: "18%" },
-  { width: "44%" },
-  { width: "12%", align: "center" as const },
-  { width: "14%" },
-  { width: "12%", align: "right" as const },
+  { width: "54%" },
+  { width: "14%", align: "center" as const },
+  { width: "16%" },
+  { width: "16%", align: "right" as const },
 ];
 
 export function StockSkeleton() {

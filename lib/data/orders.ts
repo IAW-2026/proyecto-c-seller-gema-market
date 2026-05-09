@@ -5,10 +5,11 @@ import type {
   Order,
   OrderDateRange,
   OrderFilters,
+  OrderWithJoins,
   Page,
   PageSize,
 } from "@/types/domain";
-import { nextOrderStatus, PAGE_SIZES } from "@/types/domain";
+import { DEFAULT_PAGE_SIZE, nextOrderStatus, PAGE_SIZES } from "@/types/domain";
 
 type SaleRow = Prisma.SaleGetPayload<Record<string, never>>;
 
@@ -17,7 +18,34 @@ function toOrder(row: SaleRow): Order {
   return { ...rest, total: total.toNumber(), fee: fee.toNumber() };
 }
 
-export const DEFAULT_ORDERS_PAGE_SIZE: PageSize = 10;
+const saleWithProductSelect = {
+  id: true,
+  orderId: true,
+  productId: true,
+  sellerId: true,
+  buyerId: true,
+  paymentId: true,
+  amount: true,
+  total: true,
+  fee: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  product: { select: { title: true } },
+} satisfies Prisma.SaleSelect;
+
+type SaleWithProductRow = Prisma.SaleGetPayload<{ select: typeof saleWithProductSelect }>;
+
+function toOrderWithJoins(row: SaleWithProductRow): OrderWithJoins {
+  const { product, total, fee, ...rest } = row;
+  return {
+    ...rest,
+    total: total.toNumber(),
+    fee: fee.toNumber(),
+    productTitle: product.title,
+  };
+}
+
 
 // ─── Filtros temporales ────────────────────────────────────────────────────
 
@@ -90,9 +118,9 @@ export async function findOwnedOrder(
 
 export async function listSellerOrders(
   filters: OrderFilters = {},
-): Promise<Page<Order>> {
+): Promise<Page<OrderWithJoins>> {
   const where = buildWhere(filters);
-  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_ORDERS_PAGE_SIZE);
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PAGE_SIZE);
   const requested = Math.max(1, Math.floor(filters.page ?? 1));
   const total = await prisma.sale.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -103,8 +131,9 @@ export async function listSellerOrders(
     orderBy: { createdAt: "desc" },
     skip: offset,
     take: pageSize,
+    select: saleWithProductSelect,
   });
-  return { items: rows.map(toOrder), total, page, pageSize };
+  return { items: rows.map(toOrderWithJoins), total, page, pageSize };
 }
 
 export async function countSellerOrdersByStatus(
@@ -131,13 +160,14 @@ export async function countSellerOrdersByStatus(
 export async function getRecentSellerOrders(
   limit: number,
   sellerId?: string,
-): Promise<ReadonlyArray<Order>> {
+): Promise<ReadonlyArray<OrderWithJoins>> {
   const rows = await prisma.sale.findMany({
     where: { AND: [NON_PENDING, sellerId ? { sellerId } : {}] },
     orderBy: { createdAt: "desc" },
     take: limit,
+    select: saleWithProductSelect,
   });
-  return rows.map(toOrder);
+  return rows.map(toOrderWithJoins);
 }
 
 export { nextOrderStatus };

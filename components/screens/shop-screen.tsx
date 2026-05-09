@@ -28,6 +28,7 @@ type FormState = {
   shopName: string;
   city: string;
   bio: string;
+  phone: string;
   street: string;
   number: string;
   apartment: string;
@@ -39,6 +40,7 @@ function toFormState(seller: SellerWithCounts): FormState {
     shopName: seller.shopName,
     city: seller.city,
     bio: seller.bio ?? "",
+    phone: seller.phone,
     street: seller.street,
     number: seller.number,
     apartment: seller.apartment ?? "",
@@ -51,6 +53,7 @@ function toSellerInput(form: FormState): SellerInput {
     shopName: form.shopName,
     city: form.city,
     bio: form.bio,
+    phone: form.phone.trim(),
     street: form.street,
     number: form.number,
     apartment: form.apartment.trim() || undefined,
@@ -209,8 +212,14 @@ export function ShopScreen({ seller }: ShopScreenProps) {
             >
               <ReadonlyField icon="mail" value={seller.email} />
             </Field>
-            <Field label="WhatsApp">
-              <ReadonlyField icon="phone" value={seller.phone} />
+            <Field label="WhatsApp" hint="Visible para los compradores que quieran contactarte.">
+              <Input
+                icon="phone"
+                type="tel"
+                placeholder="+54 11 1234-5678"
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+              />
             </Field>
           </div>
         </Card>

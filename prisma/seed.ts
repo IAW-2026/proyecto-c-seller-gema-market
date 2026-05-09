@@ -27,9 +27,9 @@ async function main() {
   await prisma.seller.create({
     data: {
       id: sellerId,
-      clerkUserId: 'seed_dev_seller',
+      clerkUserId: 'user_3DPo6HmgoTegPypa6iZj1HhOvwF',
       shopName: 'Carpintería Sur',
-      email: 'hola@carpinteriasur.com.ar',
+      email: 'manuelducosp@gmail.com',
       phone: '+54 291 412 5678',
       bio: 'Taller de muebles a medida en Bahía Blanca. Trabajamos con maderas locales desde 2008.',
       city: 'Bahía Blanca',

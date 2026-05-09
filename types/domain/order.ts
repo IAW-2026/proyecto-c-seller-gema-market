@@ -45,6 +45,11 @@ export type Order = {
   updatedAt: Date;
 };
 
+// Vista enriquecida con joins que el data layer compone para listados.
+export type OrderWithJoins = Order & {
+  productTitle: string; // Product.title
+};
+
 // Información adicional del comprador (fuente: Buyer App).
 // Stub hasta implementar la integración inter-app.
 export type BuyerInfo = {

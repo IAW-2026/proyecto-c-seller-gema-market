@@ -8,12 +8,12 @@ import {
 } from "./skeleton-parts";
 
 const ORDERS_COLS = [
-  { width: "16%" },
-  { width: "26%" },
-  { width: "18%" },
-  { width: "16%" },
-  { width: "18%", align: "right" as const },
-  { width: "6%" },
+  { width: "32%" },
+  { width: "22%" },
+  { width: "14%" },
+  { width: "14%" },
+  { width: "14%", align: "right" as const },
+  { width: "4%" },
 ];
 
 export function OrdersSkeleton() {

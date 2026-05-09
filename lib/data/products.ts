@@ -12,9 +12,7 @@ import type {
   SortBy,
   StockSummary,
 } from '@/types/domain';
-import { PAGE_SIZES } from '@/types/domain';
-
-export const DEFAULT_PRODUCTS_PAGE_SIZE: PageSize = 10;
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '@/types/domain';
 
 const productSelect = {
   id: true,
@@ -96,7 +94,7 @@ export async function listProducts(
   filters: ProductFilters = {},
 ): Promise<Page<ProductWithJoins>> {
   const where = buildWhere(filters);
-  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PRODUCTS_PAGE_SIZE);
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PAGE_SIZE);
   const requested = Math.max(1, Math.floor(filters.page ?? 1));
   const total = await prisma.product.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));

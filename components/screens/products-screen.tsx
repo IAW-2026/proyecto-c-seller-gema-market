@@ -68,8 +68,8 @@ export function ProductsScreen({
                         </div>
                         <div>
                           <div className="font-medium">{p.title}</div>
-                          <div className="text-[11px] text-ink-3 font-mono">
-                            {p.id.toUpperCase()}
+                          <div className="text-[11px] text-ink-3">
+                            {p.categoryName}
                           </div>
                         </div>
                       </Link>
@@ -125,8 +125,8 @@ export function ProductsScreen({
                     <div className="text-sm font-semibold leading-[1.25]">
                       {p.title}
                     </div>
-                    <div className="text-[11px] text-ink-3 font-mono mt-[3px]">
-                      {p.id.toUpperCase()}
+                    <div className="text-[11px] text-ink-3 mt-[3px]">
+                      {p.categoryName}
                     </div>
                   </div>
                   <Icon name="chevronRight" size={16} className="text-ink-3 shrink-0" />

@@ -4,28 +4,36 @@ import { countProductsByStatus, getTopProducts } from "@/lib/data/products";
 import { getRecentSellerOrders } from "@/lib/data/orders";
 import type { DashboardData } from "@/types/domain";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SALES_WINDOW_DAYS = 30;
+
 export async function getDashboardData(sellerId: string): Promise<DashboardData> {
-  const activeOrdersWhere = {
+  const salesWindowCutoff = new Date(Date.now() - SALES_WINDOW_DAYS * DAY_MS);
+  const recentOrdersWhere = {
     sellerId,
     status: { not: "pending_payment" as const },
+    createdAt: { gte: salesWindowCutoff },
   };
 
-  const [productCounts, orderAgg, orderCount, topProducts, recentOrders] =
+  const [productCounts, recentSalesAgg, orderCount, topProducts, recentOrders] =
     await Promise.all([
       countProductsByStatus(sellerId),
-      prisma.sale.aggregate({ where: activeOrdersWhere, _sum: { total: true } }),
-      prisma.sale.count({ where: activeOrdersWhere }),
+      prisma.sale.aggregate({
+        where: recentOrdersWhere,
+        _sum: { total: true },
+      }),
+      prisma.sale.count({ where: recentOrdersWhere }),
       getTopProducts(4, sellerId),
       getRecentSellerOrders(4, sellerId),
     ]);
 
-  const monthlySales = orderAgg._sum.total?.toNumber() ?? 0;
+  const recentSales = recentSalesAgg._sum.total?.toNumber() ?? 0;
 
   return {
     stats: [
-      { id: "monthlySales",   value: monthlySales,         delta: 12,   trend: "up" },
-      { id: "orders",         value: orderCount,           delta: 4,    trend: "up" },
-      { id: "activeProducts", value: productCounts.active, delta: null, trend: "flat" },
+      { id: "monthlySales",   value: recentSales },
+      { id: "orders",         value: orderCount },
+      { id: "activeProducts", value: productCounts.active },
     ],
     topProducts,
     recentOrders,
