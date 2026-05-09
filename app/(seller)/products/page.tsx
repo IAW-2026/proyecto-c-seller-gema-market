@@ -14,7 +14,16 @@ export const metadata: Metadata = {
   title: "Publicaciones",
 };
 
-const VALID_SORTS: ReadonlyArray<string> = ["price_asc", "price_desc", "sales_asc", "sales_desc", "stock_asc", "stock_desc"];
+const VALID_SORTS: ReadonlyArray<string> = [
+  "price_asc",
+  "price_desc",
+  "sales_asc",
+  "sales_desc",
+  "stock_asc",
+  "stock_desc",
+  "created_asc",
+  "created_desc",
+];
 const VALID_STOCK_FILTERS: ReadonlyArray<string> = ["all", "low", "out"];
 
 type SearchParams = Promise<{

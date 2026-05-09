@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
+import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/lib/actions/products";
 import type { Category, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
@@ -65,41 +67,43 @@ export function ProductEditScreen({
   categories,
   onSaveAction,
 }: ProductEditScreenProps) {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(() =>
     toFormState(product, categories[0]?.id ?? ""),
   );
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const save = useActionFeedback();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleSave = async () => {
-    setSaveError(null);
-    setIsSaving(true);
-    try {
-      await onSaveAction({
-        id: product?.id,
-        title: form.title,
-        description: form.description,
-        price: Number.parseFloat(form.price) || 0,
-        currency: "ARS",
-        categoryId: form.categoryId,
-        stock: Number.parseInt(form.stock, 10) || 0,
-        weight: Number.parseFloat(form.weight) || 0,
-        height: Number.parseFloat(form.height) || 0,
-        width: Number.parseFloat(form.width) || 0,
-        depth: Number.parseFloat(form.depth) || 0,
-        material: form.material,
-        color: form.color,
-        condition: form.condition,
-        images: form.images,
-        status: form.status,
-      });
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Error al guardar");
-    } finally {
-      setIsSaving(false);
-    }
+  const isNew = mode === "new";
+
+  const handleSave = () => {
+    save.run(
+      () =>
+        onSaveAction({
+          id: product?.id,
+          title: form.title,
+          description: form.description,
+          price: Number.parseFloat(form.price) || 0,
+          currency: "ARS",
+          categoryId: form.categoryId,
+          stock: Number.parseInt(form.stock, 10) || 0,
+          weight: Number.parseFloat(form.weight) || 0,
+          height: Number.parseFloat(form.height) || 0,
+          width: Number.parseFloat(form.width) || 0,
+          depth: Number.parseFloat(form.depth) || 0,
+          material: form.material,
+          color: form.color,
+          condition: form.condition,
+          images: form.images,
+          status: form.status,
+        }),
+      {
+        onSuccess: () => {
+          if (isNew) router.push("/products");
+        },
+      },
+    );
   };
 
   const handleUpload = async (files: FileList | null) => {
@@ -129,9 +133,16 @@ export function ProductEditScreen({
     }));
   };
 
-  const isNew = mode === "new";
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
   const visual = getProductVisual(selectedCategory?.name);
+
+  const saveLabel = save.isSuccess
+    ? isNew
+      ? "Publicación creada"
+      : "Cambios guardados"
+    : save.isPending
+      ? "Guardando…"
+      : "Guardar";
 
   return (
     <>
@@ -143,15 +154,22 @@ export function ProductEditScreen({
             <Button href="/products" variant="secondary">
               Cancelar
             </Button>
-            <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
-              Guardar
+            <Button
+              variant={save.isSuccess ? "success" : "accent"}
+              icon="check"
+              onClick={handleSave}
+              disabled={save.isPending}
+              className={save.isSuccess ? "pointer-events-none" : ""}
+              aria-live="polite"
+            >
+              {saveLabel}
             </Button>
           </div>
         }
       />
-      {saveError && (
+      {save.error && (
         <div className="mx-4 mt-4 lgx:mx-7 px-4 py-3 rounded-xl bg-danger/10 text-danger text-[13px]">
-          {saveError}
+          {save.error}
         </div>
       )}
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">

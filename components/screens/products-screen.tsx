@@ -5,7 +5,7 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import type { TabItem } from "@/components/ui/tabs";
-import { fmtARS } from "@/lib/ui/format";
+import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
 import { getProductVisual } from "@/lib/ui/ui-config";
 import type { ProductWithJoins } from "@/types/domain";
 import { ProductsToolbar } from "./products-toolbar";
@@ -45,6 +45,7 @@ export function ProductsScreen({
                   <th className="py-2.5 px-3">Precio</th>
                   <th className="py-2.5 px-3">Stock</th>
                   <th className="py-2.5 px-3">Ventas</th>
+                  <th className="py-2.5 px-3">Publicado</th>
                   <th className="py-2.5 px-5"></th>
                 </tr>
               </thead>
@@ -81,6 +82,9 @@ export function ProductsScreen({
                       </Pill>
                     </td>
                     <td className="py-3 px-3 text-ink-3">{p.salesCount}</td>
+                    <td className="py-3 px-3 text-ink-3 whitespace-nowrap">
+                      {fmtOrderDate(p.createdAt)}
+                    </td>
                     <td className="py-3 px-5">
                       <Link
                         href={`/products/${p.id}`}
@@ -95,7 +99,7 @@ export function ProductsScreen({
                 })}
                 {products.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-12 px-5 text-center text-ink-3">
+                    <td colSpan={6} className="py-12 px-5 text-center text-ink-3">
                       No hay publicaciones que coincidan con tu búsqueda.
                     </td>
                   </tr>
@@ -126,7 +130,7 @@ export function ProductsScreen({
                       {p.title}
                     </div>
                     <div className="text-[11px] text-ink-3 mt-[3px]">
-                      {p.categoryName}
+                      {p.categoryName} · {fmtOrderDate(p.createdAt)}
                     </div>
                   </div>
                   <Icon name="chevronRight" size={16} className="text-ink-3 shrink-0" />

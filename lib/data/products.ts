@@ -80,6 +80,8 @@ function buildOrderBy(
     case 'sales_desc': return { sales: { _count: 'desc' } };
     case 'stock_asc':  return { stock: 'asc' };
     case 'stock_desc': return { stock: 'desc' };
+    case 'created_asc':  return { createdAt: 'asc' };
+    case 'created_desc': return { createdAt: 'desc' };
     default:           return { createdAt: 'desc' };
   }
 }

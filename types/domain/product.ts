@@ -62,7 +62,9 @@ export type SortBy =
   | "sales_asc"
   | "sales_desc"
   | "stock_asc"
-  | "stock_desc";
+  | "stock_desc"
+  | "created_asc"
+  | "created_desc";
 
 export type StockFilter = "all" | "low" | "out";
 

@@ -13,7 +13,8 @@ export type ButtonVariant =
   | "ghost"
   | "danger"
   | "accent"
-  | "soft";
+  | "soft"
+  | "success";
 
 export type ButtonSize = "sm" | "md" | "lg";
 
@@ -51,6 +52,7 @@ const VARIANT_MAP: Record<ButtonVariant, string> = {
   danger: "bg-danger text-paper border border-danger",
   accent: "bg-clay text-paper border border-clay",
   soft: "bg-bone text-olive border border-transparent",
+  success: "bg-success text-paper border border-success",
 };
 
 function buildClassName({
