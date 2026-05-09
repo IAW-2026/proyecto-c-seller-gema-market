@@ -15,6 +15,7 @@ import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/lib/actions/products";
 import type { Category, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
+import { DeleteProductButton } from "./delete-product-button";
 
 type Mode = "new" | "edit";
 
@@ -391,6 +392,35 @@ export function ProductEditScreen({
           </Card>
         </div>
       </div>
+
+      {!isNew && product && (
+        <Card padding={0} className="mt-6 border-danger/30">
+          <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-danger/10 text-danger inline-flex items-center justify-center shrink-0">
+                <Icon name="alert" size={20} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="m-0 text-[15px] font-semibold text-danger">
+                  Zona de peligro
+                </h3>
+                <p className="m-0 mt-1 text-[13px] text-ink-3 leading-relaxed">
+                  Eliminar la publicación es permanente. Si solo querés ocultarla,
+                  cambiá su estado a “Pausada”.
+                </p>
+              </div>
+            </div>
+            <div className="sm:shrink-0">
+              <DeleteProductButton
+                productId={product.id}
+                productName={product.title}
+                variant="full"
+                redirectTo="/products"
+              />
+            </div>
+          </div>
+        </Card>
+      )}
       </div>
     </>
   );

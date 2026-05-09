@@ -98,6 +98,11 @@ model Product {
   stock        Int              @default(0)
   status       ProductStatus    @default(active)
   images       Json             @default("[]")
+  // Soft delete: null mientras la publicación esté viva. Cuando el seller la
+  // elimina, se setea con timestamp y la publicación deja de aparecer en el
+  // catálogo, pero el row sobrevive para preservar las ventas/reservas
+  // históricas que la referencian.
+  deletedAt    DateTime?
   seller       Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   category     Categoria        @relation(fields: [categoryId], references: [id])
   sales        Sale[]
@@ -106,6 +111,7 @@ model Product {
   updatedAt    DateTime         @updatedAt
 
   @@index([sellerId, status])
+  @@index([sellerId, deletedAt])
   @@index([title])
 }
 

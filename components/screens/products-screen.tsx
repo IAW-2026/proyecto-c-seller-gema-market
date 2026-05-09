@@ -8,6 +8,7 @@ import type { TabItem } from "@/components/ui/tabs";
 import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
 import { getProductVisual } from "@/lib/ui/ui-config";
 import type { ProductWithJoins } from "@/types/domain";
+import { DeleteProductButton } from "./delete-product-button";
 import { ProductsToolbar } from "./products-toolbar";
 
 export type ProductsScreenProps = {
@@ -86,13 +87,20 @@ export function ProductsScreen({
                       {fmtOrderDate(p.createdAt)}
                     </td>
                     <td className="py-3 px-5">
-                      <Link
-                        href={`/products/${p.id}`}
-                        className="w-8 h-8 rounded-full bg-bone inline-flex items-center justify-center"
-                        aria-label={`Editar ${p.title}`}
-                      >
-                        <Icon name="edit" size={14} />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/products/${p.id}`}
+                          className="w-8 h-8 rounded-full bg-bone inline-flex items-center justify-center hover:bg-[#e8e2d9] transition-colors"
+                          aria-label={`Editar ${p.title}`}
+                        >
+                          <Icon name="edit" size={14} />
+                        </Link>
+                        <DeleteProductButton
+                          productId={p.id}
+                          productName={p.title}
+                          variant="icon"
+                        />
+                      </div>
                     </td>
                   </tr>
                   );
@@ -111,47 +119,58 @@ export function ProductsScreen({
             {products.map((p) => {
               const visual = getProductVisual(p.categoryName);
               return (
-                <Link
+                <div
                   key={p.id}
-                  href={`/products/${p.id}`}
-                  className="w-full text-left bg-paper border border-line rounded-2xl p-3 block"
+                  className="relative bg-paper border border-line rounded-2xl p-3"
                 >
-                <div className="flex gap-3 items-center">
-                  <div
-                    className="w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                    }}
+                  <Link
+                    href={`/products/${p.id}`}
+                    className="block"
+                    aria-label={`Editar ${p.title}`}
                   >
-                    <ProductGlyph kind={visual.glyph} palette={visual.palette} size={32} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold leading-[1.25]">
-                      {p.title}
+                    <div className="flex gap-3 items-center pr-10">
+                      <div
+                        className="w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
+                        }}
+                      >
+                        <ProductGlyph kind={visual.glyph} palette={visual.palette} size={32} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold leading-[1.25]">
+                          {p.title}
+                        </div>
+                        <div className="text-[11px] text-ink-3 mt-[3px]">
+                          {p.categoryName} · {fmtOrderDate(p.createdAt)}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-ink-3 mt-[3px]">
-                      {p.categoryName} · {fmtOrderDate(p.createdAt)}
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      <div className="bg-cream rounded-xl p-2.5">
+                        <div className="text-[10px] text-ink-3">Precio</div>
+                        <div className="text-[13px] font-bold">{fmtARS(p.price)}</div>
+                      </div>
+                      <div className="bg-cream rounded-xl p-2.5">
+                        <div className="text-[10px] text-ink-3">Stock</div>
+                        <Pill size="sm" tone={p.stock < 5 ? "warn" : "sage"}>
+                          {p.stock}
+                        </Pill>
+                      </div>
+                      <div className="bg-cream rounded-xl p-2.5">
+                        <div className="text-[10px] text-ink-3">Ventas</div>
+                        <div className="text-[13px] font-bold">{p.salesCount}</div>
+                      </div>
                     </div>
-                  </div>
-                  <Icon name="chevronRight" size={16} className="text-ink-3 shrink-0" />
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  <div className="bg-cream rounded-xl p-2.5">
-                    <div className="text-[10px] text-ink-3">Precio</div>
-                    <div className="text-[13px] font-bold">{fmtARS(p.price)}</div>
-                  </div>
-                  <div className="bg-cream rounded-xl p-2.5">
-                    <div className="text-[10px] text-ink-3">Stock</div>
-                    <Pill size="sm" tone={p.stock < 5 ? "warn" : "sage"}>
-                      {p.stock}
-                    </Pill>
-                  </div>
-                  <div className="bg-cream rounded-xl p-2.5">
-                    <div className="text-[10px] text-ink-3">Ventas</div>
-                    <div className="text-[13px] font-bold">{p.salesCount}</div>
+                  </Link>
+                  <div className="absolute top-2.5 right-2.5">
+                    <DeleteProductButton
+                      productId={p.id}
+                      productName={p.title}
+                      variant="icon"
+                    />
                   </div>
                 </div>
-                </Link>
               );
             })}
             {products.length === 0 && (
