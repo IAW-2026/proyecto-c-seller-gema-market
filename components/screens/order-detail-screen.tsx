@@ -87,7 +87,7 @@ export function OrderDetailScreen({
                   <div className="flex-1 min-w-0">
                     <div className="font-medium">{product.title}</div>
                     <div className="text-xs text-ink-3 font-mono">
-                      SKU-{product.id.toUpperCase()} · 1 unidad
+                      {product.id.toUpperCase()} · 1 unidad
                     </div>
                   </div>
                   <div className="font-semibold max-[900px]:w-full max-[900px]:text-left">
@@ -125,7 +125,6 @@ export function OrderDetailScreen({
             <div className="text-xs text-ink-3">
               Tracking: <span className="font-mono">{shippingInfo.trackingCode}</span>
             </div>
-            <div className="text-xs text-ink-3 mt-1">Repartidor: {shippingInfo.carrier}</div>
           </Card>
 
           <Card padding={20}>
