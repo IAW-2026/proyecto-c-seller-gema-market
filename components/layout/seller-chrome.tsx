@@ -1,17 +1,39 @@
 import { Suspense, type ReactNode } from "react";
+import Image from "next/image";
 import { UserButton } from "@clerk/nextjs";
-import { Icon } from "@/components/ui/icon";
 import { BRAND } from "@/lib/ui/branding";
+import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { SellerNav } from "./seller-nav";
+
+async function UserCardEmail() {
+  const seller = await getCurrentSeller();
+  if (!seller?.email) return null;
+  return (
+    <div className="relative flex items-center gap-2.5 p-3 pointer-events-none">
+      <div className="w-9 h-9 shrink-0" aria-hidden />
+      <span
+        className="flex-1 min-w-0 text-xs text-ink-2 truncate"
+        title={seller.email}
+      >
+        {seller.email}
+      </span>
+    </div>
+  );
+}
 
 export function SellerChrome({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-cream">
       <aside className="hidden lgx:flex lgx:flex-col w-[240px] bg-paper border-r border-line px-3.5 py-5 shrink-0 sticky top-0 h-screen lgx:fixed lgx:left-0 lgx:top-0 lgx:bottom-0 lgx:z-[60]">
         <div className="px-1.5 pb-5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-[10px] bg-cocoa text-paper flex items-center justify-center">
-            <Icon name="tag" size={16} />
-          </div>
+          <Image
+            src="/logo.png"
+            alt={`${BRAND.platform} logo`}
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-[10px]"
+            priority
+          />
           <div>
             <div className="text-sm font-semibold tracking-[-0.01em]">
               {BRAND.platform}
@@ -20,11 +42,28 @@ export function SellerChrome({ children }: { children: ReactNode }) {
           </div>
         </div>
         <Suspense><SellerNav variant="sidebar" /></Suspense>
-        <div className="mt-auto p-3 bg-bone rounded-r2 flex items-center gap-2.5">
+        <div className="mt-auto relative bg-bone rounded-r2 min-w-0">
           <UserButton
-            appearance={{ elements: { avatarBox: { width: 36, height: 36 } } }}
-            showName
+            appearance={{
+              elements: {
+                rootBox: {
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                },
+                userButtonTrigger: {
+                  width: "100%",
+                  height: "100%",
+                  padding: "12px",
+                  justifyContent: "flex-start",
+                  borderRadius: "inherit",
+                },
+                avatarBox: { width: 36, height: 36, flexShrink: 0 },
+              },
+            }}
           />
+          <Suspense fallback={null}><UserCardEmail /></Suspense>
         </div>
       </aside>
 
