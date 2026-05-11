@@ -1,52 +1,53 @@
 import 'server-only';
+import { Prisma } from '@/lib/generated/prisma/client';
+import { prisma } from '@/lib/db';
 import type {
   Order,
   OrderDateRange,
   OrderFilters,
+  OrderWithJoins,
   Page,
   PageSize,
 } from "@/types/domain";
-import { nextOrderStatus, PAGE_SIZES } from "@/types/domain";
-import { fmtOrderDate } from "@/lib/ui/format";
+import { DEFAULT_PAGE_SIZE, nextOrderStatus, PAGE_SIZES } from "@/types/domain";
 
-type OrderSeed = Omit<Order, "date">;
+type SaleRow = Prisma.SaleGetPayload<Record<string, never>>;
 
-// createdAt es la fuente de verdad (fuente: venta.created_at).
-// `date` se computa a partir de createdAt en buildOrder.
-const ORDER_SEEDS: ReadonlyArray<OrderSeed> = [
-  { id: "OR-2841", orderId: "ord-001", sellerId: "s2", createdAt: "2026-05-02T10:15:00Z", status: "shipping",        productId: "p1", amount: 1, total: 113500, fee: 6810, buyer: "Lucía M.",   buyerId: "buyer-001", address: "Av. Alem 1253, Bahía Blanca",    trackId: "TRK-9821", paymentId: "pay-001" },
-  { id: "OR-2840", orderId: "ord-002", sellerId: "s2", createdAt: "2026-04-28T14:42:00Z", status: "paid",            productId: "p2", amount: 1, total:  24500, fee: 1470, buyer: "Mateo R.",   buyerId: "buyer-002", address: "Donado 845, B. Blanca",          trackId: "TRK-9820", paymentId: "pay-002" },
-  { id: "OR-2839", orderId: "ord-003", sellerId: "s2", createdAt: "2026-04-20T09:05:00Z", status: "delivered",       productId: "p6", amount: 1, total:  67400, fee: 4044, buyer: "Sofía G.",   buyerId: "buyer-003", address: "Brown 510, B. Blanca",           trackId: "TRK-9819", paymentId: "pay-003" },
-  { id: "OR-2838", orderId: "ord-004", sellerId: "s2", createdAt: "2026-04-18T18:21:00Z", status: "pending_payment", productId: "p3", amount: 1, total:  18900, fee: 1134, buyer: "Tomás P.",   buyerId: "buyer-004", address: "Soler 2230, B. Blanca",          trackId: "TRK-9818", paymentId: "pay-004" },
-  { id: "OR-2837", orderId: "ord-005", sellerId: "s2", createdAt: "2026-02-10T11:30:00Z", status: "delivered",       productId: "p8", amount: 1, total:  41200, fee: 2472, buyer: "Camila V.",  buyerId: "buyer-005", address: "O'Higgins 1100, B. Blanca",      trackId: "TRK-9817", paymentId: "pay-005" },
-];
-
-function buildOrder(seed: OrderSeed): Order {
-  return { ...seed, date: fmtOrderDate(seed.createdAt) };
+function toOrder(row: SaleRow): Order {
+  const { total, fee, ...rest } = row;
+  return { ...rest, total: total.toNumber(), fee: fee.toNumber() };
 }
 
-// Las mutaciones del mock (advanceOrderStatus) requieren un array mutable.
-// En el backend real, el data layer hará UPDATE en venta.
-const ORDERS: Order[] = ORDER_SEEDS.map(buildOrder);
+const saleWithProductSelect = {
+  id: true,
+  orderId: true,
+  productId: true,
+  sellerId: true,
+  buyerId: true,
+  buyerName: true,
+  paymentId: true,
+  amount: true,
+  total: true,
+  fee: true,
+  status: true,
+  trackingCode: true,
+  createdAt: true,
+  updatedAt: true,
+  product: { select: { title: true } },
+} satisfies Prisma.SaleSelect;
 
+type SaleWithProductRow = Prisma.SaleGetPayload<{ select: typeof saleWithProductSelect }>;
 
-export function getOrders(): ReadonlyArray<Order> {
-  return ORDERS;
+function toOrderWithJoins(row: SaleWithProductRow): OrderWithJoins {
+  const { product, total, fee, ...rest } = row;
+  return {
+    ...rest,
+    total: total.toNumber(),
+    fee: fee.toNumber(),
+    productTitle: product.title,
+  };
 }
 
-export function findOrder(id: string): Order | undefined {
-  return ORDERS.find((o) => o.id === id);
-}
-
-// Excluye explícitamente las ventas que aún no fueron pagadas:
-// el seller sólo opera órdenes con pago confirmado.
-export function getActiveSellerOrders(sellerId?: string): ReadonlyArray<Order> {
-  return ORDERS.filter(
-    (o) => o.status !== "pending_payment" && (sellerId === undefined || o.sellerId === sellerId),
-  );
-}
-
-export const DEFAULT_ORDERS_PAGE_SIZE: PageSize = 10;
 
 // ─── Filtros temporales ────────────────────────────────────────────────────
 
@@ -68,31 +69,29 @@ const RANGE_TO_DAYS: Readonly<Record<Exclude<OrderDateRange, "all">, number>> = 
   "90d": 90,
 };
 
-function isWithinRange(createdAt: string, range: OrderDateRange, now: Date): boolean {
-  if (range === "all") return true;
-  const created = new Date(createdAt).getTime();
-  if (Number.isNaN(created)) return false;
-  const cutoff = now.getTime() - RANGE_TO_DAYS[range] * 24 * 60 * 60 * 1000;
-  return created >= cutoff;
+function dateRangeCutoff(range: OrderDateRange): Date | undefined {
+  if (range === "all") return undefined;
+  return new Date(Date.now() - RANGE_TO_DAYS[range] * 24 * 60 * 60 * 1000);
 }
 
-function filterOrders(filters: OrderFilters): ReadonlyArray<Order> {
+function buildWhere(filters: OrderFilters): Prisma.SaleWhereInput {
   const status = filters.status ?? "todos";
-  const dateRange = filters.dateRange ?? DEFAULT_ORDER_DATE_RANGE;
-  const normalizedQuery = filters.query?.trim().toLowerCase();
-  const now = new Date();
+  const cutoff = dateRangeCutoff(filters.dateRange ?? DEFAULT_ORDER_DATE_RANGE);
+  const query = filters.query?.trim();
 
-  return getActiveSellerOrders(filters.sellerId).filter((order) => {
-    const matchesStatus = status === "todos" ? true : order.status === status;
-    if (!matchesStatus) return false;
-    if (!isWithinRange(order.createdAt, dateRange, now)) return false;
-    if (!normalizedQuery) return true;
-    return (
-      order.id.toLowerCase().includes(normalizedQuery) ||
-      order.buyer.toLowerCase().includes(normalizedQuery) ||
-      order.trackId.toLowerCase().includes(normalizedQuery)
-    );
-  });
+  const conditions: Prisma.SaleWhereInput[] = [];
+  if (status !== "todos") conditions.push({ status });
+  if (filters.sellerId) conditions.push({ sellerId: filters.sellerId });
+  if (cutoff) conditions.push({ createdAt: { gte: cutoff } });
+  if (query) {
+    conditions.push({
+      OR: [
+        { product: { title: { contains: query, mode: "insensitive" } } },
+        { buyerName: { contains: query, mode: "insensitive" } },
+      ],
+    });
+  }
+  return { AND: conditions };
 }
 
 function resolvePageSize(value: number | undefined, fallback: PageSize): PageSize {
@@ -101,44 +100,78 @@ function resolvePageSize(value: number | undefined, fallback: PageSize): PageSiz
     : fallback;
 }
 
-export function listSellerOrders(filters: OrderFilters = {}): Page<Order> {
-  const all = filterOrders(filters);
-  const total = all.length;
-  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_ORDERS_PAGE_SIZE);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+// Lookup scopeado al seller dueño. Es la única forma de leer un pedido en
+// el panel: nunca queremos exponer datos del comprador (envío, pago) por
+// adivinar el `id` en la URL.
+export async function findOwnedOrder(
+  id: string,
+  sellerId: string,
+): Promise<Order | null> {
+  const row = await prisma.sale.findFirst({ where: { id, sellerId } });
+  return row ? toOrder(row) : null;
+}
+
+export async function listSellerOrders(
+  filters: OrderFilters = {},
+): Promise<Page<OrderWithJoins>> {
+  const where = buildWhere(filters);
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PAGE_SIZE);
   const requested = Math.max(1, Math.floor(filters.page ?? 1));
+  const total = await prisma.sale.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const page = Math.min(requested, totalPages);
   const offset = (page - 1) * pageSize;
-  const items = all.slice(offset, offset + pageSize);
-  return { items, total, page, pageSize };
+  const rows = await prisma.sale.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip: offset,
+    take: pageSize,
+    select: saleWithProductSelect,
+  });
+  return { items: rows.map(toOrderWithJoins), total, page, pageSize };
 }
 
-export function countSellerOrdersByStatus(sellerId?: string): Record<
-  "todos" | "paid" | "shipping" | "delivered",
-  number
-> {
-  const orders = getActiveSellerOrders(sellerId);
-  return {
-    todos:    orders.length,
-    paid:     orders.filter((o) => o.status === "paid").length,
-    shipping: orders.filter((o) => o.status === "shipping").length,
-    delivered: orders.filter((o) => o.status === "delivered").length,
-  };
+export async function countSellerOrdersByStatus(
+  sellerId?: string,
+): Promise<Record<"todos" | "paid" | "shipping" | "delivered", number>> {
+  const groups = await prisma.sale.groupBy({
+    by: ["status"],
+    where: sellerId ? { sellerId } : undefined,
+    _count: { _all: true },
+  });
+  const out = { todos: 0, paid: 0, shipping: 0, delivered: 0 };
+  for (const g of groups) {
+    out.todos += g._count._all;
+    if (g.status === "paid") out.paid = g._count._all;
+    else if (g.status === "shipping") out.shipping = g._count._all;
+    else if (g.status === "delivered") out.delivered = g._count._all;
+  }
+  return out;
 }
 
-export function getRecentSellerOrders(limit: number, sellerId?: string): ReadonlyArray<Order> {
-  return getActiveSellerOrders(sellerId).slice(0, limit);
+export async function getRecentSellerOrders(
+  limit: number,
+  sellerId?: string,
+): Promise<ReadonlyArray<OrderWithJoins>> {
+  const rows = await prisma.sale.findMany({
+    where: sellerId ? { sellerId } : undefined,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: saleWithProductSelect,
+  });
+  return rows.map(toOrderWithJoins);
 }
-
-// ─── Transición de estado ─────────────────────────────────────────────────
 
 export { nextOrderStatus };
 
-export async function advanceOrderStatus(orderId: string): Promise<Order> {
-  const idx = ORDERS.findIndex((o) => o.id === orderId);
-  const current = idx === -1 ? undefined : ORDERS[idx];
+export async function advanceOrderStatus(
+  orderId: string,
+  sellerId: string,
+): Promise<Order> {
+  // El check por `sellerId` previene que un seller avance pedidos ajenos.
+  const current = await prisma.sale.findFirst({ where: { id: orderId, sellerId } });
   if (!current) {
-    throw new Error(`advanceOrderStatus: orden ${orderId} no existe`);
+    throw new Error(`advanceOrderStatus: pedido ${orderId} no encontrado`);
   }
   const next = nextOrderStatus(current.status);
   if (!next) {
@@ -146,8 +179,9 @@ export async function advanceOrderStatus(orderId: string): Promise<Order> {
       `advanceOrderStatus: no hay siguiente estado desde ${current.status}`,
     );
   }
-  // TODO: implementar con Prisma — UPDATE venta SET status = next WHERE id = orderId
-  const updated: Order = { ...current, status: next };
-  ORDERS[idx] = updated;
-  return updated;
+  const updated = await prisma.sale.update({
+    where: { id: orderId },
+    data: { status: next },
+  });
+  return toOrder(updated);
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
-import { updateProductStockAction } from "@/app/products/actions";
+import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
+import { updateProductStockAction } from "@/lib/actions/products";
 
 type Props = {
   productId: string;
@@ -14,28 +15,27 @@ export function StockRowEditor({ productId, initialStock, productName }: Props) 
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(initialStock);
   const [inputVal, setInputVal] = useState(String(initialStock));
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const { isPending, isSuccess, error, run } = useActionFeedback();
 
   const open = () => {
     setInputVal(String(saved));
-    setError(null);
     setEditing(true);
   };
 
   const confirm = () => {
     const parsed = Number.parseInt(inputVal, 10);
     const final = isNaN(parsed) ? 0 : Math.max(0, parsed);
-    setError(null);
-    startTransition(async () => {
-      try {
+    run(
+      async () => {
         await updateProductStockAction(productId, final);
         setSaved(final);
-        setEditing(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al guardar");
-      }
-    });
+      },
+      {
+        onSuccess: () => {
+          setEditing(false);
+        },
+      },
+    );
   };
 
   const adjust = (delta: number) => {
@@ -50,7 +50,16 @@ export function StockRowEditor({ productId, initialStock, productName }: Props) 
 
   return (
     <div className="flex flex-col items-center justify-center h-8">
-      {editing ? (
+      {isSuccess ? (
+        <div
+          className="w-8 h-8 rounded-full bg-success text-paper inline-flex items-center justify-center"
+          role="status"
+          aria-live="polite"
+          aria-label={`Stock actualizado para ${productName}`}
+        >
+          <Icon name="check" size={14} />
+        </div>
+      ) : editing ? (
         <div className="flex items-center gap-1">
           <button
             type="button"

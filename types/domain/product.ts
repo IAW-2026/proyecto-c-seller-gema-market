@@ -1,38 +1,49 @@
 // ─── Producto ──────────────────────────────────────────────────────────────
-
-import type { CategoryId } from "./catalog";
+//
+// Refleja prisma `Product` 1:1. Los joins (sellerShopName, categoryName) y
+// agregaciones (salesCount) viven en `ProductWithJoins`.
 
 export type ProductCondition = "nuevo" | "usado";
+export type ProductStatus = "active" | "paused";
 
 export type Product = {
   id: string;
+  sellerId: string;
   title: string;
   description: string;
-  price: number;
-  seller: string;      // derivado: usuario.shop_name via JOIN
-  sellerId: string;
-  category: CategoryId; // derivado: categoria.slug via JOIN
-  stock: number;
-  salesCount: number;  // computado: count(venta) donde product_id = id
-  weight: number;      // kg
-  height: number;      // cm
-  width: number;       // cm
-  depth: number;       // cm
+  weight: number; // kg
+  height: number; // cm
+  width: number;  // cm
+  depth: number;  // cm
+  condition: ProductCondition;
   material: string;
   color: string;
-  condition: ProductCondition;
-  images: ReadonlyArray<string>; // URLs — producto.images (JSON)
+  price: number;
+  currency: string; // ISO 4217 (ARS por default)
+  categoryId: string;
+  stock: number;
   status: ProductStatus;
+  images: ReadonlyArray<string>;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Vista enriquecida con joins/agregaciones que el data layer compone.
+export type ProductWithJoins = Product & {
+  sellerShopName: string; // Seller.shopName
+  categoryName: string;   // Categoria.name
+  salesCount: number;     // count(Sale)
 };
 
 // Forma de entrada para crear/editar un producto.
 // El data layer es el único que convierte esto a una query de DB.
 export type ProductInput = {
-  id?: string;         // presente en edición, ausente en creación
+  id?: string; // presente en edición, ausente en creación
   title: string;
   description: string;
   price: number;
-  category: CategoryId;
+  currency: string;
+  categoryId: string;
   stock: number;
   weight: number;
   height: number;
@@ -45,15 +56,15 @@ export type ProductInput = {
   status: ProductStatus;
 };
 
-export type ProductStatus = "active" | "paused";
-
 export type SortBy =
   | "price_asc"
   | "price_desc"
   | "sales_asc"
   | "sales_desc"
   | "stock_asc"
-  | "stock_desc";
+  | "stock_desc"
+  | "created_asc"
+  | "created_desc";
 
 export type StockFilter = "all" | "low" | "out";
 

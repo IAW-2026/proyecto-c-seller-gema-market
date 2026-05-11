@@ -1,25 +1,34 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
-import type { Seller, SellerInput } from "@/types/domain";
+import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
+import { saveSellerAction, uploadSellerCoverAction } from "@/lib/actions/shop";
+import type { IconName } from "@/types/ui";
+import type { SellerInput, SellerWithCounts } from "@/types/domain";
+
+function ReadonlyField({ icon, value }: { icon: IconName; value: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-r2 border border-line-2 bg-bone text-sm text-ink">
+      <Icon name={icon} size={14} />
+      <span className="truncate">{value || "—"}</span>
+    </div>
+  );
+}
 
 export type ShopScreenProps = {
-  seller: Seller;
-  onSaveAction: (input: SellerInput) => Promise<void>;
-  onUploadCoverAction: (formData: FormData) => Promise<string>;
+  seller: SellerWithCounts;
 };
 
 type FormState = {
   shopName: string;
   city: string;
   bio: string;
-  email: string;
   phone: string;
   street: string;
   number: string;
@@ -27,17 +36,16 @@ type FormState = {
   postalCode: string;
 };
 
-function toFormState(seller: Seller): FormState {
+function toFormState(seller: SellerWithCounts): FormState {
   return {
     shopName: seller.shopName,
     city: seller.city,
-    bio: seller.bio,
-    email: seller.email,
+    bio: seller.bio ?? "",
     phone: seller.phone,
-    street: seller.address.street,
-    number: seller.address.number,
-    apartment: seller.address.apartment ?? "",
-    postalCode: seller.address.postalCode,
+    street: seller.street,
+    number: seller.number,
+    apartment: seller.apartment ?? "",
+    postalCode: seller.postalCode,
   };
 }
 
@@ -46,27 +54,20 @@ function toSellerInput(form: FormState): SellerInput {
     shopName: form.shopName,
     city: form.city,
     bio: form.bio,
-    email: form.email,
-    phone: form.phone,
-    address: {
-      street: form.street,
-      number: form.number,
-      apartment: form.apartment.trim() || undefined,
-      postalCode: form.postalCode,
-    },
+    phone: form.phone.trim(),
+    street: form.street,
+    number: form.number,
+    apartment: form.apartment.trim() || undefined,
+    postalCode: form.postalCode,
   };
 }
 
-export function ShopScreen({
-  seller,
-  onSaveAction,
-  onUploadCoverAction,
-}: ShopScreenProps) {
+export function ShopScreen({ seller }: ShopScreenProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(seller));
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const save = useActionFeedback();
 
   const stats = [
     { label: "Productos", value: String(seller.productsCount) },
@@ -74,31 +75,32 @@ export function ShopScreen({
   ] as const;
 
   const handleSave = () => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await onSaveAction(toSellerInput(form));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al guardar");
-      }
-    });
+    setCoverError(null);
+    save.run(() => saveSellerAction(toSellerInput(form)));
   };
 
   const handleCoverChange = async (file: File | undefined) => {
     if (!file) return;
-    setError(null);
+    setCoverError(null);
     setIsUploadingCover(true);
     try {
       const fd = new FormData();
       fd.set("file", file);
-      const url = await onUploadCoverAction(fd);
+      const url = await uploadSellerCoverAction(fd);
       setCoverUrl(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir portada");
+      setCoverError(err instanceof Error ? err.message : "Error al subir portada");
     } finally {
       setIsUploadingCover(false);
     }
   };
+
+  const displayError = save.error ?? coverError;
+  const saveLabel = save.isSuccess
+    ? "Guardado correctamente"
+    : save.isPending
+      ? "Guardando…"
+      : "Guardar cambios";
 
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -110,12 +112,14 @@ export function ShopScreen({
         title="Perfil de tienda"
         action={
           <Button
-            variant="accent"
+            variant={save.isSuccess ? "success" : "accent"}
             icon="check"
             onClick={handleSave}
-            disabled={isPending}
+            disabled={save.isPending}
+            className={save.isSuccess ? "pointer-events-none" : ""}
+            aria-live="polite"
           >
-            {isPending ? "Guardando…" : "Guardar cambios"}
+            {saveLabel}
           </Button>
         }
       />
@@ -177,9 +181,9 @@ export function ShopScreen({
         </div>
       </Card>
 
-      {error && (
+      {displayError && (
         <div className="mb-4 p-3 rounded-r2 bg-danger/10 text-danger text-[13px]">
-          {error}
+          {displayError}
         </div>
       )}
 
@@ -206,16 +210,17 @@ export function ShopScreen({
         <Card padding={24}>
           <h3 className="m-0 mb-4 text-[15px] font-semibold">Contacto y operación</h3>
           <div className="flex flex-col gap-3.5">
-            <Field label="Email">
-              <Input
-                icon="mail"
-                value={form.email}
-                onChange={(e) => updateField("email", e.target.value)}
-              />
+            <Field
+              label="Email"
+              hint="Para cambiarlo, usá tu menú de cuenta arriba a la izquierda."
+            >
+              <ReadonlyField icon="mail" value={seller.email} />
             </Field>
-            <Field label="WhatsApp">
+            <Field label="WhatsApp" hint="Visible para los compradores que quieran contactarte.">
               <Input
                 icon="phone"
+                type="tel"
+                placeholder="+54 11 1234-5678"
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
               />

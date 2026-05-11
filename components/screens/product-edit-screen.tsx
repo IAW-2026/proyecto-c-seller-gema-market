@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,9 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
+import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
-import { uploadProductImageAction } from "@/app/products/actions";
-import type { Category, CategoryId, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
+import { uploadProductImageAction } from "@/lib/actions/products";
+import type { Category, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
+import { DeleteProductButton } from "./delete-product-button";
 
 type Mode = "new" | "edit";
 
@@ -21,7 +24,7 @@ type FormState = {
   description: string;
   price: string;
   stock: string;
-  category: CategoryId;
+  categoryId: string;
   weight: string;
   height: string;
   width: string;
@@ -33,13 +36,13 @@ type FormState = {
   images: ReadonlyArray<string>;
 };
 
-function toFormState(product: Product | null): FormState {
+function toFormState(product: Product | null, defaultCategoryId: string): FormState {
   return {
     title: product?.title ?? "",
     description: product?.description ?? "",
     price: product ? String(product.price) : "",
     stock: product ? String(product.stock) : "1",
-    category: product?.category ?? "living",
+    categoryId: product?.categoryId ?? defaultCategoryId,
     weight: product ? String(product.weight) : "",
     height: product ? String(product.height) : "",
     width: product ? String(product.width) : "",
@@ -65,38 +68,43 @@ export function ProductEditScreen({
   categories,
   onSaveAction,
 }: ProductEditScreenProps) {
-  const [form, setForm] = useState<FormState>(() => toFormState(product));
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const router = useRouter();
+  const [form, setForm] = useState<FormState>(() =>
+    toFormState(product, categories[0]?.id ?? ""),
+  );
+  const save = useActionFeedback();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleSave = async () => {
-    setSaveError(null);
-    setIsSaving(true);
-    try {
-      await onSaveAction({
-        id: product?.id,
-        title: form.title,
-        description: form.description,
-        price: Number.parseFloat(form.price) || 0,
-        category: form.category,
-        stock: Number.parseInt(form.stock, 10) || 0,
-        weight: Number.parseFloat(form.weight) || 0,
-        height: Number.parseFloat(form.height) || 0,
-        width: Number.parseFloat(form.width) || 0,
-        depth: Number.parseFloat(form.depth) || 0,
-        material: form.material,
-        color: form.color,
-        condition: form.condition,
-        images: form.images,
-        status: form.status,
-      });
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Error al guardar");
-    } finally {
-      setIsSaving(false);
-    }
+  const isNew = mode === "new";
+
+  const handleSave = () => {
+    save.run(
+      () =>
+        onSaveAction({
+          id: product?.id,
+          title: form.title,
+          description: form.description,
+          price: Number.parseFloat(form.price) || 0,
+          currency: "ARS",
+          categoryId: form.categoryId,
+          stock: Number.parseInt(form.stock, 10) || 0,
+          weight: Number.parseFloat(form.weight) || 0,
+          height: Number.parseFloat(form.height) || 0,
+          width: Number.parseFloat(form.width) || 0,
+          depth: Number.parseFloat(form.depth) || 0,
+          material: form.material,
+          color: form.color,
+          condition: form.condition,
+          images: form.images,
+          status: form.status,
+        }),
+      {
+        onSuccess: () => {
+          if (isNew) router.push("/products");
+        },
+      },
+    );
   };
 
   const handleUpload = async (files: FileList | null) => {
@@ -126,8 +134,16 @@ export function ProductEditScreen({
     }));
   };
 
-  const isNew = mode === "new";
-  const visual = getProductVisual({ category: form.category });
+  const selectedCategory = categories.find((c) => c.id === form.categoryId);
+  const visual = getProductVisual(selectedCategory?.name);
+
+  const saveLabel = save.isSuccess
+    ? isNew
+      ? "Publicación creada"
+      : "Cambios guardados"
+    : save.isPending
+      ? "Guardando…"
+      : "Guardar";
 
   return (
     <>
@@ -139,15 +155,22 @@ export function ProductEditScreen({
             <Button href="/products" variant="secondary">
               Cancelar
             </Button>
-            <Button variant="accent" icon="check" onClick={handleSave} disabled={isSaving}>
-              Guardar
+            <Button
+              variant={save.isSuccess ? "success" : "accent"}
+              icon="check"
+              onClick={handleSave}
+              disabled={save.isPending}
+              className={save.isSuccess ? "pointer-events-none" : ""}
+              aria-live="polite"
+            >
+              {saveLabel}
             </Button>
           </div>
         }
       />
-      {saveError && (
+      {save.error && (
         <div className="mx-4 mt-4 lgx:mx-7 px-4 py-3 rounded-xl bg-danger/10 text-danger text-[13px]">
-          {saveError}
+          {save.error}
         </div>
       )}
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
@@ -176,14 +199,14 @@ export function ProductEditScreen({
               <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
               <Field label="Categoría">
                 <select
-                  value={form.category}
+                  value={form.categoryId}
                   onChange={(e) =>
-                    setForm({ ...form, category: e.target.value as CategoryId })
+                    setForm({ ...form, categoryId: e.target.value })
                   }
                   className="w-full h-[46px] border border-line-2 rounded-r2 px-3.5 bg-paper"
                 >
                   {categories.map((c) => (
-                    <option key={c.id} value={c.slug}>
+                    <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
@@ -369,6 +392,35 @@ export function ProductEditScreen({
           </Card>
         </div>
       </div>
+
+      {!isNew && product && (
+        <Card padding={0} className="mt-6 border-danger/30">
+          <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-danger/10 text-danger inline-flex items-center justify-center shrink-0">
+                <Icon name="alert" size={20} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="m-0 text-[15px] font-semibold text-danger">
+                  Zona de peligro
+                </h3>
+                <p className="m-0 mt-1 text-[13px] text-ink-3 leading-relaxed">
+                  Eliminar la publicación es permanente. Si solo querés ocultarla,
+                  cambiá su estado a “Pausada”.
+                </p>
+              </div>
+            </div>
+            <div className="sm:shrink-0">
+              <DeleteProductButton
+                productId={product.id}
+                productName={product.title}
+                variant="full"
+                redirectTo="/products"
+              />
+            </div>
+          </div>
+        </Card>
+      )}
       </div>
     </>
   );

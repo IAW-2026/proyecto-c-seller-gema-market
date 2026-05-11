@@ -11,14 +11,13 @@ import {
 } from "@/lib/ui/ui-config";
 import { fmtARS } from "@/lib/ui/format";
 import { nextOrderStatus } from "@/lib/data/orders";
-import type { BuyerInfo, Order, PaymentInfo, Product, ShippingInfo } from "@/types/domain";
+import type { BuyerInfo, Order, PaymentInfo, ProductWithJoins } from "@/types/domain";
 import { OrderActionButton } from "./order-action-button";
 
 export type OrderDetailScreenProps = {
   order: Order;
-  product: Product;
+  product: ProductWithJoins;
   buyerInfo: BuyerInfo;
-  shippingInfo: ShippingInfo;
   paymentInfo: PaymentInfo;
 };
 
@@ -26,7 +25,6 @@ export function OrderDetailScreen({
   order,
   product,
   buyerInfo,
-  shippingInfo,
   paymentInfo,
 }: OrderDetailScreenProps) {
   const status = ORDER_STATUS_META[order.status];
@@ -39,7 +37,7 @@ export function OrderDetailScreen({
     <>
       <PageHeader
         subtitle={`Pedido ${order.id}`}
-        title={`Para ${order.buyer}`}
+        title={`Para ${buyerInfo.name}`}
         action={
           showActionSlot ? (
             <OrderActionButton orderId={order.id} status={order.status} />
@@ -73,7 +71,7 @@ export function OrderDetailScreen({
               <h3 className="m-0 text-base font-semibold">Productos</h3>
             </div>
             {(() => {
-              const visual = getProductVisual(product);
+              const visual = getProductVisual(product.categoryName);
               return (
                 <div className="p-4 flex gap-3 items-center border-b border-line max-[900px]:flex-wrap max-[900px]:items-start">
                   <div
@@ -87,7 +85,7 @@ export function OrderDetailScreen({
                   <div className="flex-1 min-w-0">
                     <div className="font-medium">{product.title}</div>
                     <div className="text-xs text-ink-3 font-mono">
-                      SKU-{product.id.toUpperCase()} · 1 unidad
+                      {product.id.toUpperCase()} · 1 unidad
                     </div>
                   </div>
                   <div className="font-semibold max-[900px]:w-full max-[900px]:text-left">
@@ -109,24 +107,24 @@ export function OrderDetailScreen({
               Comprador
             </h4>
             <div className="flex items-center gap-3">
-              <Avatar name={order.buyer} size={44} />
+              <Avatar name={buyerInfo.name} size={44} />
               <div>
-                <div className="font-semibold">{order.buyer}</div>
-                <div className="text-xs text-ink-3">{buyerInfo.previousPurchases} compras previas</div>
+                <div className="font-semibold">{buyerInfo.name}</div>
+                <div className="text-xs text-ink-3">{buyerInfo.effectivePurchases} compras</div>
               </div>
             </div>
           </Card>
 
-          <Card padding={20}>
-            <h4 className="m-0 mb-3 text-[13px] font-semibold text-ink-3 uppercase tracking-[0.06em] font-mono">
-              Envío
-            </h4>
-            <div className="text-sm mb-1.5">{order.address}</div>
-            <div className="text-xs text-ink-3">
-              Tracking: <span className="font-mono">{order.trackId}</span>
-            </div>
-            <div className="text-xs text-ink-3 mt-1">Repartidor: {shippingInfo.carrier}</div>
-          </Card>
+          {order.status === "shipping" && order.trackingCode && (
+            <Card padding={20}>
+              <h4 className="m-0 mb-3 text-[13px] font-semibold text-ink-3 uppercase tracking-[0.06em] font-mono">
+                Envío
+              </h4>
+              <div className="text-xs text-ink-3">
+                Tracking: <span className="font-mono">{order.trackingCode}</span>
+              </div>
+            </Card>
+          )}
 
           <Card padding={20}>
             <h4 className="m-0 mb-3 text-[13px] font-semibold text-ink-3 uppercase tracking-[0.06em] font-mono">

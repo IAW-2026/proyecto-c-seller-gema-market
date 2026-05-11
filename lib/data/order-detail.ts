@@ -1,29 +1,32 @@
 import 'server-only';
-import type { BuyerInfo, Order, PaymentInfo, ShippingInfo } from "@/types/domain";
+import { prisma } from '@/lib/db';
+import type { BuyerInfo, Order, PaymentInfo } from "@/types/domain";
 
-// Stubs — cuando se implemente el backend, estas funciones llaman APIs externas:
-// getBuyerInfo    → GET /api/buyer/users/:buyerId
-// getShippingInfo → GET /api/shipping/envios/:orderId
-// getPaymentInfo  → GET /api/payments/ordenes-de-pago/:paymentId
+export async function getOrderBuyerInfo(order: Order): Promise<BuyerInfo> {
+  // Toda la info del comprador se computa local: el nombre lo persistimos en
+  // `Sale.buyerName` cuando se concreta la compra, y el total de compras se
+  // deriva contando ventas del mismo buyer al mismo seller.
+  const effectivePurchases = await prisma.sale.count({
+    where: {
+      buyerId: order.buyerId,
+      sellerId: order.sellerId,
+    },
+  });
 
-export function getOrderBuyerInfo(order: Order): BuyerInfo {
   return {
-    name: order.buyer,
-    previousPurchases: 3, // TODO: obtener del Buyer App via order.buyerId
+    name: order.buyerName,
+    effectivePurchases,
   };
 }
 
-export function getOrderShippingInfo(order: Order): ShippingInfo {
-  return {
-    carrier: "Repartidor asignado", // TODO: obtener del Shipping App
-    trackingCode: order.trackId,
-    address: order.address,
-  };
-}
 
-export function getOrderPaymentInfo(_order: Order): PaymentInfo {
+// Para el alcance del proyecto, el flujo en SellerApp siempre comienza con la
+// confirmación de la compra desde PaymentsApp, la cual siempre utiliza Mercado Pago.
+// Por esto, el método siempre será Mercado Pago con estado Aprobado.
+export function getOrderPaymentInfo(order: Order): PaymentInfo {
+  void order;
   return {
-    method: "Mercado Pago",  // TODO: obtener del Payments App via order.paymentId
+    method: "Mercado Pago",
     statusLabel: "Aprobado",
     approved: true,
   };

@@ -1,0 +1,50 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { ProductEditScreen } from "@/components/screens/product-edit-screen";
+import { ProductEditSkeleton } from "@/components/screens/skeletons/product-edit-skeleton";
+import { requireSeller } from "@/lib/auth/current-seller";
+import { getCategories } from "@/lib/data/categories";
+import { findOwnedProduct } from "@/lib/data/products";
+import { saveProductAction } from "@/lib/actions/products";
+
+type ProductPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const [{ id }, seller] = await Promise.all([params, requireSeller()]);
+  const product = await findOwnedProduct(id, seller.id);
+  return {
+    title: product ? `Editar — ${product.title}` : "Producto no encontrado",
+  };
+}
+
+export default function ProductPage({ params }: ProductPageProps) {
+  return (
+    <Suspense fallback={<ProductEditSkeleton mode="edit" />}>
+      <ProductContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductContent({ params }: ProductPageProps) {
+  const [{ id }, seller] = await Promise.all([params, requireSeller()]);
+  const [product, categories] = await Promise.all([
+    findOwnedProduct(id, seller.id),
+    getCategories(),
+  ]);
+  if (!product) {
+    notFound();
+  }
+  return (
+    <ProductEditScreen
+      mode="edit"
+      product={product}
+      categories={categories}
+      onSaveAction={saveProductAction}
+    />
+  );
+}

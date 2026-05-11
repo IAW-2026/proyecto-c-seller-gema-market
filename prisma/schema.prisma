@@ -3,10 +3,9 @@
 // Schema base del bounded context Seller.
 // Decisiones de modelado deben quedar reflejadas en docs/modelo-de-datos-seller.md.
 //
-// IDs: se usa cuid() en lugar de ULID (que indica el modelo de datos) porque Prisma
-// no tiene generador ULID nativo. La forma del ID es opaca para la lógica de negocio;
-// se puede migrar a ULID con un generador externo en cualquier momento sin cambiar las
-// relaciones.
+// IDs: ULID con prefijo por modelo (`prd_`, `usr_`, `cat_`, `vnt_`, `rsv_`),
+// según el contrato definido en docs/apis.md. La generación se hace en la app
+// vía `lib/ids.ts` y la extensión de Prisma Client en `lib/db.ts`, no en el DB.
 
 generator client {
   provider = "prisma-client"
@@ -36,26 +35,31 @@ enum ProductCondition {
 }
 
 // Alineado con venta.status del modelo de datos y con el tipo OrderStatus del dominio.
+// El flujo en esta app empieza una vez aprobado el pago: la venta nace en `paid`
+// y avanza linealmente. `shipping_failed` lo setea Shipping App si el envío rebota.
 enum SaleStatus {
-  pending_payment
   paid
   shipping
   delivered
   shipping_failed
-  cancelled
-  disputed
-  refunded
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
-// Caché local del usuario de Clerk. clerk_user_id es la fuente de verdad.
+// Caché local del usuario de Clerk. `clerkUserId` es la única fuente de
+// identidad — `email`/`phone` son denormalizaciones del usuario de Clerk y
+// NO se usan como clave: Clerk ya asegura unicidad de email a nivel de cuenta,
+// y duplicar el constraint acá generaría conflictos al re-provisionar.
+//
+// `shopName` se completa en /onboarding (no viene de Clerk). Mientras esté
+// vacío, el gate de `(seller)/layout.tsx` redirige al onboarding. El nombre
+// real del usuario vive solo en Clerk (`first_name`/`last_name`) y se lee con
+// `currentUser()` cuando la UI lo necesita — no se denormaliza acá.
 model Seller {
-  id          String     @id @default(cuid())
-  clerkUserId String?    @unique
-  fullName    String
+  id          String     @id
+  clerkUserId String     @unique
   shopName    String
-  email       String     @unique
+  email       String
   phone       String
   bio         String?
   role        SellerRole @default(seller)
@@ -71,14 +75,13 @@ model Seller {
 }
 
 model Categoria {
-  id       String    @id @default(cuid())
-  slug     String    @unique
+  id       String    @id
   name     String
   products Product[]
 }
 
 model Product {
-  id           String           @id @default(cuid())
+  id           String           @id
   sellerId     String
   title        String
   description  String
@@ -95,6 +98,11 @@ model Product {
   stock        Int              @default(0)
   status       ProductStatus    @default(active)
   images       Json             @default("[]")
+  // Soft delete: null mientras la publicación esté viva. Cuando el seller la
+  // elimina, se setea con timestamp y la publicación deja de aparecer en el
+  // catálogo, pero el row sobrevive para preservar las ventas/reservas
+  // históricas que la referencian.
+  deletedAt    DateTime?
   seller       Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   category     Categoria        @relation(fields: [categoryId], references: [id])
   sales        Sale[]
@@ -103,23 +111,29 @@ model Product {
   updatedAt    DateTime         @updatedAt
 
   @@index([sellerId, status])
+  @@index([sellerId, deletedAt])
   @@index([title])
 }
 
 // Una venta = una línea de pedido del Buyer App.
 // Múltiples ventas pueden compartir el mismo orderId (un pedido con varios productos).
 model Sale {
-  id        String     @id @default(cuid())
+  id        String     @id
   orderId   String
   productId String
   sellerId  String
   buyerId   String
+  buyerName String
   paymentId String
   amount    Int
   total     Decimal    @db.Decimal(10, 2)
   fee       Decimal    @db.Decimal(10, 2)
-  status    SaleStatus @default(pending_payment)
-  product   Product    @relation(fields: [productId], references: [id])
+  status    SaleStatus @default(paid)
+  // Lo devuelve la Shipping App al pasar de `paid` → `shipping`. Null mientras
+  // la venta esté en `paid`. Se conserva en `delivered`/`shipping_failed`
+  // aunque la UI solo lo muestre durante `shipping`.
+  trackingCode String?
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   seller    Seller     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -131,12 +145,13 @@ model Sale {
 
 // Reserva temporal de stock durante el proceso de checkout del Buyer App.
 model Reserva {
-  id        String   @id @default(cuid())
+  id        String   @id
   productId String
   orderId   String
   buyerId   String
+  buyerName String
   quantity  Int
   expiresAt DateTime
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }

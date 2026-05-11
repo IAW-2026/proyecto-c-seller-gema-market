@@ -1,14 +1,14 @@
-// CategoryId es el slug estable usado para visual mapping.
-// El DB almacena un ULID en categoria.id; el data layer hace el JOIN
-// y expone el slug en Product.category y Category.slug.
-export type CategoryId =
-  | "living"
-  | "dormitorio"
-  | "comedor"
-  | "cocina"
-  | "bath"
-  | "terraza"
-  | "decoracion";
+// ─── Categoría ─────────────────────────────────────────────────────────────
+//
+// Refleja prisma `Categoria { id, name }`. El `name` es el label visible
+// (ej. "Living", "Dormitorio") tal como lo escribe el seed.
+
+export type Category = {
+  id: string;   // ULID con prefijo cat_
+  name: string; // label visible
+};
+
+// ─── Paginación (utilidad transversal) ─────────────────────────────────────
 
 export type Page<T> = {
   items: ReadonlyArray<T>;
@@ -19,9 +19,4 @@ export type Page<T> = {
 
 export const PAGE_SIZES = [10, 20, 50] as const;
 export type PageSize = (typeof PAGE_SIZES)[number];
-
-export type Category = {
-  id: string;       // ULID en DB; mismo valor que slug en mock
-  slug: CategoryId; // slug estable para visual mapping y formularios
-  name: string;
-};
+export const DEFAULT_PAGE_SIZE: PageSize = 10;

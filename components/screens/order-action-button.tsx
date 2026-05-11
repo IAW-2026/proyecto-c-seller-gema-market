@@ -2,12 +2,12 @@
 
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { advanceOrderStatusAction } from "@/app/orders/actions";
+import { advanceOrderStatusAction } from "@/lib/actions/orders";
 import { ORDER_TIMELINE } from "@/lib/ui/ui-config";
 import { nextOrderStatus, type OrderStatus } from "@/types/domain";
 
 const NEXT_STATUS_LABEL: Partial<Record<OrderStatus, string>> = {
-  paid: "Marcar como despachado",
+  paid: "Listo para envio",
 };
 
 export type OrderActionButtonProps = {
