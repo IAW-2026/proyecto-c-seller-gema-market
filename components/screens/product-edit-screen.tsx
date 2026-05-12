@@ -135,17 +135,12 @@ export function ProductEditScreen({
             <Button href="/products" variant="secondary">
               Cancelar
             </Button>
-            {/*
-              El botón Guardar acompaña a Cancelar en la barra fija inferior
-              de mobile. En desktop (>= 1100px) se oculta acá y aparece como
-              CTA full-width debajo de la card "Estado".
-            */}
             <Button
               variant={save.isSuccess ? "success" : "accent"}
               icon="check"
               onClick={handleSave}
               disabled={save.isPending}
-              className={`lgx:hidden ${save.isSuccess ? "pointer-events-none" : ""}`}
+              className={save.isSuccess ? "pointer-events-none" : ""}
               aria-live="polite"
             >
               {saveLabel}
@@ -361,22 +356,6 @@ export function ProductEditScreen({
               ))}
             </div>
           </Card>
-
-          {/*
-            CTA de guardado para desktop (>= 1100px). En viewports más chicos
-            el mismo botón vive en la barra fija inferior del PageHeader.
-          */}
-          <Button
-            variant={save.isSuccess ? "success" : "accent"}
-            icon="check"
-            full
-            onClick={handleSave}
-            disabled={save.isPending}
-            className={`hidden lgx:flex ${save.isSuccess ? "pointer-events-none" : ""}`}
-            aria-live="polite"
-          >
-            {saveLabel}
-          </Button>
         </div>
       </div>
 
