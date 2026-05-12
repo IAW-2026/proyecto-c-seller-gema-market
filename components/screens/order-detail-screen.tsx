@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
 import { PageHeader } from "@/components/layout/page-header";
@@ -45,6 +46,15 @@ export function OrderDetailScreen({
         }
       />
       <div className={`p-4 lgx:px-7 lgx:py-6 ${showActionSlot ? "pb-32" : "pb-16"}`}>
+      {product.deletedAt && (
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-warn/30 bg-warn/10 px-4 py-3 text-[13px] text-ink">
+          <Icon name="info" size={18} className="mt-0.5 shrink-0 text-warn" />
+          <span>
+            Esta publicación fue eliminada. Los datos mostrados corresponden al
+            momento de la venta.
+          </span>
+        </div>
+      )}
       <div className="grid gap-4 grid-cols-1 min-[901px]:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <div className="flex flex-col gap-4">
           <Card padding={20}>

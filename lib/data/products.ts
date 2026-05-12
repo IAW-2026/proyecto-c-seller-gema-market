@@ -34,6 +34,7 @@ const productSelect = {
   images: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
   category: { select: { name: true } },
   seller: { select: { shopName: true } },
   _count: { select: { sales: true } },
@@ -165,6 +166,20 @@ export async function findOwnedProduct(
 ): Promise<ProductWithJoins | null> {
   const row = await prisma.product.findFirst({
     where: { id, sellerId, deletedAt: null },
+    select: productSelect,
+  });
+  return row ? toProductWithJoins(row) : null;
+}
+
+// Variante que incluye productos soft-deleted. Usada por el detalle de
+// pedidos: si la publicación se eliminó, el pedido sigue siendo válido y
+// debe poder mostrarse con los datos del producto al momento de la venta.
+export async function findOwnedProductIncludingDeleted(
+  id: string,
+  sellerId: string,
+): Promise<ProductWithJoins | null> {
+  const row = await prisma.product.findFirst({
+    where: { id, sellerId },
     select: productSelect,
   });
   return row ? toProductWithJoins(row) : null;

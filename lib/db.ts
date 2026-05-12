@@ -8,7 +8,7 @@ function buildClient() {
   const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
   const base = new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   });
 
   const fillId = (prefix: Prefix) => ({

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "./icon";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from "@/types/domain";
@@ -14,10 +15,23 @@ export type PagerProps = {
 export function Pager({ page, pageSize, total, basePath }: PagerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isSizeOpen, setIsSizeOpen] = useState(false);
+  const sizeRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
+
+  useEffect(() => {
+    if (!isSizeOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (sizeRef.current && !sizeRef.current.contains(e.target as Node)) {
+        setIsSizeOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isSizeOpen]);
 
   const navigate = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -40,6 +54,7 @@ export function Pager({ page, pageSize, total, basePath }: PagerProps) {
       pageSize: next === DEFAULT_PAGE_SIZE ? null : String(next),
       page: null,
     });
+    setIsSizeOpen(false);
   };
 
   const prevDisabled = page <= 1;
@@ -51,21 +66,52 @@ export function Pager({ page, pageSize, total, basePath }: PagerProps) {
         {total === 0 ? "Sin resultados" : `${from}–${to} de ${total}`}
       </div>
       <div className="flex items-center gap-2">
-        <label className="flex items-center gap-1.5">
-          <span className="text-[11px] uppercase tracking-[0.06em] font-mono">Por página</span>
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="bg-paper border border-line-2 rounded-xl text-xs px-2 py-1 cursor-pointer text-ink"
+        <div ref={sizeRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setIsSizeOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={isSizeOpen}
             aria-label="Resultados por página"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-paper border border-line-2 text-xs font-medium text-ink cursor-pointer hover:border-ink-3 transition-colors"
           >
-            {PAGE_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </label>
+            <span className="text-[11px] uppercase tracking-[0.06em] font-mono text-ink-3">
+              Por página
+            </span>
+            <span className="tabular-nums">{pageSize}</span>
+            <Icon name="chevronDown" size={12} className="text-ink-3" />
+          </button>
+
+          {isSizeOpen && (
+            <div
+              role="listbox"
+              className="absolute right-0 bottom-full mb-2 z-50 bg-paper border border-line rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-2 min-w-[120px]"
+            >
+              {PAGE_SIZES.map((size) => {
+                const isActive = size === pageSize;
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => onPageSizeChange(size)}
+                    className={`w-full text-left text-[13px] flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-colors tabular-nums ${
+                      isActive
+                        ? "bg-bone text-cocoa font-semibold"
+                        : "text-ink hover:bg-cream"
+                    }`}
+                  >
+                    <span className="w-3.5 shrink-0">
+                      {isActive && <Icon name="check" size={13} />}
+                    </span>
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1 ml-2">
           <button
             type="button"

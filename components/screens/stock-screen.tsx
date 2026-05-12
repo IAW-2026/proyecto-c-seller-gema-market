@@ -23,18 +23,18 @@ export function StockScreen({
 }: StockScreenProps) {
   return (
     <>
-      <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-        <Card padding={20}>
-          <div className="text-xs text-ink-3">Total unidades</div>
-          <div className="text-[26px] font-bold">{summary.totalUnits}</div>
+      <div className="grid gap-2 mb-6 grid-cols-3 lgx:gap-3.5 lgx:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+        <Card padding={14}>
+          <div className="text-[11px] lgx:text-xs text-ink-3">Total unidades</div>
+          <div className="text-[20px] lgx:text-[26px] font-bold">{summary.totalUnits}</div>
         </Card>
-        <Card padding={20}>
-          <div className="text-xs text-ink-3">Productos activos</div>
-          <div className="text-[26px] font-bold">{summary.activeSkus}</div>
+        <Card padding={14}>
+          <div className="text-[11px] lgx:text-xs text-ink-3">Productos activos</div>
+          <div className="text-[20px] lgx:text-[26px] font-bold">{summary.activeSkus}</div>
         </Card>
-        <Card padding={20}>
-          <div className="text-xs text-ink-3">Sin stock</div>
-          <div className="text-[26px] font-bold text-danger">{summary.outOfStock}</div>
+        <Card padding={14}>
+          <div className="text-[11px] lgx:text-xs text-ink-3">Sin stock</div>
+          <div className="text-[20px] lgx:text-[26px] font-bold text-danger">{summary.outOfStock}</div>
         </Card>
       </div>
 
