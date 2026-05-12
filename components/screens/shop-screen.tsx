@@ -6,9 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
+import { SingleImageUpload } from "@/components/ui/image-upload";
 import { PageHeader } from "@/components/layout/page-header";
 import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
-import { saveSellerAction, uploadSellerCoverAction } from "@/lib/actions/shop";
+import {
+  saveSellerAction,
+  uploadSellerCoverAction,
+  uploadSellerLogoAction,
+} from "@/lib/actions/shop";
 import type { IconName } from "@/types/ui";
 import type { SellerInput, SellerWithCounts } from "@/types/domain";
 
@@ -64,9 +69,11 @@ function toSellerInput(form: FormState): SellerInput {
 
 export function ShopScreen({ seller }: ShopScreenProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(seller));
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [coverError, setCoverError] = useState<string | null>(null);
+  // Cover y logo se persisten al subir (acción aislada), no en el "Guardar"
+  // general. El state local arranca con lo que ya hay en DB y se va
+  // actualizando con cada upload.
+  const [coverUrl, setCoverUrl] = useState<string | null>(seller.coverUrl);
+  const [logoUrl, setLogoUrl] = useState<string | null>(seller.logoUrl);
   const save = useActionFeedback();
 
   const stats = [
@@ -75,27 +82,9 @@ export function ShopScreen({ seller }: ShopScreenProps) {
   ] as const;
 
   const handleSave = () => {
-    setCoverError(null);
     save.run(() => saveSellerAction(toSellerInput(form)));
   };
 
-  const handleCoverChange = async (file: File | undefined) => {
-    if (!file) return;
-    setCoverError(null);
-    setIsUploadingCover(true);
-    try {
-      const fd = new FormData();
-      fd.set("file", file);
-      const url = await uploadSellerCoverAction(fd);
-      setCoverUrl(url);
-    } catch (err) {
-      setCoverError(err instanceof Error ? err.message : "Error al subir portada");
-    } finally {
-      setIsUploadingCover(false);
-    }
-  };
-
-  const displayError = save.error ?? coverError;
   const saveLabel = save.isSuccess
     ? "Guardado correctamente"
     : save.isPending
@@ -125,39 +114,33 @@ export function ShopScreen({ seller }: ShopScreenProps) {
       />
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       <Card padding={0} className="mb-4 overflow-hidden">
-        <div
-          className="h-40 max-[560px]:h-[132px] bg-gradient-to-br from-clay to-bark relative"
-          style={
-            coverUrl
-              ? {
-                  backgroundImage: `url(${coverUrl})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }
-              : undefined
-          }
-        >
-          <label
-            className={`absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-paper/95 text-xs font-medium inline-flex items-center gap-1.5 ${isUploadingCover ? "opacity-60 cursor-progress" : "cursor-pointer"}`}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              disabled={isUploadingCover}
-              onChange={(e) => {
-                handleCoverChange(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-            <Icon name="camera" size={14} />
-            {isUploadingCover ? "Subiendo…" : "Cambiar portada"}
-          </label>
+        <div className="h-40 max-[560px]:h-[132px] relative">
+          <SingleImageUpload
+            shape="cover"
+            value={coverUrl}
+            onChange={setCoverUrl}
+            onUpload={uploadSellerCoverAction}
+            alt="Portada de la tienda"
+            label="Cambiar portada"
+            fallback={
+              <div className="absolute inset-0 bg-gradient-to-br from-clay to-bark" />
+            }
+          />
         </div>
         <div className="px-6 pb-6">
-          <div className="flex items-center gap-4 mb-5 max-[560px]:items-start max-[560px]:gap-3">
-            <div className="w-[88px] h-[88px] rounded-full bg-paper border-4 border-paper flex items-center justify-center text-cocoa -mt-11 shrink-0 shadow-sh-1 relative z-[1]">
-              <Icon name="tag" size={36} />
+          <div className="flex items-start gap-4 mb-5 max-[560px]:gap-3">
+            <div className="-mt-14 shrink-0 relative z-[1]">
+              <SingleImageUpload
+                shape="circle"
+                size={112}
+                value={logoUrl}
+                onChange={setLogoUrl}
+                onUpload={uploadSellerLogoAction}
+                alt="Logo de la tienda"
+                label={logoUrl ? "Cambiar logo" : "Subir logo"}
+                fallback={<Icon name="tag" size={40} />}
+                circleClassName="border-4 border-paper bg-paper shadow-sh-1"
+              />
             </div>
             <div className="flex-1 pt-3 min-w-0">
               <h2 className="m-0 text-[22px] font-semibold max-[560px]:text-[19px]">
@@ -181,9 +164,9 @@ export function ShopScreen({ seller }: ShopScreenProps) {
         </div>
       </Card>
 
-      {displayError && (
+      {save.error && (
         <div className="mb-4 p-3 rounded-r2 bg-danger/10 text-danger text-[13px]">
-          {displayError}
+          {save.error}
         </div>
       )}
 

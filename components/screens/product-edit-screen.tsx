@@ -1,15 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
+import {
+  MultiImageUpload,
+  SingleImageUpload,
+} from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { ProductGlyph } from "@/components/ui/product-glyph";
+import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/layout/page-header";
 import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
@@ -33,6 +37,7 @@ type FormState = {
   color: string;
   condition: ProductCondition;
   status: ProductStatus;
+  thumbnailUrl: string | null;
   images: ReadonlyArray<string>;
 };
 
@@ -51,6 +56,7 @@ function toFormState(product: Product | null, defaultCategoryId: string): FormSt
     color: product?.color ?? "",
     condition: product?.condition ?? "nuevo",
     status: product?.status ?? "active",
+    thumbnailUrl: product?.thumbnailUrl ?? null,
     images: product?.images ?? [],
   };
 }
@@ -73,8 +79,6 @@ export function ProductEditScreen({
     toFormState(product, categories[0]?.id ?? ""),
   );
   const save = useActionFeedback();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const isNew = mode === "new";
 
@@ -96,6 +100,7 @@ export function ProductEditScreen({
           material: form.material,
           color: form.color,
           condition: form.condition,
+          thumbnailUrl: form.thumbnailUrl,
           images: form.images,
           status: form.status,
         }),
@@ -107,33 +112,6 @@ export function ProductEditScreen({
     );
   };
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setUploadError(null);
-    setIsUploading(true);
-    try {
-      const uploaded: string[] = [];
-      for (const file of Array.from(files)) {
-        const fd = new FormData();
-        fd.set("file", file);
-        const url = await uploadProductImageAction(fd);
-        uploaded.push(url);
-      }
-      setForm((prev) => ({ ...prev, images: [...prev.images, ...uploaded] }));
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Error al subir imagen");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
   const visual = getProductVisual(selectedCategory?.name);
 
@@ -143,7 +121,9 @@ export function ProductEditScreen({
       : "Cambios guardados"
     : save.isPending
       ? "Guardando…"
-      : "Guardar";
+      : isNew
+        ? "Crear publicación"
+        : "Guardar cambios";
 
   return (
     <>
@@ -174,9 +154,17 @@ export function ProductEditScreen({
         </div>
       )}
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
-      <div className="grid gap-4 grid-cols-1 min-[901px]:grid-cols-[1fr_minmax(280px,360px)]">
-        <div className="flex flex-col gap-4">
-          <Card padding={24}>
+      {/*
+        Mobile: flex column con `order` por card para acomodar Datos, Imagen,
+        Galería, Precio, Especificaciones, Estado.
+        Desktop: dos columnas (flex-row), cada una un flex column independiente.
+        Los dos divs internos usan `display: contents` en mobile para que las
+        cards sean hijas del flex outer y respeten `order`. Esto evita gaps
+        por alturas desparejas que aparecerían con un grid 2x3.
+      */}
+      <div className="flex flex-col gap-4 min-[901px]:flex-row min-[901px]:items-start">
+        <div className="contents min-[901px]:flex min-[901px]:flex-col min-[901px]:gap-4 min-[901px]:flex-1 min-[901px]:min-w-0">
+          <Card padding={24} className="order-1 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Datos básicos</h3>
             <div className="flex flex-col gap-3.5">
               <Field label="Título">
@@ -197,106 +185,59 @@ export function ProductEditScreen({
                 />
               </Field>
               <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
-              <Field label="Categoría">
-                <select
-                  value={form.categoryId}
-                  onChange={(e) =>
-                    setForm({ ...form, categoryId: e.target.value })
-                  }
-                  className="w-full h-[46px] border border-line-2 rounded-r2 px-3.5 bg-paper"
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Condición">
-                <div className="flex gap-1.5 flex-wrap">
-                  {([
-                    { value: "nuevo", label: "Nuevo" },
-                    { value: "usado", label: "Usado" },
-                  ] as const).map((c) => (
-                    <Pill
-                      key={c.value}
-                      active={form.condition === c.value}
-                      onClick={() => setForm({ ...form, condition: c.value })}
-                      size="lg"
-                    >
-                      {c.label}
-                    </Pill>
-                  ))}
-                </div>
-              </Field>
-            </div>
-            </div>
-          </Card>
-
-          <Card padding={24}>
-            <h3 className="m-0 mb-4 text-[15px] font-semibold">Imágenes</h3>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2.5">
-              <label
-                className={`aspect-square border-2 border-dashed border-line-2 rounded-r2 flex flex-col items-center justify-center text-ink-3 bg-cream ${isUploading ? "opacity-60 cursor-progress" : "cursor-pointer"}`}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  disabled={isUploading}
-                  onChange={(e) => {
-                    handleUpload(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-                <Icon name="upload" size={20} />
-                <span className="text-[11px] mt-1.5">
-                  {isUploading ? "Subiendo…" : "Subir"}
-                </span>
-              </label>
-              {form.images.length === 0
-                ? [0, 1, 2].map((i) => (
-                    <div
-                      key={`placeholder-${i}`}
-                      className="aspect-square rounded-r2 flex items-center justify-center"
-                      style={{
-                        background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                      }}
-                    >
-                      <ProductGlyph kind={visual.glyph} palette={visual.palette} size={48} />
-                    </div>
-                  ))
-                : form.images.map((url, i) => (
-                    <div
-                      key={`${url}-${i}`}
-                      className="aspect-square rounded-r2 relative overflow-hidden bg-cream"
-                    >
-                      {/* unoptimized: origin URL is user-supplied and unknown at build time */}
-                      <Image
-                        fill
-                        unoptimized
-                        src={url}
-                        alt={`Imagen ${i + 1}`}
-                        className="object-cover"
-                      />
-                      <button
-                        type="button"
-                        aria-label="Quitar imagen"
-                        onClick={() => handleRemoveImage(i)}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-paper/90 flex items-center justify-center"
+                <Field label="Categoría">
+                  <Select
+                    value={form.categoryId}
+                    onChange={(categoryId) => setForm({ ...form, categoryId })}
+                    options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                    ariaLabel="Categoría"
+                  />
+                </Field>
+                <Field label="Condición">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {([
+                      { value: "nuevo", label: "Nuevo" },
+                      { value: "usado", label: "Usado" },
+                    ] as const).map((c) => (
+                      <Pill
+                        key={c.value}
+                        active={form.condition === c.value}
+                        onClick={() => setForm({ ...form, condition: c.value })}
+                        size="lg"
                       >
-                        <Icon name="close" size={12} />
-                      </button>
-                    </div>
-                  ))}
+                        {c.label}
+                      </Pill>
+                    ))}
+                  </div>
+                </Field>
+              </div>
             </div>
-            {uploadError && (
-              <div className="mt-2 text-[12px] text-danger">{uploadError}</div>
-            )}
           </Card>
 
-          <Card padding={24}>
+          <Card padding={24} className="order-3 min-[901px]:order-none">
+            <h3 className="m-0 mb-4 text-[15px] font-semibold">Galería de imágenes</h3>
+            <p className="m-0 mb-3 text-[12px] text-ink-3">
+              Estas imágenes se muestran como detalle en la app del comprador.
+            </p>
+            <MultiImageUpload
+              values={form.images}
+              onChange={(images) => setForm((prev) => ({ ...prev, images }))}
+              onUpload={uploadProductImageAction}
+              emptyPlaceholders={[0, 1, 2].map((i) => (
+                <div
+                  key={`ph-${i}`}
+                  className="w-full h-full rounded-r2 flex items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
+                  }}
+                >
+                  <ProductGlyph kind={visual.glyph} palette={visual.palette} size={48} />
+                </div>
+              ))}
+            />
+          </Card>
+
+          <Card padding={24} className="order-5 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Especificaciones</h3>
             <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
               <Field label="Alto (cm)">
@@ -345,8 +286,33 @@ export function ProductEditScreen({
           </Card>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <Card padding={24}>
+        <div className="contents min-[901px]:flex min-[901px]:flex-col min-[901px]:gap-4 min-[901px]:basis-[320px] min-[901px]:max-w-[360px] min-[901px]:shrink-0">
+          <Card padding={24} className="order-2 min-[901px]:order-none">
+            <h3 className="m-0 mb-3 text-[15px] font-semibold">Imagen principal</h3>
+            <p className="m-0 mb-3 text-[12px] text-ink-3">
+              Es el thumbnail que aparece como logo de la publicación en el listado.
+            </p>
+            <SingleImageUpload
+              shape="square"
+              value={form.thumbnailUrl}
+              onChange={(thumbnailUrl) => setForm((prev) => ({ ...prev, thumbnailUrl }))}
+              onUpload={uploadProductImageAction}
+              alt="Imagen principal de la publicación"
+              removable
+              fallback={
+                <div
+                  className="w-full h-full rounded-r2 flex items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
+                  }}
+                >
+                  <ProductGlyph kind={visual.glyph} palette={visual.palette} size={56} />
+                </div>
+              }
+            />
+          </Card>
+
+          <Card padding={24} className="order-4 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Precio y stock</h3>
             <div className="flex flex-col gap-3.5">
               <Field label="Precio (ARS)">
@@ -367,7 +333,7 @@ export function ProductEditScreen({
             </div>
           </Card>
 
-          <Card padding={24}>
+          <Card padding={24} className="order-6 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Estado</h3>
             <div className="flex flex-col gap-2">
               {PRODUCT_STATUS_OPTIONS.map((s) => (

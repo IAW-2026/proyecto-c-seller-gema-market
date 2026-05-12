@@ -3,8 +3,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
-import { ProductGlyph } from "@/components/ui/product-glyph";
-import { getProductVisual, ORDER_STATUS_META } from "@/lib/ui/ui-config";
+import { ProductThumb } from "@/components/ui/product-thumb";
+import { ORDER_STATUS_META } from "@/lib/ui/ui-config";
 import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
 import type {
   DashboardStat,
@@ -54,7 +54,6 @@ export function DashboardScreen({
         <h3 className="m-0 mb-4 text-base font-semibold">Top productos</h3>
         <div className="flex flex-col">
           {topProducts.map((p, i) => {
-            const visual = getProductVisual(p.categoryName);
             const stockTone = p.stock === 0 ? "danger" : p.stock < 5 ? "warn" : "sage";
             return (
               <Link
@@ -65,14 +64,12 @@ export function DashboardScreen({
                 <div className="w-5 font-mono text-[11px] text-ink-3 shrink-0 text-center">
                   {String(i + 1).padStart(2, "0")}
                 </div>
-                <div
-                  className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                  style={{
-                    background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                  }}
-                >
-                  <ProductGlyph kind={visual.glyph} palette={visual.palette} size={22} />
-                </div>
+                <ProductThumb
+                  product={p}
+                  className="w-9 h-9 rounded-[10px]"
+                  glyphSize={22}
+                  imageSizes="36px"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                     {p.title}

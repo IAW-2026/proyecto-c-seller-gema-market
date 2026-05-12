@@ -2,11 +2,10 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ui/pill";
-import { ProductGlyph } from "@/components/ui/product-glyph";
+import { ProductThumb } from "@/components/ui/product-thumb";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   getOrderTimelineIndex,
-  getProductVisual,
   ORDER_STATUS_META,
   ORDER_TIMELINE,
 } from "@/lib/ui/ui-config";
@@ -80,30 +79,23 @@ export function OrderDetailScreen({
             <div className="p-5 border-b border-line">
               <h3 className="m-0 text-base font-semibold">Productos</h3>
             </div>
-            {(() => {
-              const visual = getProductVisual(product.categoryName);
-              return (
-                <div className="p-4 flex gap-3 items-center border-b border-line max-[900px]:flex-wrap max-[900px]:items-start">
-                  <div
-                    className="w-14 h-14 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                    }}
-                  >
-                    <ProductGlyph kind={visual.glyph} palette={visual.palette} size={32} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium">{product.title}</div>
-                    <div className="text-xs text-ink-3 font-mono">
-                      {product.id.toUpperCase()} · 1 unidad
-                    </div>
-                  </div>
-                  <div className="font-semibold max-[900px]:w-full max-[900px]:text-left">
-                    {fmtARS(product.price)}
-                  </div>
+            <div className="p-4 flex gap-3 items-center border-b border-line max-[900px]:flex-wrap max-[900px]:items-start">
+              <ProductThumb
+                product={product}
+                className="w-14 h-14 rounded-xl"
+                glyphSize={32}
+                imageSizes="56px"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium">{product.title}</div>
+                <div className="text-xs text-ink-3 font-mono">
+                  {product.id.toUpperCase()} · 1 unidad
                 </div>
-              );
-            })()}
+              </div>
+              <div className="font-semibold max-[900px]:w-full max-[900px]:text-left">
+                {fmtARS(product.price)}
+              </div>
+            </div>
             <div className="p-5 flex justify-between text-base font-bold">
               <span>Total</span>
               <span>{fmtARS(order.total)}</span>

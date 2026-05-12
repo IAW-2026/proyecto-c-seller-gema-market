@@ -2,6 +2,11 @@ import 'server-only';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { prisma } from '@/lib/db';
 import { newId, PREFIXES } from '@/lib/ids';
+import {
+  deleteImageByUrl,
+  removedUrls,
+  uploadImage,
+} from '@/lib/storage/images';
 import type {
   Page,
   PageSize,
@@ -31,6 +36,7 @@ const productSelect = {
   categoryId: true,
   stock: true,
   status: true,
+  thumbnailUrl: true,
   images: true,
   createdAt: true,
   updatedAt: true,
@@ -204,22 +210,32 @@ export async function saveProduct(
     categoryId: input.categoryId,
     stock: input.stock,
     status: input.status,
+    thumbnailUrl: input.thumbnailUrl,
     images: [...input.images],
   };
   if (input.id) {
     // Verificamos ownership antes de tocar el row. `sellerId` no entra al
     // `data` — un seller no puede reasignarse productos ajenos. El filtro por
     // `deletedAt: null` impide editar publicaciones soft-deleted.
-    const owned = await prisma.product.findFirst({
+    const existing = await prisma.product.findFirst({
       where: { id: input.id, sellerId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, thumbnailUrl: true, images: true },
     });
-    if (!owned) throw new Error("Producto no encontrado.");
+    if (!existing) throw new Error("Producto no encontrado.");
     const row = await prisma.product.update({
       where: { id: input.id },
       data,
       select: productSelect,
     });
+    // Cleanup best-effort de imágenes que el seller quitó del form.
+    const oldImages = Array.isArray(existing.images)
+      ? existing.images.filter((x): x is string => typeof x === 'string')
+      : [];
+    const orphans = removedUrls(oldImages, input.images);
+    if (existing.thumbnailUrl && existing.thumbnailUrl !== input.thumbnailUrl) {
+      orphans.push(existing.thumbnailUrl);
+    }
+    await Promise.all(orphans.map((url) => deleteImageByUrl(url)));
     return toProductWithJoins(row);
   }
   const row = await prisma.product.create({
@@ -261,8 +277,12 @@ export async function deleteProduct(
   }
 }
 
-export async function uploadProductImage(file: File): Promise<string> {
-  // TODO (Fase 3): subir el archivo a Vercel Blob y devolver la URL pública.
-  void file;
-  throw new Error('uploadProductImage: storage no configurado todavía');
+// El productId no existe todavía al subir desde "Nueva publicación", por eso
+// agrupamos las imágenes solo por seller. Si el seller nunca guarda el form,
+// las URLs quedan huérfanas en el bucket — limitación conocida.
+export async function uploadProductImage(
+  sellerId: string,
+  file: File,
+): Promise<string> {
+  return uploadImage(file, `products/${sellerId}`);
 }
