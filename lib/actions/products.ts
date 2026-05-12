@@ -41,10 +41,10 @@ export async function deleteProductAction(productId: string): Promise<void> {
 export async function uploadProductImageAction(
   formData: FormData,
 ): Promise<string> {
-  await requireSeller();
+  const seller = await requireSeller();
   const file = formData.get("file");
   if (!(file instanceof File)) {
     throw new Error("uploadProductImageAction: 'file' inválido");
   }
-  return uploadProductImage(file);
+  return uploadProductImage(seller.id, file);
 }

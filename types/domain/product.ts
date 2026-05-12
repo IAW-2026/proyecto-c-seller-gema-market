@@ -23,6 +23,10 @@ export type Product = {
   categoryId: string;
   stock: number;
   status: ProductStatus;
+  // Imagen principal (logo/portada). Independiente del array `images`: vive
+  // como columna separada para diferenciarla explícitamente de la galería.
+  // En lecturas se hace fallback a `images[0]` si está vacía.
+  thumbnailUrl: string | null;
   images: ReadonlyArray<string>;
   createdAt: Date;
   updatedAt: Date;
@@ -53,6 +57,7 @@ export type ProductInput = {
   material: string;
   color: string;
   condition: ProductCondition;
+  thumbnailUrl: string | null;
   images: ReadonlyArray<string>;
   status: ProductStatus;
 };

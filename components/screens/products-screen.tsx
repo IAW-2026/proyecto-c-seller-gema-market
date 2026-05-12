@@ -3,10 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
-import { ProductGlyph } from "@/components/ui/product-glyph";
+import { ProductThumb } from "@/components/ui/product-thumb";
 import type { TabItem } from "@/components/ui/tabs";
 import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
-import { getProductVisual } from "@/lib/ui/ui-config";
 import type { ProductWithJoins } from "@/types/domain";
 import { DeleteProductButton } from "./delete-product-button";
 import { ProductsToolbar } from "./products-toolbar";
@@ -52,7 +51,6 @@ export function ProductsScreen({
               </thead>
               <tbody>
                 {products.map((p) => {
-                  const visual = getProductVisual(p.categoryName);
                   return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5">
@@ -60,14 +58,12 @@ export function ProductsScreen({
                         href={`/products/${p.id}`}
                         className="flex items-center gap-3"
                       >
-                        <div
-                          className="w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0"
-                          style={{
-                            background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                          }}
-                        >
-                          <ProductGlyph kind={visual.glyph} palette={visual.palette} size={28} />
-                        </div>
+                        <ProductThumb
+                          product={p}
+                          className="w-11 h-11 rounded-[10px]"
+                          glyphSize={28}
+                          imageSizes="44px"
+                        />
                         <div>
                           <div className="font-medium">{p.title}</div>
                           <div className="text-[11px] text-ink-3">
@@ -117,7 +113,6 @@ export function ProductsScreen({
           </div>
           <div className="grid gap-3 p-3 lgx:hidden">
             {products.map((p) => {
-              const visual = getProductVisual(p.categoryName);
               return (
                 <div
                   key={p.id}
@@ -129,14 +124,12 @@ export function ProductsScreen({
                     aria-label={`Editar ${p.title}`}
                   >
                     <div className="flex gap-3 items-center pr-10">
-                      <div
-                        className="w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0"
-                        style={{
-                          background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                        }}
-                      >
-                        <ProductGlyph kind={visual.glyph} palette={visual.palette} size={32} />
-                      </div>
+                      <ProductThumb
+                        product={p}
+                        className="w-[52px] h-[52px] rounded-xl"
+                        glyphSize={32}
+                        imageSizes="52px"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold leading-[1.25]">
                           {p.title}

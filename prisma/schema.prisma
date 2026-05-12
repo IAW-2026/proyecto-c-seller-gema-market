@@ -68,6 +68,8 @@ model Seller {
   number      String
   apartment   String?
   postalCode  String
+  coverUrl    String?
+  logoUrl     String?
   products    Product[]
   sales       Sale[]
   createdAt   DateTime   @default(now())
@@ -97,6 +99,7 @@ model Product {
   categoryId   String
   stock        Int              @default(0)
   status       ProductStatus    @default(active)
+  thumbnailUrl String?
   images       Json             @default("[]")
   // Soft delete: null mientras la publicación esté viva. Cuando el seller la
   // elimina, se setea con timestamp y la publicación deja de aparecer en el

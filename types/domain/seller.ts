@@ -22,6 +22,11 @@ export type Seller = {
   number: string;
   apartment: string | null;
   postalCode: string;
+  // Imágenes públicas servidas desde Supabase Storage. El upload las persiste
+  // de forma autónoma (botones "Cambiar portada/logo" en /shop), no a través
+  // del save general del form — por eso no aparecen en `SellerInput`.
+  coverUrl: string | null;
+  logoUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
