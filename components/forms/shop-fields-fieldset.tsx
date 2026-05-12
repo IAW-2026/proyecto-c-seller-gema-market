@@ -52,36 +52,38 @@ export function ShopFieldsFieldset(props: ShopFieldsFieldsetProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Field
-        label={rules.shopName.label}
-        hint="Es lo que van a ver los compradores."
-        error={errors?.shopName}
-      >
-        <Input
-          name="shopName"
-          icon="tag"
-          placeholder="Ej: Carpintería Sur"
-          required
-          minLength={rules.shopName.min}
-          maxLength={rules.shopName.max}
-          autoComplete="off"
-          autoFocus={autoFocusFirst}
-          {...fieldProps("shopName")}
-        />
-      </Field>
+      <div className="grid gap-5 lgx:grid-cols-2 lgx:gap-x-5 lgx:items-start">
+        <Field
+          label={rules.shopName.label}
+          hint="Es lo que van a ver los compradores."
+          error={errors?.shopName}
+        >
+          <Input
+            name="shopName"
+            icon="tag"
+            placeholder="Ej: Carpintería Sur"
+            required
+            minLength={rules.shopName.min}
+            maxLength={rules.shopName.max}
+            autoComplete="off"
+            autoFocus={autoFocusFirst}
+            {...fieldProps("shopName")}
+          />
+        </Field>
 
-      <Field label={rules.phone.label} error={errors?.phone}>
-        <Input
-          name="phone"
-          type="tel"
-          placeholder="+54 11 5555 5555"
-          required
-          minLength={rules.phone.min}
-          maxLength={rules.phone.max}
-          autoComplete="tel"
-          {...fieldProps("phone")}
-        />
-      </Field>
+        <Field label={rules.phone.label} error={errors?.phone}>
+          <Input
+            name="phone"
+            type="tel"
+            placeholder="+54 11 5555 5555"
+            required
+            minLength={rules.phone.min}
+            maxLength={rules.phone.max}
+            autoComplete="tel"
+            {...fieldProps("phone")}
+          />
+        </Field>
+      </div>
 
       <Field label={rules.city.label} error={errors?.city}>
         <Input

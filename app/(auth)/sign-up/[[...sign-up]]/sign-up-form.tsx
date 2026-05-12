@@ -163,33 +163,35 @@ export function SignUpForm() {
 
   return (
     <form action={handleDetailsSubmit} className="flex flex-col gap-5">
-      <Field label="Email">
-        <Input
-          name="email"
-          type="email"
-          icon="mail"
-          placeholder="vos@ejemplo.com"
-          autoComplete="email"
-          autoFocus
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </Field>
+      <div className="grid gap-5 lgx:grid-cols-2">
+        <Field label="Email">
+          <Input
+            name="email"
+            type="email"
+            icon="mail"
+            placeholder="vos@ejemplo.com"
+            autoComplete="email"
+            autoFocus
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Field>
 
-      <Field label="Contraseña" hint="Mínimo 8 caracteres.">
-        <Input
-          name="password"
-          type="password"
-          icon="lock"
-          placeholder="••••••••"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </Field>
+        <Field label="Contraseña" hint="Mínimo 8 caracteres.">
+          <Input
+            name="password"
+            type="password"
+            icon="lock"
+            placeholder="••••••••"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Field>
+      </div>
 
       <div className="border-t border-line pt-5 -mt-1">
         <div className="text-[13px] text-ink-2 font-medium mb-1">Tu tienda</div>

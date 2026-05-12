@@ -4,9 +4,10 @@ type PageHeaderProps = {
   title: ReactNode;
   subtitle?: string;
   action?: ReactNode;
+  hideActionOnMobile?: boolean;
 };
 
-export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, action, hideActionOnMobile }: PageHeaderProps) {
   return (
     <>
       <div className="block lgx:hidden">
@@ -40,7 +41,7 @@ export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
         {action}
       </header>
 
-      {action && (
+      {action && !hideActionOnMobile && (
         <div className="block lgx:hidden fixed bottom-16 left-0 right-0 z-[39] bg-paper/95 backdrop-blur-[12px] border-t border-line px-4 py-2.5 [&>div]:w-full [&>div]:flex [&>div]:gap-2 [&>button]:w-full [&_button]:flex-1 [&_button]:min-w-0 [&_button]:px-2.5">
           {action}
         </div>

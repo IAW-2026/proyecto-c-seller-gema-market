@@ -26,6 +26,7 @@ export type Product = {
   images: ReadonlyArray<string>;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 };
 
 // Vista enriquecida con joins/agregaciones que el data layer compone.

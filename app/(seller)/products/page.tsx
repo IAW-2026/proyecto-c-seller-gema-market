@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
+import { ProductCreateFab } from "@/components/screens/product-create-fab";
 import { ProductsFiltersBar } from "@/components/screens/products-filters-bar";
 import { ProductsScreen } from "@/components/screens/products-screen";
 import { ProductsSkeleton } from "@/components/screens/skeletons/products-skeleton";
@@ -50,6 +51,7 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
             Nueva
           </Button>
         }
+        hideActionOnMobile
       />
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
         <Suspense fallback={<FiltersFallback />}>
@@ -59,6 +61,7 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
           <ProductsContent searchParams={searchParams} />
         </Suspense>
       </div>
+      <ProductCreateFab />
     </>
   );
 }

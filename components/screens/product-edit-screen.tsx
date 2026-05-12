@@ -410,7 +410,7 @@ export function ProductEditScreen({
                 </p>
               </div>
             </div>
-            <div className="sm:shrink-0">
+            <div className="flex justify-center sm:block sm:shrink-0">
               <DeleteProductButton
                 productId={product.id}
                 productName={product.title}
