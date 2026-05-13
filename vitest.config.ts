@@ -22,6 +22,10 @@ export default defineConfig({
       // vacío local para que los imports server-side (lib/db, lib/env, etc.)
       // no exploten al cargar.
       'server-only': path.resolve(__dirname, 'tests/helpers/server-only-stub.ts'),
+      // `next/cache` exige el runtime de Next (cacheComponents config) para que
+      // cacheTag/updateTag no tiren. En tests las stubeamos a no-ops — no hay
+      // cache real que invalidar.
+      'next/cache': path.resolve(__dirname, 'tests/helpers/next-cache-stub.ts'),
     },
   },
 });
