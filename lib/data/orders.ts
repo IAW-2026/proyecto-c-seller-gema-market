@@ -115,6 +115,16 @@ export async function findOwnedOrder(
   return row ? toOrder(row) : null;
 }
 
+// Variante sin cache para mutations: necesitamos el status fresco antes de
+// decidir si disparar la llamada al servicio externo de Shipping.
+export async function findOwnedOrderFresh(
+  id: string,
+  sellerId: string,
+): Promise<Order | null> {
+  const row = await prisma.sale.findFirst({ where: { id, sellerId } });
+  return row ? toOrder(row) : null;
+}
+
 export async function listSellerOrders(
   filters: OrderFilters = {},
 ): Promise<Page<OrderWithJoins>> {
@@ -187,21 +197,21 @@ export { nextOrderStatus };
 export async function advanceOrderStatus(
   orderId: string,
   sellerId: string,
-): Promise<Order> {
+  trackingCode?: string,
+): Promise<void> {
   // El check por `sellerId` previene que un seller avance pedidos ajenos.
   const current = await prisma.sale.findFirst({ where: { id: orderId, sellerId } });
   if (!current) {
     throw new Error(`advanceOrderStatus: pedido ${orderId} no encontrado`);
   }
   const next = nextOrderStatus(current.status);
-  if (!next) {
-    throw new Error(
-      `advanceOrderStatus: no hay siguiente estado desde ${current.status}`,
-    );
-  }
-  const updated = await prisma.sale.update({
-    where: { id: orderId },
-    data: { status: next },
+  // Idempotente: si ya está en estado terminal o sin transición definida, no-op.
+  if (!next) return;
+  // updateMany con filtro por status actual = lock optimista: si dos requests
+  // pasaron en paralelo, solo el primero aplica el update; el segundo queda
+  // en count: 0 y descarta silenciosamente su trackingCode.
+  await prisma.sale.updateMany({
+    where: { id: orderId, sellerId, status: current.status },
+    data: trackingCode ? { status: next, trackingCode } : { status: next },
   });
-  return toOrder(updated);
 }

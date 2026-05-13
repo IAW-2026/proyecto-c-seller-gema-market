@@ -2,11 +2,27 @@
 
 import { updateTag } from "next/cache";
 import { requireSeller } from "@/lib/auth/current-seller";
-import { advanceOrderStatus } from "@/lib/data/orders";
+import { advanceOrderStatus, findOwnedOrderFresh } from "@/lib/data/orders";
+import { requestShipping } from "@/lib/shipping/client";
 
 export async function advanceOrderStatusAction(orderId: string): Promise<void> {
   const seller = await requireSeller();
-  await advanceOrderStatus(orderId, seller.id);
+
+  const order = await findOwnedOrderFresh(orderId, seller.id);
+  if (!order) throw new Error(`Pedido ${orderId} no encontrado`);
+
+  // Idempotente: si la orden ya avanzó (doble click, otra pestaña, carrera),
+  // no re-disparamos la llamada al servicio de Shipping ni el update en DB.
+  if (order.status !== "paid") return;
+
+  const { trackingCode } = await requestShipping({
+    orderId,
+    sellerId: seller.id,
+    buyerId: order.buyerId,
+  });
+
+  await advanceOrderStatus(orderId, seller.id, trackingCode);
+
   updateTag(`orders-listing:${seller.id}`);
   updateTag(`orders-counts:${seller.id}`);
   updateTag(`dashboard:${seller.id}`);
