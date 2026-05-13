@@ -5,6 +5,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: false,
+    // globalSetup: corre UNA SOLA VEZ en main process (env override, db push,
+    // seed). setupFiles: corre en cada worker — solo validaciones defensivas.
+    globalSetup: ['tests/global-setup.ts'],
     setupFiles: ['tests/setup.ts'],
     include: ['tests/**/*.test.ts'],
     // Un único worker secuencial. El seed corre contra el schema de test y
