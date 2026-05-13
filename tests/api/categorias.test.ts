@@ -3,6 +3,7 @@ import { GET } from '@/app/api/seller/categorias/route';
 import { invokeGet } from '@/tests/helpers/invoke';
 import { authHeader } from '@/tests/helpers/auth';
 import { TEST_CATEGORY_IDS } from '@/tests/fixtures/seed';
+import type { CategoryListResponse } from '@/lib/api/contracts/categories';
 
 const URL = 'http://test/api/seller/categorias';
 
@@ -24,8 +25,7 @@ describe('GET /api/seller/categorias', () => {
   it('200 devuelve las 3 categorías del seed con shape del contrato, ordenadas por name', async () => {
     const res = await invokeGet(GET, { url: URL, headers: authHeader() });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    const body = (await res.json()) as CategoryListResponse;
     expect(body).toHaveLength(3);
     // Ordenadas por name asc: Cocina, Dormitorio, Living.
     expect(body).toEqual([
@@ -37,7 +37,7 @@ describe('GET /api/seller/categorias', () => {
 
   it('cada item solo tiene category_id y name (no expone más campos)', async () => {
     const res = await invokeGet(GET, { url: URL, headers: authHeader() });
-    const body = (await res.json()) as Array<Record<string, unknown>>;
+    const body = (await res.json()) as CategoryListResponse;
     for (const item of body) {
       expect(Object.keys(item).sort()).toEqual(['category_id', 'name']);
     }

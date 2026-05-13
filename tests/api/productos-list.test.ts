@@ -8,36 +8,19 @@ import {
   TEST_CATEGORY_IDS,
   TEST_PRODUCT_IDS,
 } from '@/tests/fixtures/seed';
+import type { ProductListResponse } from '@/lib/api/contracts/products';
 
 const BASE = 'http://test/api/seller/productos';
 
-type ListItem = {
-  product_id: string;
-  seller_id: string;
-  title: string;
-  price: number;
-  currency: string;
-  category_id: string;
-  condition: 'nuevo' | 'usado';
-  thumbnail_url: string | null;
-  href: string;
-};
-
-type ListResponse = {
-  items: ListItem[];
-  page: number;
-  page_size: number;
-  total: number;
-  sort_by: string;
-  order: string;
-};
-
-async function call(query = '', auth = true): Promise<{ status: number; body: ListResponse }> {
+async function call(
+  query = '',
+  auth = true,
+): Promise<{ status: number; body: ProductListResponse }> {
   const res = await invokeGet(GET, {
     url: `${BASE}${query}`,
     headers: auth ? authHeader() : undefined,
   });
-  return { status: res.status, body: (await res.json()) as ListResponse };
+  return { status: res.status, body: (await res.json()) as ProductListResponse };
 }
 
 describe('GET /api/seller/productos', () => {
@@ -51,10 +34,7 @@ describe('GET /api/seller/productos', () => {
     expect(status).toBe(200);
     expect(body.total).toBe(6);
     expect(body.items).toHaveLength(6);
-    // El seed tiene 5 active del seller principal (sillon, mesaLuz, pava,
-    // vajilla, espejo) + 1 de otro seller (ajeno). Cortina (paused) y lampara
-    // (soft-deleted) NO deben aparecer.
-    const ids = body.items.map((i) => i.product_id).sort();
+    const ids = body.items.map((i) => i.product_id);
     expect(ids).not.toContain(TEST_PRODUCT_IDS.cortina);
     expect(ids).not.toContain(TEST_PRODUCT_IDS.lampara);
     expect(ids).toContain(TEST_PRODUCT_IDS.ajeno);
@@ -81,7 +61,6 @@ describe('GET /api/seller/productos', () => {
 
   it('default sort = created_at desc: el más reciente primero', async () => {
     const { body } = await call();
-    // espejo (5d) < ajeno (7d) < vajilla (10d) < pava (15d) < mesaLuz (20d) < sillon (30d)
     expect(body.items.map((i) => i.product_id)).toEqual([
       TEST_PRODUCT_IDS.espejo,
       TEST_PRODUCT_IDS.ajeno,
@@ -135,8 +114,6 @@ describe('GET /api/seller/productos', () => {
 
   it('filtra por rango de precio (min/max)', async () => {
     const { body } = await call('?min_price=20000&max_price=30000');
-    // mesaLuz 24500 cae en el rango. sillon 89000 no. pava 19200 no. vajilla
-    // 15600 no. espejo 16800 no. ajeno 1000 no.
     expect(body.total).toBe(1);
     expect(body.items[0]?.product_id).toBe(TEST_PRODUCT_IDS.mesaLuz);
   });

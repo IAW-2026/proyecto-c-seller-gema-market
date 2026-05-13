@@ -2,12 +2,12 @@ import 'server-only';
 import { Prisma, type ProductCondition } from '@/lib/generated/prisma/client';
 import { prisma } from '@/lib/db';
 
-// Filtros y orden tal como los expone el endpoint público
-// `GET /api/seller/productos`. El handler los recibe en snake_case desde la
-// URL, los convierte a este shape camelCase, y nosotros traducimos a Prisma.
-export type PublicProductSortBy = 'price' | 'created_at' | 'title';
-export type PublicProductOrder = 'asc' | 'desc';
-export type PublicProductConditionFilter = ProductCondition | 'all';
+// Tipos de dominio (camelCase). No conocen el shape del contrato HTTP — esa
+// traducción la hacen los mappers en `lib/api/mappers/products.ts`.
+
+export type ProductSortBy = 'price' | 'created_at' | 'title';
+export type ProductOrder = 'asc' | 'desc';
+export type ProductConditionFilter = ProductCondition | 'all';
 
 export type PublicProductFilters = {
   q?: string;
@@ -15,33 +15,58 @@ export type PublicProductFilters = {
   minPrice?: number;
   maxPrice?: number;
   sellerId?: string;
-  condition?: PublicProductConditionFilter;
-  sortBy?: PublicProductSortBy;
-  order?: PublicProductOrder;
+  condition?: ProductConditionFilter;
+  sortBy?: ProductSortBy;
+  order?: ProductOrder;
   page?: number;
   pageSize?: number;
 };
 
-// Row del listing: shape que el handler manda al cliente (sin `href`, que se
-// arma desde el request.url — el data layer no conoce URLs).
-export type PublicProductRow = {
-  product_id: string;
-  seller_id: string;
+// Row de listing: solo lo que el listado público necesita. No incluye joins
+// pesados — el detalle (con seller y category enriquecidos) tiene su propio
+// tipo más abajo.
+export type PublicProductListItem = {
+  productId: string;
+  sellerId: string;
   title: string;
   price: number;
   currency: string;
-  category_id: string;
+  categoryId: string;
   condition: ProductCondition;
-  thumbnail_url: string | null;
+  thumbnailUrl: string | null;
 };
 
 export type PublicProductPage = {
-  items: PublicProductRow[];
+  items: PublicProductListItem[];
   page: number;
   pageSize: number;
   total: number;
-  sortBy: PublicProductSortBy;
-  order: PublicProductOrder;
+  sortBy: ProductSortBy;
+  order: ProductOrder;
+};
+
+export type PublicProductDetail = {
+  productId: string;
+  sellerId: string;
+  sellerShopName: string;
+  sellerLogoUrl: string | null;
+  title: string;
+  description: string;
+  categoryId: string;
+  categoryName: string;
+  weight: number;
+  height: number;
+  width: number;
+  depth: number;
+  material: string;
+  color: string;
+  price: number;
+  currency: string;
+  stock: number;
+  condition: ProductCondition;
+  thumbnailUrl: string | null;
+  galleryImages: string[];
+  createdAt: Date;
 };
 
 function buildWhere(filters: PublicProductFilters): Prisma.ProductWhereInput {
@@ -67,8 +92,8 @@ function buildWhere(filters: PublicProductFilters): Prisma.ProductWhereInput {
 }
 
 function buildOrderBy(
-  sortBy: PublicProductSortBy,
-  order: PublicProductOrder,
+  sortBy: ProductSortBy,
+  order: ProductOrder,
 ): Prisma.ProductOrderByWithRelationInput {
   switch (sortBy) {
     case 'price':
@@ -113,19 +138,77 @@ export async function listPublicProducts(
 
   return {
     items: rows.map((p) => ({
-      product_id: p.id,
-      seller_id: p.sellerId,
+      productId: p.id,
+      sellerId: p.sellerId,
       title: p.title,
       price: p.price.toNumber(),
       currency: p.currency,
-      category_id: p.categoryId,
+      categoryId: p.categoryId,
       condition: p.condition,
-      thumbnail_url: p.thumbnailUrl,
+      thumbnailUrl: p.thumbnailUrl,
     })),
     page,
     pageSize,
     total,
     sortBy,
     order,
+  };
+}
+
+export async function findPublicProduct(
+  productId: string,
+): Promise<PublicProductDetail | null> {
+  const row = await prisma.product.findFirst({
+    where: { id: productId, status: 'active', deletedAt: null },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      weight: true,
+      height: true,
+      width: true,
+      depth: true,
+      condition: true,
+      material: true,
+      color: true,
+      price: true,
+      currency: true,
+      categoryId: true,
+      stock: true,
+      thumbnailUrl: true,
+      images: true,
+      createdAt: true,
+      category: { select: { name: true } },
+      seller: { select: { id: true, shopName: true, logoUrl: true } },
+    },
+  });
+  if (!row) return null;
+
+  const galleryImages = Array.isArray(row.images)
+    ? row.images.filter((u): u is string => typeof u === 'string')
+    : [];
+
+  return {
+    productId: row.id,
+    sellerId: row.seller.id,
+    sellerShopName: row.seller.shopName,
+    sellerLogoUrl: row.seller.logoUrl,
+    title: row.title,
+    description: row.description,
+    categoryId: row.categoryId,
+    categoryName: row.category.name,
+    weight: row.weight,
+    height: row.height,
+    width: row.width,
+    depth: row.depth,
+    material: row.material,
+    color: row.color,
+    price: row.price.toNumber(),
+    currency: row.currency,
+    stock: row.stock,
+    condition: row.condition,
+    thumbnailUrl: row.thumbnailUrl,
+    galleryImages,
+    createdAt: row.createdAt,
   };
 }

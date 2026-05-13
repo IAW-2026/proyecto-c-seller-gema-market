@@ -2,38 +2,31 @@
 // No levanta servidor: las funciones GET/POST/etc. exportadas por `route.ts`
 // son funciones async normales que reciben un Request y devuelven un Response.
 //
-// Uso:
-//   const res = await invokeGet(GET, { url: 'http://test/api/seller/categorias' });
-//   const res = await invokePost(POST, {
-//     url: 'http://test/api/seller/productos/abc/reservar',
-//     body: { order_id: 'ord-1', ... },
-//     params: { product_id: 'abc' },
-//   });
+// El helper es genérico en `Params` para soportar handlers con params tipados
+// específicos (ej. `{ product_id: string }`). En Next 16 los params son
+// Promises, los wrappeamos con Promise.resolve.
 
 type Headers = Record<string, string>;
-type Params = Record<string, string>;
 
-type GetHandler = (
+type Handler<P extends Record<string, string>> = (
   request: Request,
-  segment?: { params: Promise<Params> },
+  segment: { params: Promise<P> },
 ) => Promise<Response> | Response;
 
-type PostHandler = GetHandler;
-
-export async function invokeGet(
-  handler: GetHandler,
-  opts: { url: string; headers?: Headers; params?: Params },
+export async function invokeGet<P extends Record<string, string> = Record<string, string>>(
+  handler: Handler<P>,
+  opts: { url: string; headers?: Headers; params?: P },
 ): Promise<Response> {
   const req = new Request(opts.url, {
     method: 'GET',
     headers: opts.headers,
   });
-  return handler(req, { params: Promise.resolve(opts.params ?? {}) });
+  return handler(req, { params: Promise.resolve((opts.params ?? {}) as P) });
 }
 
-export async function invokePost(
-  handler: PostHandler,
-  opts: { url: string; body?: unknown; headers?: Headers; params?: Params },
+export async function invokePost<P extends Record<string, string> = Record<string, string>>(
+  handler: Handler<P>,
+  opts: { url: string; body?: unknown; headers?: Headers; params?: P },
 ): Promise<Response> {
   const headers: Headers = {
     'content-type': 'application/json',
@@ -44,5 +37,5 @@ export async function invokePost(
     headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
-  return handler(req, { params: Promise.resolve(opts.params ?? {}) });
+  return handler(req, { params: Promise.resolve((opts.params ?? {}) as P) });
 }

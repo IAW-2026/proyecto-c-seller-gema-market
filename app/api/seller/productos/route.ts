@@ -3,6 +3,7 @@ import { requireBearerAuth } from '@/lib/api/auth';
 import { jsonOk } from '@/lib/api/responses';
 import { parseSearchParams } from '@/lib/api/validation';
 import { listPublicProducts } from '@/lib/data/public-products';
+import { toProductListResponse } from '@/lib/api/mappers/products';
 
 // Coerce: los query params vienen como strings; números/enums se castean.
 const QuerySchema = z.object({
@@ -18,10 +19,7 @@ const QuerySchema = z.object({
   page_size: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-// GET /api/seller/productos
-// Listado paginado del catálogo público. Filtra `status=active` y excluye
-// soft-deleted siempre (eso vive en el data layer). El handler solo arma
-// `href` con el origin del request — el data layer no conoce URLs.
+// GET /api/seller/productos — listado paginado del catálogo público.
 export async function GET(request: Request): Promise<Response> {
   const authErr = requireBearerAuth(request);
   if (authErr) return authErr;
@@ -44,15 +42,5 @@ export async function GET(request: Request): Promise<Response> {
   });
 
   const origin = new URL(request.url).origin;
-  return jsonOk({
-    items: page.items.map((p) => ({
-      ...p,
-      href: `${origin}/api/seller/productos/${p.product_id}`,
-    })),
-    page: page.page,
-    page_size: page.pageSize,
-    total: page.total,
-    sort_by: page.sortBy,
-    order: page.order,
-  });
+  return jsonOk(toProductListResponse(page, origin));
 }
