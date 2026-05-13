@@ -1,4 +1,5 @@
 import 'server-only';
+import { cacheTag } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { deleteImageByUrl, uploadImage } from '@/lib/storage/images';
 import type { Seller, SellerInput, SellerWithCounts } from "@/types/domain";
@@ -10,6 +11,8 @@ export async function findSeller(id: string): Promise<Seller | null> {
 export async function findSellerWithCounts(
   id: string,
 ): Promise<SellerWithCounts | null> {
+  "use cache";
+  cacheTag(`shop:${id}`);
   const row = await prisma.seller.findUnique({
     where: { id },
     include: {

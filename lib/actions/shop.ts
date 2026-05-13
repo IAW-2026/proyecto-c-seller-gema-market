@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
   saveSeller,
@@ -12,7 +12,7 @@ import type { SellerInput } from "@/types/domain";
 export async function saveSellerAction(input: SellerInput): Promise<void> {
   const seller = await requireSeller();
   await saveSeller(seller.id, input);
-  revalidatePath("/shop");
+  updateTag(`shop:${seller.id}`);
 }
 
 async function fileFrom(formData: FormData, action: string): Promise<File> {
@@ -29,7 +29,7 @@ export async function uploadSellerCoverAction(
   const seller = await requireSeller();
   const file = await fileFrom(formData, "uploadSellerCoverAction");
   const url = await uploadSellerCover(seller.id, file);
-  revalidatePath("/shop");
+  updateTag(`shop:${seller.id}`);
   return url;
 }
 
@@ -39,6 +39,6 @@ export async function uploadSellerLogoAction(
   const seller = await requireSeller();
   const file = await fileFrom(formData, "uploadSellerLogoAction");
   const url = await uploadSellerLogo(seller.id, file);
-  revalidatePath("/shop");
+  updateTag(`shop:${seller.id}`);
   return url;
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
+import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import { useDebouncedSearchParam } from "@/lib/hooks/use-debounced-search-param";
+import { useFilterParams } from "@/lib/hooks/use-filter-params";
 import type { OrderDateRange } from "@/types/domain";
 
 export type OrdersFiltersBarProps = {
@@ -19,9 +20,7 @@ export function OrdersFiltersBar({
   dateRange,
   dateRangeOptions,
 }: OrdersFiltersBarProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const pushParams = useFilterParams();
   const [query, setQuery] = useDebouncedSearchParam("q", initialQuery);
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -29,23 +28,10 @@ export function OrdersFiltersBar({
   const selectedLabel =
     dateRangeOptions.find((opt) => opt.id === dateRange)?.label ?? "Fechas";
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [isOpen]);
+  useClickOutside(popoverRef, isOpen, () => setIsOpen(false));
 
   const onRangeChange = (next: OrderDateRange) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("range", next);
-    params.delete("page");
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    pushParams({ range: next });
     setIsOpen(false);
   };
 

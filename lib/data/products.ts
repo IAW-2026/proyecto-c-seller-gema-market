@@ -1,4 +1,5 @@
 import 'server-only';
+import { cacheTag } from 'next/cache';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { prisma } from '@/lib/db';
 import { newId, PREFIXES } from '@/lib/ids';
@@ -15,6 +16,7 @@ import type {
   ProductStatus,
   ProductWithJoins,
   SortBy,
+  StockFilter,
   StockSummary,
 } from '@/types/domain';
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '@/types/domain';
@@ -121,9 +123,28 @@ export async function listProducts(
   return { items: rows.map(toProductWithJoins), total, page, pageSize };
 }
 
+// Wrapper cacheado de `listProducts` para los listings sin búsqueda libre.
+// Las páginas hacen el switch: si hay `query`, llaman a `listProducts`
+// (cada combinación de texto es nueva → no vale la pena cachear); si no,
+// llaman acá y se reusan combinaciones finitas (tab/sort/stockFilter/page).
+export async function listProductsCached(
+  sellerId: string,
+  status: ProductStatus | undefined,
+  sortBy: SortBy | undefined,
+  stockFilter: StockFilter | undefined,
+  page: number,
+  pageSize: number | undefined,
+): Promise<Page<ProductWithJoins>> {
+  "use cache";
+  cacheTag(`products-listing:${sellerId}`);
+  return listProducts({ sellerId, status, sortBy, stockFilter, page, pageSize });
+}
+
 export async function countProductsByStatus(
   sellerId?: string,
 ): Promise<Record<ProductStatus, number>> {
+  "use cache";
+  cacheTag(`products-counts:${sellerId ?? 'all'}`);
   const groups = await prisma.product.groupBy({
     by: ['status'],
     where: { sellerId, deletedAt: null },
@@ -137,6 +158,8 @@ export async function countProductsByStatus(
 }
 
 export async function getStockSummary(sellerId?: string): Promise<StockSummary> {
+  "use cache";
+  cacheTag(`stock-summary:${sellerId ?? 'all'}`);
   const where: Prisma.ProductWhereInput = { sellerId, deletedAt: null };
   const [agg, activeSkus, outOfStock] = await Promise.all([
     prisma.product.aggregate({ where, _sum: { stock: true } }),
@@ -170,6 +193,8 @@ export async function findOwnedProduct(
   id: string,
   sellerId: string,
 ): Promise<ProductWithJoins | null> {
+  "use cache";
+  cacheTag(`product:${id}`);
   const row = await prisma.product.findFirst({
     where: { id, sellerId, deletedAt: null },
     select: productSelect,
@@ -184,6 +209,8 @@ export async function findOwnedProductIncludingDeleted(
   id: string,
   sellerId: string,
 ): Promise<ProductWithJoins | null> {
+  "use cache";
+  cacheTag(`product:${id}`);
   const row = await prisma.product.findFirst({
     where: { id, sellerId },
     select: productSelect,
