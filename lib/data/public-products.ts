@@ -69,6 +69,26 @@ export type PublicProductDetail = {
   createdAt: Date;
 };
 
+// Shape para el batch endpoint: subconjunto del detalle, sin description,
+// galería, material/color ni createdAt — pensado para carrito/favoritos.
+export type PublicProductBatchItem = {
+  productId: string;
+  sellerId: string;
+  sellerShopName: string;
+  sellerLogoUrl: string | null;
+  title: string;
+  categoryId: string;
+  price: number;
+  currency: string;
+  stock: number;
+  condition: ProductCondition;
+  thumbnailUrl: string | null;
+  weight: number;
+  height: number;
+  width: number;
+  depth: number;
+};
+
 function buildWhere(filters: PublicProductFilters): Prisma.ProductWhereInput {
   const where: Prisma.ProductWhereInput = {
     // Endpoints públicos: solo productos activos y no borrados.
@@ -211,4 +231,66 @@ export async function findPublicProduct(
     galleryImages,
     createdAt: row.createdAt,
   };
+}
+
+// Lookup batch: devuelve los productos públicos que matchean los IDs dados,
+// preservando el orden de entrada. IDs sin match (inexistentes, paused o
+// soft-deleted) se omiten silenciosamente — el consumer (carrito) sigue
+// renderizando los demás items.
+export async function findPublicProductsByIds(
+  ids: ReadonlyArray<string>,
+): Promise<PublicProductBatchItem[]> {
+  if (ids.length === 0) return [];
+
+  const rows = await prisma.product.findMany({
+    where: {
+      id: { in: [...ids] },
+      status: 'active',
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      sellerId: true,
+      title: true,
+      categoryId: true,
+      price: true,
+      currency: true,
+      stock: true,
+      condition: true,
+      thumbnailUrl: true,
+      weight: true,
+      height: true,
+      width: true,
+      depth: true,
+      seller: { select: { shopName: true, logoUrl: true } },
+    },
+  });
+
+  const byId = new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        productId: row.id,
+        sellerId: row.sellerId,
+        sellerShopName: row.seller.shopName,
+        sellerLogoUrl: row.seller.logoUrl,
+        title: row.title,
+        categoryId: row.categoryId,
+        price: row.price.toNumber(),
+        currency: row.currency,
+        stock: row.stock,
+        condition: row.condition,
+        thumbnailUrl: row.thumbnailUrl,
+        weight: row.weight,
+        height: row.height,
+        width: row.width,
+        depth: row.depth,
+      } satisfies PublicProductBatchItem,
+    ]),
+  );
+
+  return ids.flatMap((id) => {
+    const item = byId.get(id);
+    return item ? [item] : [];
+  });
 }

@@ -65,3 +65,27 @@ export type ProductDetailResponse = {
   images: string[];
   created_at: string; // ISO 8601
 };
+
+// ─── POST /api/seller/productos/batch ─────────────────────────────────────────
+
+// Más liviano que el detail: pensado para carrito/favoritos/resumen — sin
+// description, sin galería completa, sin material/color, sin created_at.
+export type ProductBatchItem = {
+  product_id: string;
+  seller: ProductSellerSummary;
+  title: string;
+  category_id: string;
+  price: number;
+  currency: string;
+  stock: number;
+  condition: ProductCondition;
+  thumbnail_url: string | null;
+  weight: number;
+  height: number;
+  width: number;
+  depth: number;
+};
+
+export type ProductBatchResponse = {
+  products: ProductBatchItem[];
+};

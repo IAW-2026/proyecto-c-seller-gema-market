@@ -3,11 +3,14 @@
 // `images` (thumbnail + galería), `created_at` como ISO, etc.
 
 import type {
+  PublicProductBatchItem,
   PublicProductDetail,
   PublicProductListItem,
   PublicProductPage,
 } from '@/lib/data/public-products';
 import type {
+  ProductBatchItem,
+  ProductBatchResponse,
   ProductDetailResponse,
   ProductListItem,
   ProductListResponse,
@@ -46,6 +49,36 @@ export function toProductListResponse(
     sort_by: page.sortBy,
     order: page.order,
   };
+}
+
+export function toProductBatchItem(
+  domain: PublicProductBatchItem,
+): ProductBatchItem {
+  return {
+    product_id: domain.productId,
+    seller: {
+      seller_id: domain.sellerId,
+      shop_name: domain.sellerShopName,
+      logo_url: domain.sellerLogoUrl,
+    },
+    title: domain.title,
+    category_id: domain.categoryId,
+    price: domain.price,
+    currency: domain.currency,
+    stock: domain.stock,
+    condition: domain.condition,
+    thumbnail_url: domain.thumbnailUrl,
+    weight: domain.weight,
+    height: domain.height,
+    width: domain.width,
+    depth: domain.depth,
+  };
+}
+
+export function toProductBatchResponse(
+  items: ReadonlyArray<PublicProductBatchItem>,
+): ProductBatchResponse {
+  return { products: items.map(toProductBatchItem) };
 }
 
 export function toProductDetailResponse(
