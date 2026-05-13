@@ -36,6 +36,7 @@ export async function setup(): Promise<void> {
   process.env.DATABASE_URL = testUrl;
   process.env.SELLER_INTERNAL_API_KEY ??= 'test-internal-key';
   process.env.RESERVATION_TTL_MINUTES ??= '30';
+  process.env.CRON_SECRET ??= 'test-cron-secret';
 
   // 1. Crear schema si no existe.
   const client = new Client({ connectionString: testUrl });

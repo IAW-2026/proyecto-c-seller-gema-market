@@ -16,3 +16,17 @@ export function requireBearerAuth(request: Request): Response | null {
   if (!checkBearerAuth(request, expected)) return jsonUnauthorized();
   return null;
 }
+
+// Gate de auth para endpoints internos disparados por Vercel Cron. Vercel
+// envía `Authorization: Bearer ${CRON_SECRET}` automáticamente cuando el cron
+// está configurado en `vercel.json` y la env var está seteada en el proyecto.
+//
+// Mantiene la key separada de SELLER_INTERNAL_API_KEY para que un compromiso
+// de la key shared con Buyer/Payments/Shipping no exponga los endpoints
+// administrativos internos.
+export function requireCronAuth(request: Request): Response | null {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) return jsonServerError('Server misconfiguration');
+  if (!checkBearerAuth(request, expected)) return jsonUnauthorized();
+  return null;
+}

@@ -48,6 +48,33 @@ export const TEST_SALES = {
   delivered: 'ord-test-003', // delivered
 } as const;
 
+// Mapa producto → stock inicial. Se usa tanto en el seed (al crear) como en
+// resetMutableState() (al restaurar entre tests mutating). Mantener en sync
+// con los `stock: N` de los `prisma.product.create` de abajo.
+export const SEED_PRODUCT_STOCK: Readonly<Record<string, number>> = {
+  [TEST_PRODUCT_IDS.sillon]: 5,
+  [TEST_PRODUCT_IDS.mesaLuz]: 10,
+  [TEST_PRODUCT_IDS.pava]: 1,
+  [TEST_PRODUCT_IDS.vajilla]: 14,
+  [TEST_PRODUCT_IDS.espejo]: 0,
+  [TEST_PRODUCT_IDS.cortina]: 30,
+  [TEST_PRODUCT_IDS.lampara]: 5,
+  [TEST_PRODUCT_IDS.ajeno]: 3,
+};
+
+// IDs de las Sales del seed + su estado inicial. resetMutableState borra Sales
+// con id NO incluido acá (las que crearon los tests) y restaura status/tracking
+// de estas (las que pudieron mutar tests de estado-envio).
+export const SEED_SALES_STATE: ReadonlyArray<{
+  id: string;
+  status: 'paid' | 'shipping' | 'delivered' | 'shipping_failed';
+  trackingCode: string | null;
+}> = [
+  { id: 'vnt_test_001', status: 'paid', trackingCode: null },
+  { id: 'vnt_test_002', status: 'shipping', trackingCode: 'TRK-TEST-002' },
+  { id: 'vnt_test_003', status: 'delivered', trackingCode: 'TRK-TEST-003' },
+];
+
 const PLACEHOLDER_LOGO = 'https://placehold.co/400x400/png?text=Logo';
 const PLACEHOLDER_COVER = 'https://placehold.co/1200x400/png?text=Cover';
 const PLACEHOLDER_THUMB = 'https://placehold.co/600x600/png?text=Product';

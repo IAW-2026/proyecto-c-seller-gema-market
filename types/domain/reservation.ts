@@ -12,15 +12,6 @@ export type Reserva = {
   buyerId: string;   // FK lógica → Buyer App
   buyerName: string; // denormalizado de Buyer App al momento de reservar
   quantity: number;
-  expiresAt: Date;   // definido por el Buyer App
+  expiresAt: Date;   // lo asigna la Seller App al crear la reserva (TTL fijo)
   createdAt: Date;
-};
-
-export type ReservaInput = {
-  productId: string;
-  orderId: string;
-  buyerId: string;
-  buyerName: string;
-  quantity: number;
-  expiresAt: Date;
 };
