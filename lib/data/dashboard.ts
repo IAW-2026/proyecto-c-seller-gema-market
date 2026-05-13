@@ -1,4 +1,5 @@
 import 'server-only';
+import { cacheTag } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { countProductsByStatus, getTopProducts } from "@/lib/data/products";
 import { getRecentSellerOrders } from "@/lib/data/orders";
@@ -8,6 +9,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const SALES_WINDOW_DAYS = 30;
 
 export async function getDashboardData(sellerId: string): Promise<DashboardData> {
+  "use cache";
+  cacheTag(`dashboard:${sellerId}`);
   const salesWindowCutoff = new Date(Date.now() - SALES_WINDOW_DAYS * DAY_MS);
   const recentOrdersWhere = {
     sellerId,

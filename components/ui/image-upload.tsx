@@ -251,11 +251,9 @@ export function MultiImageUpload({
     }
     setIsUploading(true);
     try {
-      const uploaded: string[] = [];
-      for (const file of arr) {
-        const url = await uploadFile(file, onUpload);
-        uploaded.push(url);
-      }
+      const uploaded = await Promise.all(
+        arr.map((file) => uploadFile(file, onUpload)),
+      );
       onChange([...values, ...uploaded]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir imagen");

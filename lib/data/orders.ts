@@ -1,10 +1,12 @@
 import 'server-only';
+import { cacheTag } from 'next/cache';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { prisma } from '@/lib/db';
 import type {
   Order,
   OrderDateRange,
   OrderFilters,
+  OrderListStatus,
   OrderWithJoins,
   Page,
   PageSize,
@@ -107,6 +109,8 @@ export async function findOwnedOrder(
   id: string,
   sellerId: string,
 ): Promise<Order | null> {
+  "use cache";
+  cacheTag(`order:${id}`);
   const row = await prisma.sale.findFirst({ where: { id, sellerId } });
   return row ? toOrder(row) : null;
 }
@@ -131,9 +135,25 @@ export async function listSellerOrders(
   return { items: rows.map(toOrderWithJoins), total, page, pageSize };
 }
 
+// Wrapper cacheado para listings sin búsqueda libre. Las páginas hacen el
+// switch: con `query` van a `listSellerOrders`, sin query van acá.
+export async function listSellerOrdersCached(
+  sellerId: string,
+  status: OrderListStatus | undefined,
+  dateRange: OrderDateRange,
+  page: number,
+  pageSize: number | undefined,
+): Promise<Page<OrderWithJoins>> {
+  "use cache";
+  cacheTag(`orders-listing:${sellerId}`);
+  return listSellerOrders({ sellerId, status, dateRange, page, pageSize });
+}
+
 export async function countSellerOrdersByStatus(
   sellerId?: string,
 ): Promise<Record<"todos" | "paid" | "shipping" | "delivered", number>> {
+  "use cache";
+  cacheTag(`orders-counts:${sellerId ?? 'all'}`);
   const groups = await prisma.sale.groupBy({
     by: ["status"],
     where: sellerId ? { sellerId } : undefined,

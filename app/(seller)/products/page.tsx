@@ -8,7 +8,11 @@ import { ProductsSkeleton } from "@/components/screens/skeletons/products-skelet
 import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { Button } from "@/components/ui/button";
 import { requireSeller } from "@/lib/auth/current-seller";
-import { countProductsByStatus, listProducts } from "@/lib/data/products";
+import {
+  countProductsByStatus,
+  listProducts,
+  listProductsCached,
+} from "@/lib/data/products";
 import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
 
 export const metadata: Metadata = {
@@ -90,17 +94,21 @@ async function ProductsContent({ searchParams }: { searchParams: SearchParams })
     : undefined;
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
+  const page = Number.isFinite(pageNum) ? pageNum : 1;
+  const pageSize = Number.isFinite(pageSizeNum) ? pageSizeNum : undefined;
 
   const [result, counts] = await Promise.all([
-    listProducts({
-      sellerId: seller.id,
-      query: q,
-      status: activeTab,
-      sortBy,
-      stockFilter,
-      page: Number.isFinite(pageNum) ? pageNum : 1,
-      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-    }),
+    q
+      ? listProducts({
+          sellerId: seller.id,
+          query: q,
+          status: activeTab,
+          sortBy,
+          stockFilter,
+          page,
+          pageSize,
+        })
+      : listProductsCached(seller.id, activeTab, sortBy, stockFilter, page, pageSize),
     countProductsByStatus(seller.id),
   ]);
 
