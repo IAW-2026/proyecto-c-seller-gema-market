@@ -17,9 +17,12 @@ export function ShopSkeleton() {
             rounded="none"
           />
           <div className="px-6 pb-6">
-            <div className="flex items-center gap-4 mb-5 max-[560px]:items-start max-[560px]:gap-3">
-              <div className="-mt-11 shrink-0 relative z-[1]">
-                <SkeletonCircle size={88} className="border-4 border-paper" />
+            <div className="flex items-start gap-4 mb-5 max-[560px]:gap-3">
+              <div className="-mt-14 shrink-0 relative z-[1]">
+                <SkeletonCircle
+                  size={112}
+                  className="border-4 border-paper"
+                />
               </div>
               <div className="flex-1 pt-3 min-w-0 flex flex-col gap-2">
                 <SkeletonText width={220} height={22} />

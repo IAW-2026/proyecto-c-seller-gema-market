@@ -47,43 +47,50 @@ export function PageHeaderSkeleton({
   );
 }
 
-export function ToolbarSkeleton({
-  tabsCount = 0,
-  withSearch = true,
-  withSecondary = false,
+export function TabsSkeleton({
+  count = 2,
+  withCounts = true,
 }: {
-  tabsCount?: number;
-  withSearch?: boolean;
-  withSecondary?: boolean;
+  count?: number;
+  withCounts?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3 lgx:flex-row lgx:items-center lgx:justify-between">
-      {tabsCount > 0 && (
-        <div className="flex gap-2 overflow-x-auto -mx-1 px-1">
-          {Array.from({ length: tabsCount }).map((_, i) => (
-            <Skeleton
-              key={i}
-              rounded="full"
-              className="h-9 w-24 shrink-0"
-            />
-          ))}
+    <div className="flex gap-1 border-b border-line overflow-x-auto max-w-full no-scrollbar">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="px-4 py-3 flex items-center gap-2 whitespace-nowrap shrink-0 max-[520px]:px-2.5 max-[520px]:gap-1.5"
+        >
+          <SkeletonText width={70} height={13} />
+          {withCounts && (
+            <Skeleton className="h-[18px] w-7" rounded="full" />
+          )}
         </div>
-      )}
-      <div className="flex gap-2 lgx:ml-auto">
-        {withSearch && (
-          <Skeleton className="h-[42px] w-full lgx:w-[280px]" rounded="r2" />
-        )}
-        {withSecondary && (
-          <Skeleton className="h-[42px] w-[140px] shrink-0" rounded="r2" />
-        )}
-      </div>
+      ))}
     </div>
   );
 }
 
-export function StatCardSkeleton() {
+export function FiltersBarSkeleton({
+  withSecondary = false,
+}: {
+  withSecondary?: boolean;
+}) {
   return (
-    <Card padding={20}>
+    <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex-1 min-w-[220px]">
+        <Skeleton className="h-[42px] w-full" rounded="r2" />
+      </div>
+      {withSecondary && (
+        <Skeleton className="h-[42px] w-[120px] shrink-0" rounded="r2" />
+      )}
+    </div>
+  );
+}
+
+export function StatCardSkeleton({ padding = 20 }: { padding?: number }) {
+  return (
+    <Card padding={padding}>
       <SkeletonText width={110} height={11} className="mb-3" />
       <SkeletonText width={140} height={26} />
     </Card>
@@ -92,11 +99,15 @@ export function StatCardSkeleton() {
 
 export function PagerSkeleton() {
   return (
-    <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-t border-line">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-line">
       <SkeletonText width={120} height={11} />
-      <div className="flex gap-2">
-        <Skeleton className="h-8 w-8" rounded="full" />
-        <Skeleton className="h-8 w-8" rounded="full" />
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-[130px]" rounded="full" />
+        <div className="flex items-center gap-1 ml-2">
+          <Skeleton className="h-8 w-8" rounded="full" />
+          <SkeletonText width={42} height={12} />
+          <Skeleton className="h-8 w-8" rounded="full" />
+        </div>
       </div>
     </div>
   );
@@ -157,51 +168,6 @@ export function TableSkeleton({
   );
 }
 
-export function MobileCardListSkeleton({
-  count = 5,
-  withMetaGrid = true,
-  metaCells = 3,
-}: {
-  count?: number;
-  withMetaGrid?: boolean;
-  metaCells?: number;
-}) {
-  return (
-    <div className="grid gap-3 p-3 lgx:hidden">
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-paper border border-line rounded-2xl p-3.5"
-        >
-          <div className="flex justify-between gap-2.5 items-start mb-3">
-            <div className="flex gap-3 min-w-0 flex-1">
-              <Skeleton className="w-[44px] h-[44px] shrink-0" rounded="r1" />
-              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                <SkeletonText width="60%" height={11} />
-                <SkeletonText width="80%" height={14} />
-              </div>
-            </div>
-            <Skeleton className="h-6 w-16 shrink-0" rounded="full" />
-          </div>
-          {withMetaGrid && (
-            <div
-              className="grid gap-2"
-              style={{ gridTemplateColumns: `repeat(${metaCells}, minmax(0, 1fr))` }}
-            >
-              {Array.from({ length: metaCells }).map((__, j) => (
-                <div key={j} className="bg-cream rounded-xl p-2.5">
-                  <SkeletonText width={48} height={9} className="mb-1.5" />
-                  <SkeletonText width={64} height={13} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function FieldSkeleton({ height = 46 }: { height?: number }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -215,10 +181,10 @@ export function SectionTitleSkeleton({ width = 160 }: { width?: number }) {
   return <SkeletonText width={width} height={15} className="mb-4" />;
 }
 
-export function AvatarRowSkeleton() {
+export function AvatarRowSkeleton({ size = 28 }: { size?: number }) {
   return (
     <div className="flex items-center gap-2">
-      <SkeletonCircle size={28} />
+      <SkeletonCircle size={size} />
       <SkeletonText width={96} height={12} />
     </div>
   );

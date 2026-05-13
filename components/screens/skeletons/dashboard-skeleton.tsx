@@ -1,10 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton, SkeletonRegion, SkeletonText } from "@/components/ui/skeleton";
-import {
-  AvatarRowSkeleton,
-  StatCardSkeleton,
-  TableSkeleton,
-} from "./skeleton-parts";
+import { StatCardSkeleton, TableSkeleton } from "./skeleton-parts";
 
 const RECENT_ORDERS_COLS = [
   { width: "34%" },
@@ -38,6 +34,10 @@ export function DashboardSkeleton() {
                   <SkeletonText width="55%" height={12} />
                   <SkeletonText width="30%" height={10} />
                 </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <SkeletonText width={56} height={11} />
+                  <Skeleton className="h-[18px] w-16" rounded="full" />
+                </div>
               </div>
             ))}
           </div>
@@ -48,19 +48,19 @@ export function DashboardSkeleton() {
             <SkeletonText width={150} height={15} />
             <Skeleton className="h-8 w-24" rounded="full" />
           </div>
-          <TableSkeleton columns={RECENT_ORDERS_COLS} rows={5} minWidth={600} />
+          <TableSkeleton columns={RECENT_ORDERS_COLS} rows={5} minWidth={640} />
           <div className="grid gap-3 p-3 lgx:hidden">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
                 className="bg-paper border border-line rounded-2xl p-3.5"
               >
-                <div className="flex justify-between items-start mb-2.5">
-                  <div className="flex flex-col gap-1.5">
-                    <SkeletonText width={84} height={10} />
-                    <AvatarRowSkeleton />
+                <div className="flex justify-between gap-2.5 items-start mb-2.5">
+                  <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+                    <SkeletonText width="70%" height={14} />
+                    <SkeletonText width="50%" height={10} />
                   </div>
-                  <Skeleton className="h-6 w-20" rounded="full" />
+                  <Skeleton className="h-[18px] w-20 shrink-0" rounded="full" />
                 </div>
                 <div className="flex justify-between items-center">
                   <SkeletonText width={80} height={11} />
