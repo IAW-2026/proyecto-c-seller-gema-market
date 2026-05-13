@@ -29,13 +29,22 @@ function shippingBaseUrl(): string {
   return v;
 }
 
+function shippingApiKey(): string {
+  const v = process.env.SHIPPING_API_KEY;
+  if (!v) throw new Error('Missing env var: SHIPPING_API_KEY');
+  return v;
+}
+
 export async function requestShipping(
   input: RequestShippingInput,
 ): Promise<RequestShippingResult> {
   const url = `${shippingBaseUrl()}/api/shipping/envios`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${shippingApiKey()}`,
+    },
     body: JSON.stringify({
       order_id: input.orderId,
       seller_id: input.sellerId,

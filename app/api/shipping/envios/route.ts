@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { checkBearerAuth } from '@/lib/api-auth';
 
 const RequestSchema = z.object({
   order_id: z.string().min(1),
@@ -12,6 +13,14 @@ function randomTrackingCode(): string {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const expectedKey = process.env.SHIPPING_API_KEY;
+  if (!expectedKey) {
+    return Response.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
+  if (!checkBearerAuth(request, expectedKey)) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
