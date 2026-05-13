@@ -1,10 +1,18 @@
 import { z } from 'zod';
 import { checkBearerAuth } from '@/lib/api-auth';
 
+const OriginAddressSchema = z.object({
+  street: z.string().min(1),
+  number: z.string().min(1),
+  zip: z.string().min(1),
+  city: z.string().min(1),
+});
+
 const RequestSchema = z.object({
   order_id: z.string().min(1),
   seller_id: z.string().min(1),
   buyer_id: z.string().min(1),
+  origin_address: OriginAddressSchema,
 });
 
 function randomTrackingCode(): string {
@@ -34,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   return Response.json(
-    { tracking_code: randomTrackingCode() },
+    { status: 'pending_pickup', tracking_code: randomTrackingCode() },
     { status: 201 },
   );
 }
