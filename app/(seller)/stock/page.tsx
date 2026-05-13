@@ -4,9 +4,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StockScreen } from "@/components/screens/stock-screen";
 import { StockToolbar } from "@/components/screens/stock-toolbar";
 import { StockSkeleton } from "@/components/screens/skeletons/stock-skeleton";
-import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
+import { FiltersBarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { requireSeller } from "@/lib/auth/current-seller";
-import { getStockSummary, listProducts } from "@/lib/data/products";
+import {
+  getStockSummary,
+  listProducts,
+  listProductsCached,
+} from "@/lib/data/products";
 import type { ProductStatus, SortBy } from "@/types/domain";
 
 export const metadata: Metadata = {
@@ -55,11 +59,7 @@ export default function StockPage({ searchParams }: StockPageProps) {
 }
 
 function FiltersFallback() {
-  return (
-    <div className="mb-4">
-      <ToolbarSkeleton withSearch withSecondary />
-    </div>
-  );
+  return <FiltersBarSkeleton withSecondary />;
 }
 
 async function StockToolbarLoader({ searchParams }: { searchParams: SearchParams }) {
@@ -74,16 +74,20 @@ async function StockContent({ searchParams }: { searchParams: SearchParams }) {
   const statusFilter = parseStatusFilter(params.status);
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
+  const page = Number.isFinite(pageNum) ? pageNum : 1;
+  const pageSize = Number.isFinite(pageSizeNum) ? pageSizeNum : undefined;
 
   const [result, summary] = await Promise.all([
-    listProducts({
-      sellerId: seller.id,
-      query: q,
-      status: statusFilter,
-      sortBy,
-      page: Number.isFinite(pageNum) ? pageNum : 1,
-      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-    }),
+    q
+      ? listProducts({
+          sellerId: seller.id,
+          query: q,
+          status: statusFilter,
+          sortBy,
+          page,
+          pageSize,
+        })
+      : listProductsCached(seller.id, statusFilter, sortBy, undefined, page, pageSize),
     getStockSummary(seller.id),
   ]);
 

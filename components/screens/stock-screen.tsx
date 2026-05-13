@@ -1,8 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
-import { ProductGlyph } from "@/components/ui/product-glyph";
-import { getProductVisual } from "@/lib/ui/ui-config";
+import { ProductThumb } from "@/components/ui/product-thumb";
 import { StockRowEditor } from "./stock-row-editor";
 import type { ProductWithJoins, StockSummary } from "@/types/domain";
 
@@ -23,18 +22,18 @@ export function StockScreen({
 }: StockScreenProps) {
   return (
     <>
-      <div className="grid gap-3.5 mb-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-        <Card padding={20}>
-          <div className="text-xs text-ink-3">Total unidades</div>
-          <div className="text-[26px] font-bold">{summary.totalUnits}</div>
+      <div className="grid gap-2 mb-6 grid-cols-3 lgx:gap-3.5 lgx:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+        <Card padding={14}>
+          <div className="text-[11px] lgx:text-xs text-ink-3">Total unidades</div>
+          <div className="text-[20px] lgx:text-[26px] font-bold">{summary.totalUnits}</div>
         </Card>
-        <Card padding={20}>
-          <div className="text-xs text-ink-3">Productos activos</div>
-          <div className="text-[26px] font-bold">{summary.activeSkus}</div>
+        <Card padding={14}>
+          <div className="text-[11px] lgx:text-xs text-ink-3">Productos activos</div>
+          <div className="text-[20px] lgx:text-[26px] font-bold">{summary.activeSkus}</div>
         </Card>
-        <Card padding={20}>
-          <div className="text-xs text-ink-3">Sin stock</div>
-          <div className="text-[26px] font-bold text-danger">{summary.outOfStock}</div>
+        <Card padding={14}>
+          <div className="text-[11px] lgx:text-xs text-ink-3">Sin stock</div>
+          <div className="text-[20px] lgx:text-[26px] font-bold text-danger">{summary.outOfStock}</div>
         </Card>
       </div>
 
@@ -54,20 +53,17 @@ export function StockScreen({
             </thead>
             <tbody>
               {products.map((p) => {
-                const visual = getProductVisual(p.categoryName);
                 const isActive = p.status === "active";
                 return (
                   <tr key={p.id} className="border-b border-line">
                     <td className="py-3 px-5">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
-                          style={{
-                            background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                          }}
-                        >
-                          <ProductGlyph kind={visual.glyph} palette={visual.palette} size={22} />
-                        </div>
+                        <ProductThumb
+                          product={p}
+                          className="w-9 h-9 rounded-[9px]"
+                          glyphSize={22}
+                          imageSizes="36px"
+                        />
                         <div className="min-w-0">
                           <div className="font-medium truncate">{p.title}</div>
                           <div className="text-[11px] text-ink-3">{p.categoryName}</div>
@@ -100,7 +96,6 @@ export function StockScreen({
         </div>
         <div className="grid gap-3 p-3 lgx:hidden">
           {products.map((p) => {
-            const visual = getProductVisual(p.categoryName);
             const isActive = p.status === "active";
             return (
               <div
@@ -108,14 +103,12 @@ export function StockScreen({
                 className="bg-paper border border-line rounded-2xl p-3.5"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${visual.palette[0]}55, ${visual.palette[1]}55)`,
-                    }}
-                  >
-                    <ProductGlyph kind={visual.glyph} palette={visual.palette} size={30} />
-                  </div>
+                  <ProductThumb
+                    product={p}
+                    className="w-12 h-12 rounded-xl"
+                    glyphSize={30}
+                    imageSizes="48px"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate">{p.title}</div>
                     <div className="text-[11px] text-ink-3 mt-0.5">{p.categoryName}</div>

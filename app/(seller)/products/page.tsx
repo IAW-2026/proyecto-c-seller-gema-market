@@ -1,13 +1,18 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
+import { ProductCreateFab } from "@/components/screens/product-create-fab";
 import { ProductsFiltersBar } from "@/components/screens/products-filters-bar";
 import { ProductsScreen } from "@/components/screens/products-screen";
 import { ProductsSkeleton } from "@/components/screens/skeletons/products-skeleton";
-import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
+import { FiltersBarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { Button } from "@/components/ui/button";
 import { requireSeller } from "@/lib/auth/current-seller";
-import { countProductsByStatus, listProducts } from "@/lib/data/products";
+import {
+  countProductsByStatus,
+  listProducts,
+  listProductsCached,
+} from "@/lib/data/products";
 import type { ProductStatus, SortBy, StockFilter } from "@/types/domain";
 
 export const metadata: Metadata = {
@@ -50,6 +55,7 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
             Nueva
           </Button>
         }
+        hideActionOnMobile
       />
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
         <Suspense fallback={<FiltersFallback />}>
@@ -59,16 +65,13 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
           <ProductsContent searchParams={searchParams} />
         </Suspense>
       </div>
+      <ProductCreateFab />
     </>
   );
 }
 
 function FiltersFallback() {
-  return (
-    <div className="mb-4">
-      <ToolbarSkeleton withSearch withSecondary />
-    </div>
-  );
+  return <FiltersBarSkeleton withSecondary />;
 }
 
 async function ProductsFiltersBarLoader({ searchParams }: { searchParams: SearchParams }) {
@@ -87,17 +90,21 @@ async function ProductsContent({ searchParams }: { searchParams: SearchParams })
     : undefined;
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
+  const page = Number.isFinite(pageNum) ? pageNum : 1;
+  const pageSize = Number.isFinite(pageSizeNum) ? pageSizeNum : undefined;
 
   const [result, counts] = await Promise.all([
-    listProducts({
-      sellerId: seller.id,
-      query: q,
-      status: activeTab,
-      sortBy,
-      stockFilter,
-      page: Number.isFinite(pageNum) ? pageNum : 1,
-      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-    }),
+    q
+      ? listProducts({
+          sellerId: seller.id,
+          query: q,
+          status: activeTab,
+          sortBy,
+          stockFilter,
+          page,
+          pageSize,
+        })
+      : listProductsCached(seller.id, activeTab, sortBy, stockFilter, page, pageSize),
     countProductsByStatus(seller.id),
   ]);
 

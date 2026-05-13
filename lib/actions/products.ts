@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
   deleteProduct,
@@ -8,14 +8,28 @@ import {
   updateProductStock,
   uploadProductImage,
 } from "@/lib/data/products";
+import { hasErrors, validateProductInput } from "@/lib/validation/product";
 import type { ProductInput } from "@/types/domain";
+
+// Tags que cubren listings, conteos y aggregates derivados de los productos
+// del seller. Toda action que cree/edite/borre un producto los invalida.
+function invalidateProductDependents(sellerId: string) {
+  updateTag(`products-listing:${sellerId}`);
+  updateTag(`products-counts:${sellerId}`);
+  updateTag(`stock-summary:${sellerId}`);
+  updateTag(`dashboard:${sellerId}`);
+  updateTag(`shop:${sellerId}`);
+}
 
 export async function saveProductAction(input: ProductInput): Promise<void> {
   const seller = await requireSeller();
+  if (hasErrors(validateProductInput(input))) {
+    throw new Error("Faltan completar campos obligatorios.");
+  }
   await saveProduct(seller.id, input);
-  revalidatePath("/products");
+  invalidateProductDependents(seller.id);
   if (input.id) {
-    revalidatePath(`/products/${input.id}`);
+    updateTag(`product:${input.id}`);
   }
 }
 
@@ -25,26 +39,26 @@ export async function updateProductStockAction(
 ): Promise<void> {
   const seller = await requireSeller();
   await updateProductStock(productId, seller.id, stock);
-  revalidatePath("/stock");
-  revalidatePath("/products");
-  revalidatePath(`/products/${productId}`);
+  updateTag(`products-listing:${seller.id}`);
+  updateTag(`stock-summary:${seller.id}`);
+  updateTag(`dashboard:${seller.id}`);
+  updateTag(`product:${productId}`);
 }
 
 export async function deleteProductAction(productId: string): Promise<void> {
   const seller = await requireSeller();
   await deleteProduct(productId, seller.id);
-  revalidatePath("/products");
-  revalidatePath("/stock");
-  revalidatePath("/dashboard");
+  invalidateProductDependents(seller.id);
+  updateTag(`product:${productId}`);
 }
 
 export async function uploadProductImageAction(
   formData: FormData,
 ): Promise<string> {
-  await requireSeller();
+  const seller = await requireSeller();
   const file = formData.get("file");
   if (!(file instanceof File)) {
     throw new Error("uploadProductImageAction: 'file' inválido");
   }
-  return uploadProductImage(file);
+  return uploadProductImage(seller.id, file);
 }

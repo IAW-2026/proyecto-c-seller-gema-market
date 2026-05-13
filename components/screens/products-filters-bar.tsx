@@ -1,11 +1,13 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
+import { useClickOutside } from "@/lib/hooks/use-click-outside";
 import { useDebouncedSearchParam } from "@/lib/hooks/use-debounced-search-param";
+import { useFilterParams } from "@/lib/hooks/use-filter-params";
 
 const SORT_FIELDS = [
   { value: "price", label: "Precio" },
@@ -21,9 +23,8 @@ export type ProductsFiltersBarProps = {
 };
 
 export function ProductsFiltersBar({ initialQuery }: ProductsFiltersBarProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const pushParams = useFilterParams();
   const [query, setQuery] = useDebouncedSearchParam("q", initialQuery);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -38,27 +39,7 @@ export function ProductsFiltersBar({ initialQuery }: ProductsFiltersBarProps) {
 
   const activeFilterCount = [currentSort, currentStockFilter].filter(Boolean).length;
 
-  useEffect(() => {
-    if (!isFilterOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setIsFilterOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [isFilterOpen]);
-
-  const pushParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(window.location.search);
-    for (const [k, v] of Object.entries(updates)) {
-      if (v) params.set(k, v);
-      else params.delete(k);
-    }
-    params.delete("page");
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
+  useClickOutside(filterRef, isFilterOpen, () => setIsFilterOpen(false));
 
   const setField = (field: SortField) => {
     if (currentField === field) {

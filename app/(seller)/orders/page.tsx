@@ -4,12 +4,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { OrdersFiltersBar } from "@/components/screens/orders-filters-bar";
 import { OrdersScreen } from "@/components/screens/orders-screen";
 import { OrdersSkeleton } from "@/components/screens/skeletons/orders-skeleton";
-import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
+import { FiltersBarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
   DEFAULT_ORDER_DATE_RANGE,
   listSellerOrders,
+  listSellerOrdersCached,
   ORDER_DATE_RANGE_OPTIONS,
 } from "@/lib/data/orders";
 import type { OrderDateRange, OrderListStatus } from "@/types/domain";
@@ -60,11 +61,7 @@ export default function OrdersPage({ searchParams }: OrdersPageProps) {
 }
 
 function FiltersFallback() {
-  return (
-    <div className="mb-4">
-      <ToolbarSkeleton withSearch withSecondary />
-    </div>
-  );
+  return <FiltersBarSkeleton withSecondary />;
 }
 
 async function OrdersFiltersBarLoader({ searchParams }: { searchParams: SearchParams }) {
@@ -86,16 +83,21 @@ async function OrdersContent({ searchParams }: { searchParams: SearchParams }) {
   const dateRange = parseDateRange(params.range);
   const pageNum = Number.parseInt(params.page ?? "1", 10);
   const pageSizeNum = Number.parseInt(params.pageSize ?? "", 10);
+  const page = Number.isFinite(pageNum) ? pageNum : 1;
+  const pageSize = Number.isFinite(pageSizeNum) ? pageSizeNum : undefined;
+  const status = TAB_TO_STATUS[activeTab];
 
   const [result, rawCounts] = await Promise.all([
-    listSellerOrders({
-      sellerId: seller.id,
-      status: TAB_TO_STATUS[activeTab],
-      query: q,
-      dateRange,
-      page: Number.isFinite(pageNum) ? pageNum : 1,
-      pageSize: Number.isFinite(pageSizeNum) ? pageSizeNum : undefined,
-    }),
+    q
+      ? listSellerOrders({
+          sellerId: seller.id,
+          status,
+          query: q,
+          dateRange,
+          page,
+          pageSize,
+        })
+      : listSellerOrdersCached(seller.id, status, dateRange, page, pageSize),
     countSellerOrdersByStatus(seller.id),
   ]);
 

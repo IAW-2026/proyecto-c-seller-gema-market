@@ -27,6 +27,7 @@ export default function DashboardPage() {
             Nueva publicación
           </Button>
         }
+        hideActionOnMobile
       />
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardContent />
