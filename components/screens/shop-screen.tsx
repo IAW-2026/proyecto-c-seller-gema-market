@@ -195,7 +195,7 @@ export function ShopScreen({ seller }: ShopScreenProps) {
           <div className="flex flex-col gap-3.5">
             <Field
               label="Email"
-              hint="Para cambiarlo, usá tu menú de cuenta arriba a la izquierda."
+              hint="Para cambiarlo, usá tu menú de cuenta abajo a la izquierda."
             >
               <ReadonlyField icon="mail" value={seller.email} />
             </Field>

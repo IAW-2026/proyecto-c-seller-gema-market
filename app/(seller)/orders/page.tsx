@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { OrdersFiltersBar } from "@/components/screens/orders-filters-bar";
 import { OrdersScreen } from "@/components/screens/orders-screen";
 import { OrdersSkeleton } from "@/components/screens/skeletons/orders-skeleton";
-import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
+import { FiltersBarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
   countSellerOrdersByStatus,
@@ -61,11 +61,7 @@ export default function OrdersPage({ searchParams }: OrdersPageProps) {
 }
 
 function FiltersFallback() {
-  return (
-    <div className="mb-4">
-      <ToolbarSkeleton withSearch withSecondary />
-    </div>
-  );
+  return <FiltersBarSkeleton withSecondary />;
 }
 
 async function OrdersFiltersBarLoader({ searchParams }: { searchParams: SearchParams }) {

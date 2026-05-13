@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StockScreen } from "@/components/screens/stock-screen";
 import { StockToolbar } from "@/components/screens/stock-toolbar";
 import { StockSkeleton } from "@/components/screens/skeletons/stock-skeleton";
-import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
+import { FiltersBarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
   getStockSummary,
@@ -59,11 +59,7 @@ export default function StockPage({ searchParams }: StockPageProps) {
 }
 
 function FiltersFallback() {
-  return (
-    <div className="mb-4">
-      <ToolbarSkeleton withSearch withSecondary />
-    </div>
-  );
+  return <FiltersBarSkeleton withSecondary />;
 }
 
 async function StockToolbarLoader({ searchParams }: { searchParams: SearchParams }) {

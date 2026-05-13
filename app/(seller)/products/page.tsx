@@ -5,7 +5,7 @@ import { ProductCreateFab } from "@/components/screens/product-create-fab";
 import { ProductsFiltersBar } from "@/components/screens/products-filters-bar";
 import { ProductsScreen } from "@/components/screens/products-screen";
 import { ProductsSkeleton } from "@/components/screens/skeletons/products-skeleton";
-import { ToolbarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
+import { FiltersBarSkeleton } from "@/components/screens/skeletons/skeleton-parts";
 import { Button } from "@/components/ui/button";
 import { requireSeller } from "@/lib/auth/current-seller";
 import {
@@ -71,11 +71,7 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
 }
 
 function FiltersFallback() {
-  return (
-    <div className="mb-4">
-      <ToolbarSkeleton withSearch withSecondary />
-    </div>
-  );
+  return <FiltersBarSkeleton withSecondary />;
 }
 
 async function ProductsFiltersBarLoader({ searchParams }: { searchParams: SearchParams }) {

@@ -18,7 +18,7 @@ function StatusTimelineSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex-1">
             <Skeleton className="h-1 mb-2" rounded="full" />
-            <SkeletonText width="80%" height={10} />
+            <SkeletonText width={70} height={11} />
           </div>
         ))}
       </div>
@@ -52,34 +52,39 @@ function ProductsCardSkeleton() {
   );
 }
 
-function SidePanelSkeleton({
-  rows,
-  withAvatar = false,
-}: {
-  rows: number;
-  withAvatar?: boolean;
-}) {
+function BuyerPanelSkeleton() {
   return (
     <Card padding={20}>
       <SkeletonText width={88} height={11} className="mb-3" />
-      {withAvatar ? (
-        <div className="flex items-center gap-3">
-          <SkeletonCircle size={44} />
-          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-            <SkeletonText width="70%" height={14} />
-            <SkeletonText width="50%" height={11} />
-          </div>
+      <div className="flex items-center gap-3">
+        <SkeletonCircle size={44} />
+        <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+          <SkeletonText width="70%" height={14} />
+          <SkeletonText width="50%" height={11} />
         </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: rows }).map((_, i) => (
-            <div key={i} className="flex justify-between gap-3">
-              <SkeletonText width="40%" height={12} />
-              <SkeletonText width="35%" height={12} />
-            </div>
-          ))}
+      </div>
+    </Card>
+  );
+}
+
+function PaymentPanelSkeleton() {
+  return (
+    <Card padding={20}>
+      <SkeletonText width={56} height={11} className="mb-3" />
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between items-center gap-3">
+          <SkeletonText width={56} height={12} />
+          <SkeletonText width={88} height={12} />
         </div>
-      )}
+        <div className="flex justify-between items-center gap-3">
+          <SkeletonText width={56} height={12} />
+          <Skeleton className="h-[18px] w-20" rounded="full" />
+        </div>
+        <div className="flex justify-between items-center gap-3">
+          <SkeletonText width={64} height={12} />
+          <SkeletonText width={72} height={12} />
+        </div>
+      </div>
     </Card>
   );
 }
@@ -95,9 +100,8 @@ export function OrderDetailSkeleton() {
             <ProductsCardSkeleton />
           </div>
           <div className="flex flex-col gap-4">
-            <SidePanelSkeleton rows={2} withAvatar />
-            <SidePanelSkeleton rows={3} />
-            <SidePanelSkeleton rows={3} />
+            <BuyerPanelSkeleton />
+            <PaymentPanelSkeleton />
           </div>
         </div>
       </div>
