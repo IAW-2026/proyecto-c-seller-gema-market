@@ -18,7 +18,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useActionFeedback } from "@/lib/hooks/use-action-feedback";
 import { getProductVisual, PRODUCT_STATUS_OPTIONS } from "@/lib/ui/ui-config";
 import { uploadProductImageAction } from "@/lib/actions/products";
+import type { ProductDraft } from "@/lib/ai/product-draft";
+import { hasErrors, validateProductInput } from "@/lib/validation/product";
 import type { Category, Product, ProductCondition, ProductInput, ProductStatus } from "@/types/domain";
+import { AIWizardButton } from "./ai-wizard-button";
 import { DeleteProductButton } from "./delete-product-button";
 
 type Mode = "new" | "edit";
@@ -78,39 +81,79 @@ export function ProductEditScreen({
   const [form, setForm] = useState<FormState>(() =>
     toFormState(product, categories[0]?.id ?? ""),
   );
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const save = useActionFeedback();
 
   const isNew = mode === "new";
 
-  const handleSave = () => {
-    save.run(
-      () =>
-        onSaveAction({
-          id: product?.id,
-          title: form.title,
-          description: form.description,
-          price: Number.parseFloat(form.price) || 0,
-          currency: "ARS",
-          categoryId: form.categoryId,
-          stock: Number.parseInt(form.stock, 10) || 0,
-          weight: Number.parseFloat(form.weight) || 0,
-          height: Number.parseFloat(form.height) || 0,
-          width: Number.parseFloat(form.width) || 0,
-          depth: Number.parseFloat(form.depth) || 0,
-          material: form.material,
-          color: form.color,
-          condition: form.condition,
-          thumbnailUrl: form.thumbnailUrl,
-          images: form.images,
-          status: form.status,
-        }),
-      {
-        onSuccess: () => {
-          if (isNew) router.push("/products");
-        },
-      },
-    );
+  const productInput: ProductInput = {
+    id: product?.id,
+    title: form.title,
+    description: form.description,
+    price: Number.parseFloat(form.price) || 0,
+    currency: "ARS",
+    categoryId: form.categoryId,
+    stock: Number.parseInt(form.stock, 10) || 0,
+    weight: Number.parseFloat(form.weight) || 0,
+    height: Number.parseFloat(form.height) || 0,
+    width: Number.parseFloat(form.width) || 0,
+    depth: Number.parseFloat(form.depth) || 0,
+    material: form.material,
+    color: form.color,
+    condition: form.condition,
+    thumbnailUrl: form.thumbnailUrl,
+    images: form.images,
+    status: form.status,
   };
+
+  // Solo mostramos los errores per-field después del primer intento de guardado,
+  // para no llenar de mensajes rojos un form recién abierto. A partir de ahí
+  // los errores son reactivos: se borran solos cuando el vendedor los corrige.
+  const errors = hasAttemptedSubmit ? validateProductInput(productInput) : {};
+  const formHasErrors = hasAttemptedSubmit && hasErrors(errors);
+
+  const handleSave = () => {
+    if (hasErrors(validateProductInput(productInput))) {
+      setHasAttemptedSubmit(true);
+      return;
+    }
+    save.run(() => onSaveAction(productInput), {
+      onSuccess: () => {
+        if (isNew) router.push("/products");
+      },
+    });
+  };
+
+  // Aplica un draft de IA al formulario. Política:
+  // - Campos de texto (description, material, color): solo se completan si
+  //   están vacíos — nunca pisan lo que el vendedor ya escribió.
+  // - condition y categoryId: la sugerencia de IA gana sobre el default, porque
+  //   el default no representa una decisión del vendedor sino un valor inicial.
+  //   El vendedor puede editarlos después si no está de acuerdo.
+  const applyDraft = (draft: ProductDraft) => {
+    setForm((prev) => ({
+      ...prev,
+      description:
+        prev.description.trim() === "" && draft.description
+          ? draft.description
+          : prev.description,
+      material:
+        prev.material.trim() === "" && draft.material ? draft.material : prev.material,
+      color: prev.color.trim() === "" && draft.color ? draft.color : prev.color,
+      condition: draft.condition ?? prev.condition,
+      categoryId: draft.suggestedCategoryId ?? prev.categoryId,
+    }));
+  };
+
+  // El thumbnail suele ser la foto más representativa del producto, así que
+  // lo mandamos primero a la IA. Filtramos duplicados si también está en la
+  // galería.
+  const aiImageUrls = form.thumbnailUrl
+    ? [
+        form.thumbnailUrl,
+        ...form.images.filter((url) => url !== form.thumbnailUrl),
+      ]
+    : form.images;
 
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
   const visual = getProductVisual(selectedCategory?.name);
@@ -153,6 +196,15 @@ export function ProductEditScreen({
           {save.error}
         </div>
       )}
+      {formHasErrors && !save.error && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="mx-4 mt-4 lgx:mx-7 px-4 py-3 rounded-xl bg-danger/10 text-danger text-[13px]"
+        >
+          Faltan completar campos obligatorios. Revisá los marcados en rojo.
+        </div>
+      )}
       <div className="p-4 pb-32 lgx:px-7 lgx:py-6">
       {/*
         Mobile: flex column con `order` por card para acomodar Datos, Imagen,
@@ -167,14 +219,24 @@ export function ProductEditScreen({
           <Card padding={24} className="order-1 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Datos básicos</h3>
             <div className="flex flex-col gap-3.5">
-              <Field label="Título">
+              <Field label="Título" error={errors.title}>
                 <Input
                   placeholder="Ej. Sillón de pana 2 cuerpos"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </Field>
-              <Field label="Descripción">
+              <div>
+                <div className="flex justify-between items-end gap-2 mb-1.5">
+                  <span className="text-[13px] text-ink-2 font-medium">
+                    Descripción
+                  </span>
+                  <AIWizardButton
+                    title={form.title}
+                    imageUrls={aiImageUrls}
+                    onApplyAction={applyDraft}
+                  />
+                </div>
                 <textarea
                   rows={5}
                   value={form.description}
@@ -183,9 +245,14 @@ export function ProductEditScreen({
                   }
                   className="w-full resize-y border border-line-2 rounded-r2 p-3.5 text-sm font-sans bg-paper"
                 />
-              </Field>
+                {errors.description && (
+                  <div className="text-xs text-danger mt-1.5">
+                    {errors.description}
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
-                <Field label="Categoría">
+                <Field label="Categoría" error={errors.categoryId}>
                   <Select
                     value={form.categoryId}
                     onChange={(categoryId) => setForm({ ...form, categoryId })}
@@ -235,47 +302,50 @@ export function ProductEditScreen({
                 </div>
               ))}
             />
+            {errors.images && (
+              <div className="text-xs text-danger mt-3">{errors.images}</div>
+            )}
           </Card>
 
           <Card padding={24} className="order-5 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Especificaciones</h3>
             <div className="grid grid-cols-1 gap-3 min-[600px]:grid-cols-2">
-              <Field label="Alto (cm)">
+              <Field label="Alto (cm)" error={errors.height}>
                 <Input
                   placeholder="90"
                   value={form.height}
                   onChange={(e) => setForm({ ...form, height: e.target.value })}
                 />
               </Field>
-              <Field label="Ancho (cm)">
+              <Field label="Ancho (cm)" error={errors.width}>
                 <Input
                   placeholder="180"
                   value={form.width}
                   onChange={(e) => setForm({ ...form, width: e.target.value })}
                 />
               </Field>
-              <Field label="Profundidad (cm)">
+              <Field label="Profundidad (cm)" error={errors.depth}>
                 <Input
                   placeholder="85"
                   value={form.depth}
                   onChange={(e) => setForm({ ...form, depth: e.target.value })}
                 />
               </Field>
-              <Field label="Peso (kg)">
+              <Field label="Peso (kg)" error={errors.weight}>
                 <Input
                   placeholder="32"
                   value={form.weight}
                   onChange={(e) => setForm({ ...form, weight: e.target.value })}
                 />
               </Field>
-              <Field label="Material">
+              <Field label="Material" error={errors.material}>
                 <Input
                   placeholder="Pino macizo + pana"
                   value={form.material}
                   onChange={(e) => setForm({ ...form, material: e.target.value })}
                 />
               </Field>
-              <Field label="Color">
+              <Field label="Color" error={errors.color}>
                 <Input
                   placeholder="Verde oliva"
                   value={form.color}
@@ -310,12 +380,17 @@ export function ProductEditScreen({
                 </div>
               }
             />
+            {errors.thumbnailUrl && (
+              <div className="text-xs text-danger mt-3">
+                {errors.thumbnailUrl}
+              </div>
+            )}
           </Card>
 
           <Card padding={24} className="order-4 min-[901px]:order-none">
             <h3 className="m-0 mb-4 text-[15px] font-semibold">Precio y stock</h3>
             <div className="flex flex-col gap-3.5">
-              <Field label="Precio (ARS)">
+              <Field label="Precio (ARS)" error={errors.price}>
                 <Input
                   suffix="ARS"
                   placeholder="0"
@@ -323,7 +398,7 @@ export function ProductEditScreen({
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                 />
               </Field>
-              <Field label="Stock disponible">
+              <Field label="Stock disponible" error={errors.stock}>
                 <Input
                   placeholder="1"
                   value={form.stock}
