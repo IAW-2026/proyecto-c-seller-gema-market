@@ -8,6 +8,7 @@ import {
   updateProductStock,
   uploadProductImage,
 } from "@/lib/data/products";
+import { hasErrors, validateProductInput } from "@/lib/validation/product";
 import type { ProductInput } from "@/types/domain";
 
 // Tags que cubren listings, conteos y aggregates derivados de los productos
@@ -22,6 +23,9 @@ function invalidateProductDependents(sellerId: string) {
 
 export async function saveProductAction(input: ProductInput): Promise<void> {
   const seller = await requireSeller();
+  if (hasErrors(validateProductInput(input))) {
+    throw new Error("Faltan completar campos obligatorios.");
+  }
   await saveProduct(seller.id, input);
   invalidateProductDependents(seller.id);
   if (input.id) {
