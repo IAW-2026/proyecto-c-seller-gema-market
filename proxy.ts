@@ -3,6 +3,10 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
+  // Mocks de servicios externos (Shipping, Payments, etc.) que la Seller App
+  // consume server-to-server. La Shipping App real vivirá en otro dominio
+  // sin Clerk; durante el desarrollo individual los mockeamos acá.
+  '/api/shipping(.*)',
 ]);
 
 export default clerkMiddleware(
