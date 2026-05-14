@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from '@/lib/db';
 import { newId, PREFIXES } from '@/lib/ids';
+import type { OrderStatus } from '@/types/domain';
 
 // Capa de datos para la tabla `Sale`.
 //
@@ -116,4 +117,32 @@ export async function confirmPaymentSales(
 
     return { outcome: 'confirmed' as const, saleIds };
   });
+}
+
+// Actualiza la Sale de un order con el estado de envío que reporta Shipping App
+// y persiste el tracking_code. Una orden corresponde a un único producto (y
+// por lo tanto a una sola Sale), así que `updateMany` por `orderId` opera sobre
+// 0 o 1 row. Si `count === 0` significa que no hay Sale → 404.
+//
+// `status` llega ya mapeado al enum interno (`shipping`/`delivered`/`shipping_failed`);
+// la traducción desde el vocabulario externo de Shipping App la hace el handler.
+export type UpdateSaleShippingInput = {
+  orderId: string;
+  status: OrderStatus;
+  trackingCode: string;
+};
+
+export type UpdateSaleShippingResult =
+  | { outcome: 'updated' }
+  | { outcome: 'not_found' };
+
+export async function updateSaleShipping(
+  input: UpdateSaleShippingInput,
+): Promise<UpdateSaleShippingResult> {
+  const result = await prisma.sale.updateMany({
+    where: { orderId: input.orderId },
+    data: { status: input.status, trackingCode: input.trackingCode },
+  });
+  if (result.count === 0) return { outcome: 'not_found' };
+  return { outcome: 'updated' };
 }
