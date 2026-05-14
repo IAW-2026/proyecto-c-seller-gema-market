@@ -18,6 +18,16 @@ import type { Reserva } from '@/types/domain';
 //       releaseReserva, que en una transacción restaura el stock y borra
 //       la Reserva.
 //
+// Cleanup de Reservas vencidas: dos mecanismos complementarios.
+//   - Cron diario (Vercel Cron, plan Hobby = 1 vez/día) → sweepExpiredReservas
+//     barre TODAS las expiradas globalmente. Safety net para productos que
+//     nadie está intentando comprar.
+//   - Lazy sweep dentro de createReserva → si alguien intenta reservar un
+//     producto, barre las expiradas DE ESE PRODUCTO antes de procesar. Cubre
+//     el gap entre corridas del cron: el caso real ("compré algo que otra
+//     persona había reservado y abandonó hace media hora") se resuelve sin
+//     esperar al 3am.
+//
 // `expiresAt` lo asigna esta capa (no lo envía el cliente) usando la env var
 // RESERVATION_TTL_MINUTES (default 30). El consumer no se entera del TTL.
 
@@ -56,7 +66,29 @@ export async function createReserva(
   input: CreateReservaInput,
 ): Promise<CreateReservaResult> {
   return prisma.$transaction(async (tx) => {
-    // 1. Order ya reservado por otro request? (idempotencia: Payments puede
+    // 1. Lazy sweep de Reservas vencidas de ESTE producto. Cubre el gap entre
+    // corridas del cron diario: si hay stock "fantasma" bloqueado por
+    // Reservas expiradas, lo liberamos justo cuando alguien quiere comprar.
+    //
+    // Uso `DELETE ... RETURNING` vía $queryRaw para que sea atómico bajo
+    // concurrencia: si dos /reservar corren en paralelo sobre el mismo
+    // producto, Postgres garantiza que solo una transacción "gana" cada
+    // Reserva expirada (el RETURNING de la otra devuelve array vacío),
+    // así que no podemos sobre-restaurar stock por double-counting.
+    const swept = await tx.$queryRaw<Array<{ quantity: number | bigint }>>`
+      DELETE FROM "Reserva"
+      WHERE "productId" = ${input.productId} AND "expiresAt" < NOW()
+      RETURNING quantity
+    `;
+    if (swept.length > 0) {
+      const restoreQty = swept.reduce((sum, r) => sum + Number(r.quantity), 0);
+      await tx.product.update({
+        where: { id: input.productId },
+        data: { stock: { increment: restoreQty } },
+      });
+    }
+
+    // 2. Order ya reservado por otro request? (idempotencia: Payments puede
     // reintentar con el mismo orderId — devolvemos 409 en vez de duplicar.)
     const existingReserva = await tx.reserva.findFirst({
       where: { orderId: input.orderId },
@@ -64,14 +96,14 @@ export async function createReserva(
     });
     if (existingReserva) return { outcome: 'order_already_reserved' as const };
 
-    // 2. Order ya tiene Sale? La compra ya se concretó, no se puede re-reservar.
+    // 3. Order ya tiene Sale? La compra ya se concretó, no se puede re-reservar.
     const existingSale = await tx.sale.findFirst({
       where: { orderId: input.orderId },
       select: { id: true },
     });
     if (existingSale) return { outcome: 'order_already_sold' as const };
 
-    // 3. Decremento atómico: updateMany con filtro de stock evita la race
+    // 4. Decremento atómico: updateMany con filtro de stock evita la race
     // condition de dos checkouts compitiendo por el último unit. Si el
     // producto no existe / está paused / soft-deleted / no tiene stock,
     // count será 0 y diferenciamos los casos con un find adicional.
@@ -95,7 +127,7 @@ export async function createReserva(
         : { outcome: 'product_not_found' as const };
     }
 
-    // 4. Crear Reserva. expiresAt lo computa esta capa (TTL desde env).
+    // 5. Crear Reserva. expiresAt lo computa esta capa (TTL desde env).
     const reserva = await tx.reserva.create({
       data: {
         id: newId(PREFIXES.reserva),
