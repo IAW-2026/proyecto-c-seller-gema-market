@@ -1,26 +1,27 @@
 import 'server-only';
 import { z } from 'zod';
 
-// Schema flexible: el mock interno devuelve sólo tracking_code, pero la
-// Shipping App real (ver docs/apis.md) responde con los 3 campos del contrato.
-// Aceptamos ambos para que el switch a la integración real no requiera tocar
-// este cliente.
+// Alineado con el contrato de POST /api/shipping/envios en docs/apis.md.
 const ShippingResponseSchema = z.object({
+  status: z.string().min(1),
   tracking_code: z.string().min(1),
-  shipping_id: z.string().optional(),
-  status: z.string().optional(),
 });
 
 export type RequestShippingInput = {
   orderId: string;
   sellerId: string;
   buyerId: string;
+  originAddress: {
+    street: string;
+    number: string;
+    zip: string;
+    city: string;
+  };
 };
 
 export type RequestShippingResult = {
+  status: string;
   trackingCode: string;
-  shippingId?: string;
-  status?: string;
 };
 
 function shippingBaseUrl(): string {
@@ -49,6 +50,7 @@ export async function requestShipping(
       order_id: input.orderId,
       seller_id: input.sellerId,
       buyer_id: input.buyerId,
+      origin_address: input.originAddress,
     }),
     cache: 'no-store',
   });
@@ -59,8 +61,7 @@ export async function requestShipping(
 
   const parsed = ShippingResponseSchema.parse(await res.json());
   return {
-    trackingCode: parsed.tracking_code,
-    shippingId: parsed.shipping_id,
     status: parsed.status,
+    trackingCode: parsed.tracking_code,
   };
 }

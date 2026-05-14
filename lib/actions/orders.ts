@@ -19,6 +19,12 @@ export async function advanceOrderStatusAction(orderId: string): Promise<void> {
     orderId,
     sellerId: seller.id,
     buyerId: order.buyerId,
+    originAddress: {
+      street: seller.street,
+      number: seller.number,
+      zip: seller.postalCode,
+      city: seller.city,
+    },
   });
 
   await advanceOrderStatus(orderId, seller.id, trackingCode);
