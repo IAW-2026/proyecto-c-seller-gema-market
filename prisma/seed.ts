@@ -19,7 +19,13 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { createClient } from '@supabase/supabase-js';
 import { newId, PREFIXES } from '../lib/ids';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+// El driver adapter (`pg`) ignora el `?schema=` de la connection string; hay que
+// pasarlo explícitamente o las queries corren contra `public`.
+const schema = new URL(process.env.DATABASE_URL!).searchParams.get('schema') ?? undefined;
+const adapter = new PrismaPg(
+  { connectionString: process.env.DATABASE_URL! },
+  schema ? { schema } : undefined,
+);
 const prisma = new PrismaClient({ adapter });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
