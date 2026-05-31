@@ -19,10 +19,6 @@ datasource db {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-enum SellerRole {
-  seller
-}
-
 enum ProductStatus {
   active
   paused
@@ -62,7 +58,14 @@ model Seller {
   email       String
   phone       String
   bio         String?
-  role        SellerRole @default(seller)
+  // El rol (seller / seller_admin) NO vive acá: se modela en Clerk
+  // (`publicMetadata.role`) y se lee con `lib/auth/role.ts`. La identidad y los
+  // permisos son responsabilidad de Clerk; esta tabla es solo caché de perfil.
+  //
+  // Moderación: un admin puede suspender la cuenta. Mientras `suspended` sea
+  // true, los productos del seller se excluyen del catálogo público y su panel
+  // queda bloqueado (ver `(seller)/layout.tsx`).
+  suspended   Boolean    @default(false)
   city        String
   street      String
   number      String
@@ -99,6 +102,10 @@ model Product {
   categoryId   String
   stock        Int              @default(0)
   status       ProductStatus    @default(active)
+  // Moderación del admin: cuando es true la publicación se excluye del catálogo
+  // público sin importar `status`. Es autoridad del admin — el seller no puede
+  // revertirla desde su panel (a diferencia de `status: paused`).
+  hiddenByAdmin Boolean         @default(false)
   thumbnailUrl String?
   images       Json             @default("[]")
   // Soft delete: null mientras la publicación esté viva. Cuando el seller la

@@ -48,8 +48,10 @@ export async function findPublicShop(
   sellerId: string,
   opts: FindPublicShopOptions = {},
 ): Promise<PublicShop | null> {
-  const seller = await prisma.seller.findUnique({
-    where: { id: sellerId },
+  // Un seller suspendido por un admin no tiene shop público: el endpoint
+  // responde 404 igual que para un id inexistente.
+  const seller = await prisma.seller.findFirst({
+    where: { id: sellerId, suspended: false },
     select: {
       id: true,
       shopName: true,
@@ -65,6 +67,7 @@ export async function findPublicShop(
     sellerId,
     status: 'active' as const,
     deletedAt: null,
+    hiddenByAdmin: false,
   };
 
   const totalProducts = await prisma.product.count({ where: activeProductsWhere });

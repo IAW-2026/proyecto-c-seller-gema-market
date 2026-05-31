@@ -91,9 +91,12 @@ export type PublicProductBatchItem = {
 
 function buildWhere(filters: PublicProductFilters): Prisma.ProductWhereInput {
   const where: Prisma.ProductWhereInput = {
-    // Endpoints públicos: solo productos activos y no borrados.
+    // Endpoints públicos: solo productos activos, no borrados, no ocultados por
+    // un admin y cuyo seller no esté suspendido.
     status: 'active',
     deletedAt: null,
+    hiddenByAdmin: false,
+    seller: { suspended: false },
   };
   if (filters.sellerId) where.sellerId = filters.sellerId;
   if (filters.categoryId) where.categoryId = filters.categoryId;
@@ -179,7 +182,13 @@ export async function findPublicProduct(
   productId: string,
 ): Promise<PublicProductDetail | null> {
   const row = await prisma.product.findFirst({
-    where: { id: productId, status: 'active', deletedAt: null },
+    where: {
+      id: productId,
+      status: 'active',
+      deletedAt: null,
+      hiddenByAdmin: false,
+      seller: { suspended: false },
+    },
     select: {
       id: true,
       title: true,
@@ -247,6 +256,8 @@ export async function findPublicProductsByIds(
       id: { in: [...ids] },
       status: 'active',
       deletedAt: null,
+      hiddenByAdmin: false,
+      seller: { suspended: false },
     },
     select: {
       id: true,
