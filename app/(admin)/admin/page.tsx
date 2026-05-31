@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
+import { AdminDashboardSkeleton } from "@/components/screens/skeletons/admin-dashboard-skeleton";
 import { getAdminMetrics } from "@/lib/data/admin/metrics";
 import { fmtARS } from "@/lib/ui/format";
 
@@ -12,23 +13,11 @@ export default function AdminDashboardPage() {
     <>
       <PageHeader subtitle="Administración" title="Panel del marketplace" />
       <div className="p-4 pb-20 lgx:px-7 lgx:py-6">
-        <Suspense fallback={<MetricsFallback />}>
+        <Suspense fallback={<AdminDashboardSkeleton />}>
           <Metrics />
         </Suspense>
       </div>
     </>
-  );
-}
-
-function MetricsFallback() {
-  return (
-    <div className="grid grid-cols-2 lgx:grid-cols-4 gap-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i}>
-          <div className="h-12 animate-pulse bg-bone rounded-xl" />
-        </Card>
-      ))}
-    </div>
   );
 }
 

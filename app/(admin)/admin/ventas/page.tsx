@@ -6,6 +6,7 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { AdminSearchBar } from "@/components/screens/admin/admin-search-bar";
 import { AdminSalesStatusFilter } from "@/components/screens/admin/admin-sales-status-filter";
+import { AdminSalesSkeleton } from "@/components/screens/skeletons/admin-sales-skeleton";
 import { listAllSales } from "@/lib/data/admin/sales";
 import type { SaleStatus } from "@/lib/generated/prisma/client";
 import { ORDER_STATUS_META } from "@/lib/ui/ui-config";
@@ -45,7 +46,7 @@ export default function AdminVentasPage({
         <Suspense fallback={<div className="mb-4 h-[46px]" />}>
           <FiltersLoader searchParams={searchParams} />
         </Suspense>
-        <Suspense fallback={<Card>Cargando…</Card>}>
+        <Suspense fallback={<AdminSalesSkeleton />}>
           <SalesTable searchParams={searchParams} />
         </Suspense>
       </div>
@@ -82,7 +83,7 @@ async function SalesTable({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <Card padding={0}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto hidden lgx:block">
         <table className="w-full border-collapse text-[13px] min-w-[760px]">
           <thead className="bg-cream">
             <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
@@ -131,6 +132,50 @@ async function SalesTable({ searchParams }: { searchParams: SearchParams }) {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="grid gap-3 p-3 lgx:hidden">
+        {result.items.map((s) => {
+          const st = ORDER_STATUS_META[s.status];
+          return (
+            <div
+              key={s.id}
+              className="bg-paper border border-line rounded-2xl p-3"
+            >
+              <div className="flex justify-between gap-2.5 items-start mb-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold truncate">
+                    {s.productTitle}
+                  </div>
+                  <div className="text-[11px] text-ink-3 mt-[3px] truncate">
+                    {s.sellerShopName} · {s.buyerName}
+                  </div>
+                </div>
+                <Pill tone={st.tone} size="sm">
+                  {st.label}
+                </Pill>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-cream rounded-xl p-2.5">
+                  <div className="text-[10px] text-ink-3">Fecha</div>
+                  <div className="text-xs font-semibold">
+                    {fmtOrderDate(s.createdAt)}
+                  </div>
+                </div>
+                <div className="bg-cream rounded-xl p-2.5">
+                  <div className="text-[10px] text-ink-3">Total</div>
+                  <div className="text-xs font-bold tabular-nums">
+                    {fmtARS(s.total)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {result.items.length === 0 && (
+          <div className="text-center text-ink-3 py-10 text-sm">
+            No se encontraron ventas.
+          </div>
+        )}
       </div>
       <Pager
         page={result.page}

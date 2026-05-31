@@ -7,6 +7,7 @@ import { Pill } from "@/components/ui/pill";
 import { AdminSearchBar } from "@/components/screens/admin/admin-search-bar";
 import { AdminVisibilityFilter } from "@/components/screens/admin/admin-visibility-filter";
 import { ProductHideButton } from "@/components/screens/admin/product-hide-button";
+import { AdminProductsSkeleton } from "@/components/screens/skeletons/admin-products-skeleton";
 import { listAllProducts, type AdminVisibility } from "@/lib/data/admin/products";
 import { fmtARS } from "@/lib/ui/format";
 
@@ -35,7 +36,7 @@ export default function AdminProductosPage({
         <Suspense fallback={<div className="mb-4 h-[46px]" />}>
           <FiltersLoader searchParams={searchParams} />
         </Suspense>
-        <Suspense fallback={<Card>Cargando…</Card>}>
+        <Suspense fallback={<AdminProductsSkeleton />}>
           <ProductsTable searchParams={searchParams} />
         </Suspense>
       </div>
@@ -72,7 +73,7 @@ async function ProductsTable({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <Card padding={0}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto hidden lgx:block">
         <table className="w-full border-collapse text-[13px] min-w-[680px]">
           <thead className="bg-cream">
             <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
@@ -124,6 +125,57 @@ async function ProductsTable({ searchParams }: { searchParams: SearchParams }) {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="grid gap-3 p-3 lgx:hidden">
+        {result.items.map((p) => (
+          <div
+            key={p.id}
+            className="bg-paper border border-line rounded-2xl p-3"
+          >
+            <div className="flex justify-between gap-2.5 items-start mb-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{p.title}</div>
+                <div className="text-[11px] text-ink-3 mt-[3px]">
+                  {p.categoryName}
+                </div>
+              </div>
+              {p.hiddenByAdmin ? (
+                <Pill tone="danger" size="sm">
+                  Oculto
+                </Pill>
+              ) : (
+                <Pill
+                  tone={p.status === "active" ? "success" : "warn"}
+                  size="sm"
+                >
+                  {p.status === "active" ? "Visible" : "Pausado"}
+                </Pill>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-cream rounded-xl p-2.5 min-w-0">
+                <div className="text-[10px] text-ink-3">Tienda</div>
+                <div className="text-xs font-semibold truncate">
+                  {p.sellerShopName}
+                </div>
+              </div>
+              <div className="bg-cream rounded-xl p-2.5">
+                <div className="text-[10px] text-ink-3">Precio</div>
+                <div className="text-xs font-bold tabular-nums">
+                  {fmtARS(p.price)}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <ProductHideButton productId={p.id} hidden={p.hiddenByAdmin} />
+            </div>
+          </div>
+        ))}
+        {result.items.length === 0 && (
+          <div className="text-center text-ink-3 py-10 text-sm">
+            No se encontraron productos.
+          </div>
+        )}
       </div>
       <Pager
         page={result.page}
