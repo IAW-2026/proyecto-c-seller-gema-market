@@ -8,6 +8,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ShopFieldsFieldset } from "@/components/forms/shop-fields-fieldset";
 import { VerificationCodeStep } from "@/app/(auth)/_components/verification-code-step";
+import { GoogleAuthBlock } from "@/app/(auth)/_components/google-auth-block";
 import { clerkErrorMessage } from "@/lib/auth/clerk-error-messages";
 import { finalizeWithRedirect } from "@/lib/auth/finalize-redirect";
 import {
@@ -162,7 +163,10 @@ export function SignUpForm() {
   }
 
   return (
-    <form action={handleDetailsSubmit} className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
+      <GoogleAuthBlock redirectUrl={redirectUrl} />
+
+      <form action={handleDetailsSubmit} className="flex flex-col gap-5">
       <div className="grid gap-5 lgx:grid-cols-2">
         <Field label="Email">
           <Input
@@ -223,6 +227,7 @@ export function SignUpForm() {
       <Button type="submit" full disabled={pending}>
         {pending ? "Creando cuenta…" : "Crear cuenta"}
       </Button>
-    </form>
+      </form>
+    </div>
   );
 }
