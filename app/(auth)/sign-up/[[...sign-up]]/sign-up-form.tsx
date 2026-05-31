@@ -91,6 +91,23 @@ export function SignUpForm() {
       return;
     }
 
+    // Si la instancia no exige verificar el email, el sign-up queda `complete`
+    // apenas se crea: finalizamos y entramos, sin pedir código. Solo cuando
+    // falta verificación enviamos el código y pasamos al paso de verificar.
+    if (signUp.status === "complete") {
+      const { error: finalizeError } = await finalizeWithRedirect(
+        signUp,
+        router,
+        redirectUrl,
+      );
+      if (finalizeError) {
+        setFormError(
+          clerkErrorMessage(finalizeError, "No pudimos completar el registro."),
+        );
+      }
+      return;
+    }
+
     const { error: sendError } = await signUp.verifications.sendEmailCode();
     if (sendError) {
       setFormError(

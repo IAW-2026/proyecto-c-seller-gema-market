@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { currentUser } from '@clerk/nextjs/server';
+import { currentUser, clerkClient, type User } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import type { Role } from '@/types/domain';
 
@@ -20,6 +20,23 @@ export const getRole = cache(async (): Promise<Role> => {
 
 export async function isAdmin(): Promise<boolean> {
   return (await getRole()) === 'seller_admin';
+}
+
+// Setea `publicMetadata.role = 'seller'` la primera vez que vemos a un usuario
+// sin rol (lo invoca `getCurrentSeller` al crear el Seller). El default de
+// `getRole()` ya trata la ausencia como "seller"; esto lo deja explícito en
+// Clerk. No pisa un rol existente (p.ej. `seller_admin`).
+export async function ensureDefaultRole(user: User): Promise<void> {
+  if (user.publicMetadata?.role) return;
+  try {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(user.id, {
+      publicMetadata: { ...user.publicMetadata, role: 'seller' satisfies Role },
+    });
+  } catch {
+    // Best-effort: si la escritura falla, el usuario sigue funcionando porque
+    // la ausencia se trata como "seller". No rompemos el primer login.
+  }
 }
 
 // Gate para server components / layouts / actions del panel admin. Redirige al
