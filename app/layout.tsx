@@ -17,6 +17,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Las imágenes (portadas, fotos de producto) se sirven desde Supabase Storage.
+  // Preconectar el origen ahorra el handshake TLS cuando aparece la primera
+  // imagen, que suele ser el elemento LCP. React 19 sube el <link> al <head>.
+  const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return (
     <ClerkProvider
       signInUrl="/sign-in"
@@ -25,7 +29,10 @@ export default function RootLayout({
       signUpFallbackRedirectUrl="/"
     >
       <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-        <body>{children}</body>
+        <body>
+          {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} />}
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );
