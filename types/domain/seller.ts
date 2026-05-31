@@ -7,7 +7,9 @@
 // El nombre real del usuario (first_name/last_name) NO se persiste acá: vive
 // en Clerk y se lee con `currentUser()` cuando la UI lo necesite.
 
-export type SellerRole = "seller";
+// Rol del usuario. Vive en Clerk (`publicMetadata.role`), no en la tabla Seller.
+// Se lee con `lib/auth/role.ts`. Un usuario sin metadata se trata como "seller".
+export type Role = "seller" | "seller_admin";
 
 export type Seller = {
   id: string;
@@ -16,7 +18,9 @@ export type Seller = {
   email: string;
   phone: string;
   bio: string | null;
-  role: SellerRole;
+  // Moderación: lo togglea el admin. Excluye al seller del catálogo público y
+  // bloquea su panel mientras sea true.
+  suspended: boolean;
   city: string;
   street: string;
   number: string;

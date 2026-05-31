@@ -19,7 +19,13 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { createClient } from '@supabase/supabase-js';
 import { newId, PREFIXES } from '../lib/ids';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+// El driver adapter (`pg`) ignora el `?schema=` de la connection string; hay que
+// pasarlo explícitamente o las queries corren contra `public`.
+const schema = new URL(process.env.DATABASE_URL!).searchParams.get('schema') ?? undefined;
+const adapter = new PrismaPg(
+  { connectionString: process.env.DATABASE_URL! },
+  schema ? { schema } : undefined,
+);
 const prisma = new PrismaClient({ adapter });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -134,9 +140,9 @@ async function main() {
   await prisma.seller.create({
     data: {
       id: SEED_SELLER_ID,
-      clerkUserId: 'user_3DPo6HmgoTegPypa6iZj1HhOvwF',
+      clerkUserId: 'user_3EV5ASyAkRn8krDifQhfjRCKXjO',
       shopName: 'Carpintería Sur',
-      email: 'manuelducosp@gmail.com',
+      email: 'seller_no_admin+clerk_test@unihousing.com',
       phone: '+54 291 412 5678',
       bio: 'Taller de muebles a medida en Bahía Blanca. Trabajamos con maderas locales desde 2008.',
       city: 'Bahía Blanca',
@@ -323,8 +329,101 @@ async function main() {
     });
   }
 
+  // ── Sellers extra (para que el panel admin tenga datos significativos) ──────
+  // Filas de DB sin cuenta real de Clerk. Sus productos usan thumbnails de
+  // Picsum directos (sin el pipeline de Pexels/Supabase) para mantener el seed
+  // liviano. Uno de los sellers queda suspendido y un producto de otro queda
+  // oculto por admin, para demostrar la moderación del panel admin.
+  const extraSellers = [
+    { clerkUserId: 'seed_extra_norte',   shopName: 'Maderas del Norte', email: 'norte@gemamarket.test',   city: 'Salta',   suspended: false },
+    { clerkUserId: 'seed_extra_litoral', shopName: 'Deco Litoral',      email: 'litoral@gemamarket.test', city: 'Rosario', suspended: false },
+    { clerkUserId: 'seed_extra_revend',  shopName: 'Revende Express',   email: 'revende@gemamarket.test', city: 'Córdoba', suspended: true  },
+  ];
+
+  let extraProductCount = 0;
+  let extraSaleCount = 0;
+  for (const [si, es] of extraSellers.entries()) {
+    const sellerId = newId(PREFIXES.seller);
+    await prisma.seller.create({
+      data: {
+        id: sellerId,
+        clerkUserId: es.clerkUserId,
+        shopName: es.shopName,
+        email: es.email,
+        phone: `+54 9 11 5000 100${si}`,
+        bio: null,
+        suspended: es.suspended,
+        city: es.city,
+        street: 'Av. Siempre Viva',
+        number: String(100 + si),
+        postalCode: '5000',
+        logoUrl: picsumUrl(`logo-${es.clerkUserId}`, 200, 200),
+        coverUrl: null,
+      },
+    });
+
+    for (let pi = 0; pi < 3; pi++) {
+      const catName = categoryNames[(si + pi) % categoryNames.length]!;
+      const productId = newId(PREFIXES.product);
+      // Un producto oculto por admin en un seller NO suspendido, para demostrar
+      // que la moderación de productos es independiente de la de tiendas.
+      const hiddenByAdmin = si === 1 && pi === 0;
+      await prisma.product.create({
+        data: {
+          id: productId,
+          sellerId,
+          title: `${catName} — ${es.shopName} #${pi + 1}`,
+          description: '',
+          weight: 5,
+          height: 50,
+          width: 50,
+          depth: 40,
+          condition: ProductCondition.nuevo,
+          material: 'Madera',
+          color: 'Natural',
+          price: 12000 + si * 5000 + pi * 3000,
+          currency: 'ARS',
+          categoryId: catIdByName.get(catName)!,
+          stock: 5 + pi,
+          status: ProductStatus.active,
+          hiddenByAdmin,
+          thumbnailUrl: picsumUrl(`prod-${sellerId}-${pi}`, 800, 600),
+          images: [
+            picsumUrl(`prod-${sellerId}-${pi}-g0`, 800, 600),
+            picsumUrl(`prod-${sellerId}-${pi}-g1`, 800, 600),
+          ],
+          createdAt: daysAgo(30 - si * 5 - pi),
+        },
+      });
+      extraProductCount++;
+
+      // Una venta entregada por seller (sobre su primer producto) para que el
+      // reporte global de ventas y los conteos del admin no queden vacíos.
+      if (pi === 0) {
+        await prisma.sale.create({
+          data: {
+            id: newId(PREFIXES.sale),
+            orderId: `ord-extra-${si + 1}`,
+            productId,
+            sellerId,
+            buyerId: `buyer-extra-${si + 1}`,
+            buyerName: 'Cliente Demo',
+            paymentId: `pay-extra-${si + 1}`,
+            amount: 1,
+            total: 12000 + si * 5000,
+            fee: 720,
+            status: SaleStatus.delivered,
+            trackingCode: `TRK-AR-EXTRA${si + 1}`,
+            createdAt: daysAgo(20 - si * 3),
+          },
+        });
+        extraSaleCount++;
+      }
+    }
+  }
+
   console.log(
-    `Seed completo: 1 seller, ${categoryNames.length} categorías, ${productSeeds.length} productos, ${saleSeeds.length} ventas.`,
+    `Seed completo: ${1 + extraSellers.length} sellers (1 suspendido), ${categoryNames.length} categorías, ${productSeeds.length + extraProductCount} productos (1 oculto por admin), ${saleSeeds.length + extraSaleCount} ventas.`,
   );
 }
 
