@@ -8,6 +8,23 @@ Construida con **Next.js 16 · React 19 · TypeScript · Prisma 7 · PostgreSQL*
 
 ---
 
+## 🔑 Usuarios de prueba
+
+Dos cuentas listas para evaluar la app en `/sign-in`:
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| Vendedor (`seller`) | `seller_no_admin+clerk_test@unihousing.com` | `UnihousingSeller` |
+| Administrador (`seller_admin`) | `seller_admin+clerk_test@unihousing.com` | `UnihousingAdmin` |
+
+> **Código de verificación:** son emails de prueba de Clerk (sufijo `+clerk_test`), así
+> que no se envía ningún correo real. Si en algún flujo se pide un código de
+> verificación, usá el código fijo de test: **`424242`**.
+
+Más detalle sobre roles y accesos en [Roles y acceso](#roles-y-acceso).
+
+---
+
 ## Setup local
 
 ### Requisitos
