@@ -5,7 +5,15 @@ import { env } from '@/lib/env';
 import { newId, PREFIXES, type Prefix } from '@/lib/ids';
 
 function buildClient() {
-  const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+  // El driver adapter (`pg`) ignora el `?schema=` de la connection string —
+  // solo el query engine nativo lo respeta. Hay que pasarlo explícitamente acá,
+  // si no las queries corren contra `public`. En tests la URL trae `?schema=test`
+  // (override en tests/global-setup.ts); en dev/prod no hay schema → default.
+  const schema = new URL(env.DATABASE_URL).searchParams.get('schema') ?? undefined;
+  const adapter = new PrismaPg(
+    { connectionString: env.DATABASE_URL },
+    schema ? { schema } : undefined,
+  );
   const base = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
