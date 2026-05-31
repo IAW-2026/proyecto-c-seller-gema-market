@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { requireSeller } from "@/lib/auth/current-seller";
+import { validateShopFields } from "@/lib/auth/shop-fields";
 import {
   saveSeller,
   uploadSellerCover,
@@ -11,6 +12,11 @@ import type { SellerInput } from "@/types/domain";
 
 export async function saveSellerAction(input: SellerInput): Promise<void> {
   const seller = await requireSeller();
+  // Backstop server-side: el form también valida en el cliente, pero el server
+  // es la fuente de verdad. Mismas reglas que onboarding (validateShopFields).
+  if (Object.keys(validateShopFields(input)).length > 0) {
+    throw new Error("Revisá los datos de la tienda: hay campos obligatorios o inválidos.");
+  }
   await saveSeller(seller.id, input);
   updateTag(`shop:${seller.id}`);
 }
