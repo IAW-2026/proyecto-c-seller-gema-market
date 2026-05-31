@@ -49,6 +49,9 @@ export type SingleImageUploadProps = {
   // Solo para shape="circle". Classes extras del círculo (p.ej. para
   // simular un avatar con ring/shadow superpuesto a una portada).
   circleClassName?: string;
+  // Marca la imagen como LCP (above-the-fold): desactiva lazy-load y pide
+  // fetchpriority alto. Usar solo en la portada visible al cargar.
+  priority?: boolean;
 };
 
 export function SingleImageUpload({
@@ -62,6 +65,7 @@ export function SingleImageUpload({
   removable = false,
   size = 112,
   circleClassName = "",
+  priority = false,
 }: SingleImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +110,7 @@ export function SingleImageUpload({
             src={value}
             alt={alt}
             fill
+            priority={priority}
             sizes="(max-width: 900px) 100vw, 900px"
             className="object-cover"
           />
