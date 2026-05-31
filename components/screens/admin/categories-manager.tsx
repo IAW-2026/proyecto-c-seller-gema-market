@@ -156,24 +156,26 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
                       size="sm"
                       variant="secondary"
                       icon="edit"
+                      aria-label={`Editar ${cat.name}`}
                       onClick={() => {
                         setEditingId(cat.id);
                         setEditName(cat.name);
                         setEditError(null);
                       }}
                     >
-                      Editar
+                      <span className="hidden lgx:inline">Editar</span>
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
                       icon="trash"
+                      aria-label={`Borrar ${cat.name}`}
                       onClick={() => {
                         setToDelete(cat);
                         setDeleteError(null);
                       }}
                     >
-                      Borrar
+                      <span className="hidden lgx:inline">Borrar</span>
                     </Button>
                   </div>
                 </>

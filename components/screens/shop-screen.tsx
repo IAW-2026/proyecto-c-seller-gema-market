@@ -122,6 +122,7 @@ export function ShopScreen({ seller }: ShopScreenProps) {
             onUpload={uploadSellerCoverAction}
             alt="Portada de la tienda"
             label="Cambiar portada"
+            priority
             fallback={
               <div className="absolute inset-0 bg-gradient-to-br from-clay to-bark" />
             }
