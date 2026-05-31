@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { VerificationCodeStep } from "@/app/(auth)/_components/verification-code-step";
+import { GoogleAuthBlock } from "@/app/(auth)/_components/google-auth-block";
 import { clerkErrorMessage } from "@/lib/auth/clerk-error-messages";
 import { finalizeWithRedirect } from "@/lib/auth/finalize-redirect";
 
@@ -128,7 +129,10 @@ export function SignInForm() {
   }
 
   return (
-    <form action={handleCredentialsSubmit} className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
+      <GoogleAuthBlock redirectUrl={redirectUrl} />
+
+      <form action={handleCredentialsSubmit} className="flex flex-col gap-5">
       <Field label="Email">
         <Input
           name="identifier"
@@ -172,6 +176,7 @@ export function SignInForm() {
       <Button type="submit" full disabled={pending}>
         {pending ? "Entrando…" : "Entrar"}
       </Button>
-    </form>
+      </form>
+    </div>
   );
 }
