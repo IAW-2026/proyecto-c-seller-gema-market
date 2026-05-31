@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SignOutButton } from "./sign-out-button";
 
 type PageHeaderProps = {
   title: ReactNode;
@@ -23,7 +24,9 @@ export function PageHeader({ title, subtitle, action, hideActionOnMobile }: Page
               {title}
             </div>
           </div>
-          <div className="w-12 shrink-0" />
+          <div className="w-12 shrink-0 flex justify-end">
+            <SignOutButton variant="header-icon" />
+          </div>
         </div>
       </div>
 

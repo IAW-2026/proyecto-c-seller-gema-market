@@ -4,6 +4,7 @@ import { UserButton } from "@clerk/nextjs";
 import { BRAND } from "@/lib/ui/branding";
 import { getCurrentSeller } from "@/lib/auth/current-seller";
 import { SellerNav } from "./seller-nav";
+import { SignOutButton } from "./sign-out-button";
 
 async function UserCardEmail() {
   const seller = await getCurrentSeller();
@@ -42,7 +43,7 @@ export function SellerChrome({ children }: { children: ReactNode }) {
           </div>
         </div>
         <Suspense><SellerNav variant="sidebar" /></Suspense>
-        <div className="mt-auto relative bg-bone rounded-r2 min-w-0">
+        <div className="mt-auto relative rounded-r2 min-w-0">
           <UserButton
             appearance={{
               elements: {
@@ -65,6 +66,7 @@ export function SellerChrome({ children }: { children: ReactNode }) {
           />
           <Suspense fallback={null}><UserCardEmail /></Suspense>
         </div>
+        <SignOutButton variant="sidebar" />
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col lgx:ml-[240px] lgx:w-[calc(100%-240px)]">
