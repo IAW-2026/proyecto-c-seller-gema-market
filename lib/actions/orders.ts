@@ -11,8 +11,8 @@ export async function advanceOrderStatusAction(orderId: string): Promise<void> {
   const order = await findOwnedOrderFresh(orderId, seller.id);
   if (!order) throw new Error(`Pedido ${orderId} no encontrado`);
 
-  // Idempotente: si la orden ya avanzó (doble click, otra pestaña, carrera),
-  // no re-disparamos la llamada al servicio de Shipping ni el update en DB.
+  // Si la orden ya avanzó (doble click, otra pestaña, etc),
+  // no se redisparala llamada al servicio de Shipping ni el update en DB.
   if (order.status !== "paid") return;
 
   const { trackingCode } = await requestShipping({
