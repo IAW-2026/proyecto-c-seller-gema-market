@@ -6,6 +6,7 @@ import { Pager } from "@/components/ui/pager";
 import { Pill } from "@/components/ui/pill";
 import { AdminSearchBar } from "@/components/screens/admin/admin-search-bar";
 import { SellerSuspendButton } from "@/components/screens/admin/seller-suspend-button";
+import { AdminSellersSkeleton } from "@/components/screens/skeletons/admin-sellers-skeleton";
 import { listAllSellers } from "@/lib/data/admin/sellers";
 
 export const metadata: Metadata = { title: "Admin · Tiendas" };
@@ -24,7 +25,7 @@ export default function AdminSellersPage({
         <Suspense fallback={<div className="mb-4 h-[46px]" />}>
           <SearchLoader searchParams={searchParams} />
         </Suspense>
-        <Suspense fallback={<Card>Cargando…</Card>}>
+        <Suspense fallback={<AdminSellersSkeleton />}>
           <SellersTable searchParams={searchParams} />
         </Suspense>
       </div>
@@ -53,7 +54,7 @@ async function SellersTable({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <Card padding={0}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto hidden lgx:block">
         <table className="w-full border-collapse text-[13px] min-w-[640px]">
           <thead className="bg-cream">
             <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
@@ -102,6 +103,54 @@ async function SellersTable({ searchParams }: { searchParams: SearchParams }) {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="grid gap-3 p-3 lgx:hidden">
+        {result.items.map((s) => (
+          <div
+            key={s.id}
+            className="bg-paper border border-line rounded-2xl p-3"
+          >
+            <div className="flex justify-between gap-2.5 items-start mb-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">
+                  {s.shopName || "—"}
+                </div>
+                <div className="text-[11px] text-ink-3 mt-[3px] truncate">
+                  {s.city} · {s.email}
+                </div>
+              </div>
+              <Pill tone={s.suspended ? "danger" : "success"} size="sm">
+                {s.suspended ? "Suspendida" : "Activa"}
+              </Pill>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-cream rounded-xl p-2.5">
+                <div className="text-[10px] text-ink-3">Productos</div>
+                <div className="text-xs font-bold tabular-nums">
+                  {s.productsCount}
+                </div>
+              </div>
+              <div className="bg-cream rounded-xl p-2.5">
+                <div className="text-[10px] text-ink-3">Ventas</div>
+                <div className="text-xs font-bold tabular-nums">
+                  {s.salesCount}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <SellerSuspendButton
+                sellerId={s.id}
+                shopName={s.shopName || s.email}
+                suspended={s.suspended}
+              />
+            </div>
+          </div>
+        ))}
+        {result.items.length === 0 && (
+          <div className="text-center text-ink-3 py-10 text-sm">
+            No se encontraron tiendas.
+          </div>
+        )}
       </div>
       <Pager
         page={result.page}
