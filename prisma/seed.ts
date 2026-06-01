@@ -140,9 +140,9 @@ async function main() {
   await prisma.seller.create({
     data: {
       id: SEED_SELLER_ID,
-      clerkUserId: 'user_3EV5ASyAkRn8krDifQhfjRCKXjO',
+      clerkUserId: 'user_3EYDxhJY0J3jsOEIvaZULQ7Yt1H',
       shopName: 'Carpintería Sur',
-      email: 'seller_no_admin+clerk_test@unihousing.com',
+      email: 'seller.user+clerk_test@iaw.com',
       phone: '+54 291 412 5678',
       bio: 'Taller de muebles a medida en Bahía Blanca. Trabajamos con maderas locales desde 2008.',
       city: 'Bahía Blanca',
