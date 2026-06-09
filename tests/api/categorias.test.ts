@@ -14,10 +14,10 @@ describe('GET /api/seller/categorias', () => {
     expect(await res.json()).toEqual({ error: 'Unauthorized' });
   });
 
-  it('401 con api key inválida', async () => {
+  it('401 con api key hash inválido', async () => {
     const res = await invokeGet(GET, {
       url: URL,
-      headers: { 'x-api-key': 'wrong-key' },
+      headers: { 'x-api-key-hash': 'wrong-hash' },
     });
     expect(res.status).toBe(401);
   });

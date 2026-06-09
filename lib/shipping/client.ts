@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { hashApiKey } from '@/lib/api-auth';
 
 // Alineado con el contrato de POST /api/shipping/envios en docs/apis.md.
 const ShippingResponseSchema = z.object({
@@ -44,7 +45,7 @@ export async function requestShipping(
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-api-key': shippingApiKey(),
+      'x-api-key-hash': hashApiKey(shippingApiKey()),
     },
     body: JSON.stringify({
       order_id: input.orderId,
