@@ -44,7 +44,7 @@ export async function requestShipping(
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      authorization: `Bearer ${shippingApiKey()}`,
+      'x-api-key': shippingApiKey(),
     },
     body: JSON.stringify({
       order_id: input.orderId,

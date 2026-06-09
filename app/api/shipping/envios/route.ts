@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { checkBearerAuth } from '@/lib/api-auth';
+import { checkApiKeyAuth } from '@/lib/api-auth';
 
 const OriginAddressSchema = z.object({
   street: z.string().min(1),
@@ -25,7 +25,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!expectedKey) {
     return Response.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
-  if (!checkBearerAuth(request, expectedKey)) {
+  if (!checkApiKeyAuth(request, expectedKey)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

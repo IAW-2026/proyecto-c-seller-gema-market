@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requireBearerAuth } from '@/lib/api/auth';
+import { requireApiKeyAuth } from '@/lib/api/auth';
 import { jsonBadRequest, jsonOk } from '@/lib/api/responses';
 import { findPublicProductsByIds } from '@/lib/data/public-products';
 import { toProductBatchResponse } from '@/lib/api/mappers/products';
@@ -12,7 +12,7 @@ const BodySchema = z.object({
 // IDs inexistentes / pausados / soft-deleted se omiten silenciosamente (el
 // carrito sigue mostrando los demás).
 export async function POST(request: Request): Promise<Response> {
-  const authErr = requireBearerAuth(request);
+  const authErr = requireApiKeyAuth(request);
   if (authErr) return authErr;
 
   // Validación manual para devolver el mensaje exacto del contrato. parseBody
