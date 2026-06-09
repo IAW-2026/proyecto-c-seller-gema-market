@@ -3,7 +3,7 @@ import { checkApiKeyAuth, checkBearerAuth } from '@/lib/api-auth';
 import { jsonServerError, jsonUnauthorized } from '@/lib/api/responses';
 
 // Gate de auth service-to-service para los endpoints públicos del Seller App.
-// Valida el header `X-API-Key`. Una sola API key shared para todos los consumers
+// Valida el header `X-API-Key-Hash` (SHA-256 de la key). Una sola API key shared para todos los consumers
 // (Buyer, Payments, Shipping) — alineado con el mock de Shipping
 // (lib/shipping/client.ts).
 // Si la env var no está, devolvemos 500 para evitar fail-open por config.

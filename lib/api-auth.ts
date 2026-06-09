@@ -1,5 +1,5 @@
 import 'server-only';
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 // Comparación de tokens en tiempo constante. timingSafeEqual exige misma
 // longitud; chequearla primero es seguro: longitudes distintas garantizan
@@ -11,13 +11,21 @@ function constantTimeEqual(received: string, expected: string): boolean {
   return timingSafeEqual(receivedBuf, expectedBuf);
 }
 
-// Valida `X-API-Key: <key>` contra `expected`. Esquema service-to-service usado
-// por las webapps con las que se integra el Seller App (Buyer, Payments,
-// Shipping). Devuelve false si el header falta o no matchea.
+// SHA-256 hex de la API key. Las webapps con las que se integra el Seller App
+// mandan el digest en vez de la key cruda, así que tanto las llamadas salientes
+// (lib/shipping/client.ts) como la validación entrante usan este mismo hashing.
+export function hashApiKey(key: string): string {
+  return createHash('sha256').update(key).digest('hex');
+}
+
+// Valida `X-API-Key-Hash: <sha256(key)>` contra el hash de `expected` (la key
+// cruda de env). Esquema service-to-service usado por las webapps con las que se
+// integra el Seller App (Buyer, Payments, Shipping). Devuelve false si el header
+// falta o no matchea.
 export function checkApiKeyAuth(request: Request, expected: string): boolean {
-  const key = request.headers.get('x-api-key');
-  if (!key) return false;
-  return constantTimeEqual(key, expected);
+  const received = request.headers.get('x-api-key-hash');
+  if (!received) return false;
+  return constantTimeEqual(received, hashApiKey(expected));
 }
 
 // Valida `Authorization: Bearer <token>` contra `expected`. Lo usa solo el gate

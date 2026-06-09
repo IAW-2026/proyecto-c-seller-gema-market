@@ -10,6 +10,14 @@ const isPublicRoute = createRouteMatcher([
   // consume server-to-server. La Shipping App real vivirá en otro dominio
   // sin Clerk; durante el desarrollo individual los mockeamos acá.
   '/api/shipping(.*)',
+  // API de integración con el marketplace (Buyer, Payments, Shipping). No usan
+  // sesión Clerk: cada handler valida el header `X-API-Key-Hash` por su cuenta
+  // (lib/api/auth.ts → requireApiKeyAuth). Sin esto Clerk las frenaría antes de
+  // llegar al gate de la API key.
+  '/api/seller(.*)',
+  // Jobs internos disparados por Vercel Cron, autenticados con CRON_SECRET
+  // (Authorization: Bearer) en el propio handler — no por sesión Clerk.
+  '/api/internal(.*)',
 ]);
 
 export default clerkMiddleware(
