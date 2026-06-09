@@ -11,11 +11,12 @@ function constantTimeEqual(received: string, expected: string): boolean {
   return timingSafeEqual(receivedBuf, expectedBuf);
 }
 
-// SHA-256 hex de la API key. Las webapps con las que se integra el Seller App
-// mandan el digest en vez de la key cruda, así que tanto las llamadas salientes
-// (lib/shipping/client.ts) como la validación entrante usan este mismo hashing.
+// SHA-256 hex (MAYÚSCULAS) de la API key. Las webapps con las que se integra el
+// Seller App mandan el digest en hex uppercase, así que tanto las llamadas
+// salientes (lib/shipping/client.ts) como la validación entrante usan este mismo
+// hashing. Ojo: digest('hex') devuelve lowercase, por eso el toUpperCase().
 export function hashApiKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex');
+  return createHash('sha256').update(key).digest('hex').toUpperCase();
 }
 
 // Valida `X-API-Key-Hash: <sha256(key)>` contra el hash de `expected` (la key
