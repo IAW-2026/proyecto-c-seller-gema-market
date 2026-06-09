@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requireBearerAuth } from '@/lib/api/auth';
+import { requireApiKeyAuth } from '@/lib/api/auth';
 import { jsonNotFound, jsonOk } from '@/lib/api/responses';
 import { parseSearchParams } from '@/lib/api/validation';
 import { findPublicShop } from '@/lib/data/public-shop';
@@ -18,7 +18,7 @@ export async function GET(
   request: Request,
   segment: { params: Promise<{ seller_id: string }> },
 ): Promise<Response> {
-  const authErr = requireBearerAuth(request);
+  const authErr = requireApiKeyAuth(request);
   if (authErr) return authErr;
 
   const { seller_id } = await segment.params;
