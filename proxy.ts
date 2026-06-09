@@ -6,10 +6,6 @@ const isPublicRoute = createRouteMatcher([
   // Callback del flujo OAuth (Google): debe ser accesible sin sesión activa
   // mientras Clerk finaliza el sign-in/sign-up.
   '/sso-callback(.*)',
-  // Mocks de servicios externos (Shipping, Payments, etc.) que la Seller App
-  // consume server-to-server. La Shipping App real vivirá en otro dominio
-  // sin Clerk; durante el desarrollo individual los mockeamos acá.
-  '/api/shipping(.*)',
   // API de integración con el marketplace (Buyer, Payments, Shipping). No usan
   // sesión Clerk: cada handler valida el header `X-API-Key-Hash` por su cuenta
   // (lib/api/auth.ts → requireApiKeyAuth). Sin esto Clerk las frenaría antes de
