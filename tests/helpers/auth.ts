@@ -4,5 +4,5 @@
 export function authHeader(): Record<string, string> {
   const key = process.env.SELLER_INTERNAL_API_KEY;
   if (!key) throw new Error('SELLER_INTERNAL_API_KEY no está seteada en tests');
-  return { authorization: `Bearer ${key}` };
+  return { 'x-api-key': key };
 }

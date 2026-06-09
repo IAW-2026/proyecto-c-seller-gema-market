@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requireBearerAuth } from '@/lib/api/auth';
+import { requireApiKeyAuth } from '@/lib/api/auth';
 import { jsonOk } from '@/lib/api/responses';
 import { parseSearchParams } from '@/lib/api/validation';
 import { listPublicProducts } from '@/lib/data/public-products';
@@ -21,7 +21,7 @@ const QuerySchema = z.object({
 
 // GET /api/seller/productos — listado paginado del catálogo público.
 export async function GET(request: Request): Promise<Response> {
-  const authErr = requireBearerAuth(request);
+  const authErr = requireApiKeyAuth(request);
   if (authErr) return authErr;
 
   const parsed = parseSearchParams(request.url, QuerySchema);

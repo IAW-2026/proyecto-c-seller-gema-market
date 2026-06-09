@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requireBearerAuth } from '@/lib/api/auth';
+import { requireApiKeyAuth } from '@/lib/api/auth';
 import {
   jsonConflict,
   jsonNotFound,
@@ -23,7 +23,7 @@ export async function POST(
   request: Request,
   segment: { params: Promise<{ product_id: string }> },
 ): Promise<Response> {
-  const authErr = requireBearerAuth(request);
+  const authErr = requireApiKeyAuth(request);
   if (authErr) return authErr;
 
   const { product_id } = await segment.params;
