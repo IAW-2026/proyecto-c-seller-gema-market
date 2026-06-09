@@ -16,7 +16,9 @@ export async function advanceOrderStatusAction(orderId: string): Promise<void> {
   if (order.status !== "paid") return;
 
   const { trackingCode } = await requestShipping({
-    orderId,
+    // `orderId` (el param del action) es el id de la Sale; Shipping espera el
+    // order_id de negocio, que vive en `order.orderId`.
+    orderId: order.orderId,
     sellerId: seller.id,
     buyerId: order.buyerId,
     originAddress: {
