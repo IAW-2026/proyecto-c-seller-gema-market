@@ -305,3 +305,26 @@ export async function findPublicProductsByIds(
     return item ? [item] : [];
   });
 }
+
+export type OriginAddress = { street: string; number: string; zip: string };
+
+// Dirección de origen del envío: la del vendedor dueño del producto. La consume
+// la Shipping App para cotizar/crear el envío. Busca por id SIN los filtros de
+// catálogo público (un producto vendido puede estar pausado/oculto/eliminado y
+// aún así necesita resolver su origen). Devuelve null si el producto no existe.
+export async function findProductOriginAddress(
+  productId: string,
+): Promise<OriginAddress | null> {
+  const row = await prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      seller: { select: { street: true, number: true, postalCode: true } },
+    },
+  });
+  if (!row) return null;
+  return {
+    street: row.seller.street,
+    number: row.seller.number,
+    zip: row.seller.postalCode,
+  };
+}
