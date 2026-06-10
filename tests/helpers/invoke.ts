@@ -39,3 +39,30 @@ export async function invokePost<P extends Record<string, string> = Record<strin
   });
   return handler(req, { params: Promise.resolve((opts.params ?? {}) as P) });
 }
+
+export async function invokePatch<P extends Record<string, string> = Record<string, string>>(
+  handler: Handler<P>,
+  opts: { url: string; body?: unknown; headers?: Headers; params?: P },
+): Promise<Response> {
+  const headers: Headers = {
+    'content-type': 'application/json',
+    ...opts.headers,
+  };
+  const req = new Request(opts.url, {
+    method: 'PATCH',
+    headers,
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  });
+  return handler(req, { params: Promise.resolve((opts.params ?? {}) as P) });
+}
+
+export async function invokeDelete<P extends Record<string, string> = Record<string, string>>(
+  handler: Handler<P>,
+  opts: { url: string; headers?: Headers; params?: P },
+): Promise<Response> {
+  const req = new Request(opts.url, {
+    method: 'DELETE',
+    headers: opts.headers,
+  });
+  return handler(req, { params: Promise.resolve((opts.params ?? {}) as P) });
+}
