@@ -22,6 +22,32 @@ export async function listCategoriesWithCounts(): Promise<
   return rows.map((r) => ({ id: r.id, name: r.name, productsCount: r._count.products }));
 }
 
+// Lookup por id — lo usa la API admin para devolver 404 antes de mutar.
+export async function findCategory(id: string): Promise<Category | null> {
+  return prisma.categoria.findUnique({
+    where: { id },
+    select: { id: true, name: true },
+  });
+}
+
+// Detecta nombre duplicado (case-insensitive) — lo usa la API admin para
+// devolver 409 al crear/renombrar. `exceptId` excluye la propia categoría en un
+// rename. `Categoria.name` no tiene constraint `@unique` en el schema, así que
+// la unicidad se valida acá a nivel app.
+export async function categoryNameExists(
+  name: string,
+  exceptId?: string,
+): Promise<boolean> {
+  const found = await prisma.categoria.findFirst({
+    where: {
+      name: { equals: name, mode: 'insensitive' },
+      id: exceptId ? { not: exceptId } : undefined,
+    },
+    select: { id: true },
+  });
+  return found !== null;
+}
+
 export async function createCategory(name: string): Promise<Category> {
   return prisma.categoria.create({
     data: { id: newId(PREFIXES.categoria), name },
