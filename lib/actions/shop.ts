@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { requireSeller } from "@/lib/auth/current-seller";
 import { validateShopFields } from "@/lib/auth/shop-fields";
+import { checkShopOrigin } from "@/lib/shipping/verify-shop-origin";
 import {
   saveSeller,
   uploadSellerCover,
@@ -17,6 +18,22 @@ export async function saveSellerAction(input: SellerInput): Promise<void> {
   if (Object.keys(validateShopFields(input)).length > 0) {
     throw new Error("Revisá los datos de la tienda: hay campos obligatorios o inválidos.");
   }
+
+  // Solo verificamos contra Shipping si la dirección cambió: evita una llamada
+  // al servicio en ediciones que no la tocan (nombre, bio, teléfono).
+  const addressChanged =
+    input.street !== seller.street ||
+    input.number !== seller.number ||
+    input.postalCode !== seller.postalCode;
+  if (addressChanged) {
+    const originError = await checkShopOrigin({
+      street: input.street,
+      number: input.number,
+      zip: input.postalCode,
+    });
+    if (originError) throw new Error(originError);
+  }
+
   await saveSeller(seller.id, input);
   updateTag(`shop:${seller.id}`);
 }

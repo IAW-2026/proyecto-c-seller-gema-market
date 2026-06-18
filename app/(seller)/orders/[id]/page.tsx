@@ -7,6 +7,7 @@ import { requireSeller } from "@/lib/auth/current-seller";
 import { findOwnedOrder } from "@/lib/data/orders";
 import { findOwnedProductIncludingDeleted } from "@/lib/data/products";
 import { getOrderBuyerInfo, getOrderPaymentInfo } from "@/lib/data/order-detail";
+import { getShipmentTrackingUrl } from "@/lib/shipping/client";
 
 type OrderPageProps = { params: Promise<{ id: string }> };
 
@@ -35,12 +36,20 @@ async function OrderContent({ params }: OrderPageProps) {
   const buyerInfo = await getOrderBuyerInfo(order);
   const paymentInfo = getOrderPaymentInfo(order);
 
+  // Link al tracking que expone la Shipping App. Solo se consulta mientras el
+  // envío está en curso y hay código; degrada a null sin romper el detalle.
+  const trackingUrl =
+    order.status === "shipping" && order.trackingCode
+      ? await getShipmentTrackingUrl(order.orderId)
+      : null;
+
   return (
     <OrderDetailScreen
       order={order}
       product={product}
       buyerInfo={buyerInfo}
       paymentInfo={paymentInfo}
+      trackingUrl={trackingUrl}
     />
   );
 }

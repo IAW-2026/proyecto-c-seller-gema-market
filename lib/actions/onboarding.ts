@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSeller } from "@/lib/auth/current-seller";
+import { checkShopOrigin } from "@/lib/shipping/verify-shop-origin";
 import {
   validateShopFields,
   type ShopFieldErrors,
@@ -43,6 +44,16 @@ export async function completeOnboardingAction(
   const errors = validateShopFields(values);
   if (Object.keys(errors).length > 0) {
     return { errors, values };
+  }
+
+  // La dirección debe existir y estar en zona de cobertura (Bahía Blanca).
+  const originError = await checkShopOrigin({
+    street: values.street,
+    number: values.number,
+    zip: values.postalCode,
+  });
+  if (originError) {
+    return { errors: { street: originError }, values };
   }
 
   await prisma.seller.update({
