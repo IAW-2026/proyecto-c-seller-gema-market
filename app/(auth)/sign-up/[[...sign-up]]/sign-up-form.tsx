@@ -11,6 +11,7 @@ import { VerificationCodeStep } from "@/app/(auth)/_components/verification-code
 import { GoogleAuthBlock } from "@/app/(auth)/_components/google-auth-block";
 import { clerkErrorMessage } from "@/lib/auth/clerk-error-messages";
 import { finalizeWithRedirect } from "@/lib/auth/finalize-redirect";
+import { verifyShopOriginAction } from "@/lib/actions/verify-origin";
 import {
   SHOP_FIELD_RULES,
   validateShopFields,
@@ -47,6 +48,7 @@ export function SignUpForm() {
   const [shopErrors, setShopErrors] = useState<ShopFieldErrors>({});
   const [code, setCode] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   const pending = fetchStatus === "fetching";
   const redirectUrl = searchParams.get("redirect_url") ?? DEFAULT_REDIRECT;
@@ -63,7 +65,7 @@ export function SignUpForm() {
   }
 
   async function handleDetailsSubmit() {
-    if (pending) return;
+    if (pending || verifying) return;
 
     setFormError(null);
 
@@ -73,6 +75,29 @@ export function SignUpForm() {
     const errors = validateShopFields(shop);
     setShopErrors(errors);
     if (Object.keys(errors).length > 0) return;
+
+    // La dirección de origen debe existir y estar en zona de cobertura. Se
+    // verifica contra la Shipping App antes de crear la cuenta (fail-closed:
+    // si el servicio no responde, no avanzamos).
+    setVerifying(true);
+    let originError: string | null = null;
+    try {
+      const result = await verifyShopOriginAction({
+        street: shop.street.trim(),
+        number: shop.number.trim(),
+        zip: shop.postalCode.trim() || undefined,
+      });
+      if (!result.ok) originError = result.message;
+    } catch {
+      originError =
+        "No pudimos verificar la dirección con el servicio de envíos. Probá de nuevo en unos minutos.";
+    } finally {
+      setVerifying(false);
+    }
+    if (originError) {
+      setShopErrors({ street: originError });
+      return;
+    }
 
     const trimmedShop: Record<string, string> = {};
     for (const name of Object.keys(SHOP_FIELD_RULES) as ShopFieldName[]) {
@@ -241,8 +266,12 @@ export function SignUpForm() {
         </div>
       )}
 
-      <Button type="submit" full disabled={pending}>
-        {pending ? "Creando cuenta…" : "Crear cuenta"}
+      <Button type="submit" full disabled={pending || verifying}>
+        {verifying
+          ? "Verificando dirección…"
+          : pending
+            ? "Creando cuenta…"
+            : "Crear cuenta"}
       </Button>
       </form>
     </div>
