@@ -19,6 +19,9 @@ export type OrderDetailScreenProps = {
   product: ProductWithJoins;
   buyerInfo: BuyerInfo;
   paymentInfo: PaymentInfo;
+  // Link al tracking que devuelve la Shipping App. Null si no se pudo obtener:
+  // en ese caso el código se muestra como texto plano.
+  trackingUrl?: string | null;
 };
 
 export function OrderDetailScreen({
@@ -26,6 +29,7 @@ export function OrderDetailScreen({
   product,
   buyerInfo,
   paymentInfo,
+  trackingUrl,
 }: OrderDetailScreenProps) {
   const status = ORDER_STATUS_META[order.status];
   const statusIndex = getOrderTimelineIndex(order.status);
@@ -123,7 +127,19 @@ export function OrderDetailScreen({
                 Envío
               </h4>
               <div className="text-xs text-ink-3">
-                Tracking: <span className="font-mono">{order.trackingCode}</span>
+                Tracking:{" "}
+                {trackingUrl ? (
+                  <a
+                    href={trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-olive hover:underline underline-offset-2"
+                  >
+                    {order.trackingCode}
+                  </a>
+                ) : (
+                  <span className="font-mono">{order.trackingCode}</span>
+                )}
               </div>
             </Card>
           )}
