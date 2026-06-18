@@ -1,0 +1,315 @@
+import 'server-only';
+import { cacheTag } from 'next/cache';
+import { Prisma } from '@/lib/generated/prisma/client';
+import { prisma } from '@/lib/db';
+import { newId, PREFIXES } from '@/lib/ids';
+import {
+  deleteImageByUrl,
+  removedUrls,
+  uploadImage,
+} from '@/lib/storage/images';
+import type {
+  Page,
+  PageSize,
+  ProductFilters,
+  ProductInput,
+  ProductStatus,
+  ProductWithJoins,
+  SortBy,
+  StockFilter,
+  StockSummary,
+} from '@/types/domain';
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '@/types/domain';
+
+const productSelect = {
+  id: true,
+  sellerId: true,
+  title: true,
+  description: true,
+  weight: true,
+  height: true,
+  width: true,
+  depth: true,
+  condition: true,
+  material: true,
+  color: true,
+  price: true,
+  currency: true,
+  categoryId: true,
+  stock: true,
+  status: true,
+  thumbnailUrl: true,
+  images: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  category: { select: { name: true } },
+  seller: { select: { shopName: true } },
+  _count: { select: { sales: true } },
+} satisfies Prisma.ProductSelect;
+
+type ProductRow = Prisma.ProductGetPayload<{ select: typeof productSelect }>;
+
+function toProductWithJoins(row: ProductRow): ProductWithJoins {
+  const { seller, category, _count, price, images, ...rest } = row;
+  return {
+    ...rest,
+    price: price.toNumber(),
+    images: Array.isArray(images)
+      ? images.filter((x): x is string => typeof x === 'string')
+      : [],
+    sellerShopName: seller.shopName,
+    categoryName: category.name,
+    salesCount: _count.sales,
+  };
+}
+
+function buildWhere(filters: ProductFilters): Prisma.ProductWhereInput {
+  const query = filters.query?.trim();
+  return {
+    sellerId: filters.sellerId,
+    status: filters.status,
+    // Soft delete: las publicaciones eliminadas nunca aparecen en el catálogo.
+    deletedAt: null,
+    title: query ? { contains: query, mode: 'insensitive' } : undefined,
+    stock:
+      filters.stockFilter === 'low'
+        ? { gt: 0, lt: 5 }
+        : filters.stockFilter === 'out'
+          ? 0
+          : undefined,
+  };
+}
+
+function buildOrderBy(
+  sortBy: SortBy | undefined,
+): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
+  switch (sortBy) {
+    case 'price_asc':  return { price: 'asc' };
+    case 'price_desc': return { price: 'desc' };
+    case 'sales_asc':  return { sales: { _count: 'asc' } };
+    case 'sales_desc': return { sales: { _count: 'desc' } };
+    case 'stock_asc':  return { stock: 'asc' };
+    case 'stock_desc': return { stock: 'desc' };
+    case 'created_asc':  return { createdAt: 'asc' };
+    case 'created_desc': return { createdAt: 'desc' };
+    default:           return { createdAt: 'desc' };
+  }
+}
+
+function resolvePageSize(value: number | undefined, fallback: PageSize): PageSize {
+  return (PAGE_SIZES as ReadonlyArray<number>).includes(value ?? -1)
+    ? (value as PageSize)
+    : fallback;
+}
+
+export async function listProducts(
+  filters: ProductFilters = {},
+): Promise<Page<ProductWithJoins>> {
+  const where = buildWhere(filters);
+  const pageSize = resolvePageSize(filters.pageSize, DEFAULT_PAGE_SIZE);
+  const requested = Math.max(1, Math.floor(filters.page ?? 1));
+  const total = await prisma.product.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(requested, totalPages);
+  const offset = (page - 1) * pageSize;
+  const rows = await prisma.product.findMany({
+    where,
+    orderBy: buildOrderBy(filters.sortBy),
+    skip: offset,
+    take: pageSize,
+    select: productSelect,
+  });
+  return { items: rows.map(toProductWithJoins), total, page, pageSize };
+}
+
+// Wrapper cacheado de `listProducts` para los listings sin búsqueda libre.
+// Las páginas hacen el switch: si hay `query`, llaman a `listProducts`
+// (cada combinación de texto es nueva → no vale la pena cachear); si no,
+// llaman acá y se reusan combinaciones finitas (tab/sort/stockFilter/page).
+export async function listProductsCached(
+  sellerId: string,
+  status: ProductStatus | undefined,
+  sortBy: SortBy | undefined,
+  stockFilter: StockFilter | undefined,
+  page: number,
+  pageSize: number | undefined,
+): Promise<Page<ProductWithJoins>> {
+  "use cache";
+  cacheTag(`products-listing:${sellerId}`);
+  return listProducts({ sellerId, status, sortBy, stockFilter, page, pageSize });
+}
+
+export async function countProductsByStatus(
+  sellerId?: string,
+): Promise<Record<ProductStatus, number>> {
+  "use cache";
+  cacheTag(`products-counts:${sellerId ?? 'all'}`);
+  const groups = await prisma.product.groupBy({
+    by: ['status'],
+    where: { sellerId, deletedAt: null },
+    _count: { _all: true },
+  });
+  const out: Record<ProductStatus, number> = { active: 0, paused: 0 };
+  for (const g of groups) {
+    out[g.status] = g._count._all;
+  }
+  return out;
+}
+
+export async function getStockSummary(sellerId?: string): Promise<StockSummary> {
+  "use cache";
+  cacheTag(`stock-summary:${sellerId ?? 'all'}`);
+  const where: Prisma.ProductWhereInput = { sellerId, deletedAt: null };
+  const [agg, activeSkus, outOfStock] = await Promise.all([
+    prisma.product.aggregate({ where, _sum: { stock: true } }),
+    prisma.product.count({ where: { ...where, status: 'active' } }),
+    prisma.product.count({ where: { ...where, stock: 0 } }),
+  ]);
+  return {
+    totalUnits: agg._sum.stock ?? 0,
+    activeSkus,
+    outOfStock,
+  };
+}
+
+export async function getTopProducts(
+  limit: number,
+  sellerId?: string,
+): Promise<ReadonlyArray<ProductWithJoins>> {
+  const rows = await prisma.product.findMany({
+    where: { sellerId, deletedAt: null },
+    orderBy: { sales: { _count: 'desc' } },
+    take: limit,
+    select: productSelect,
+  });
+  return rows.map(toProductWithJoins);
+}
+
+// Lookup scopeado al seller dueño. Es la única forma de leer un producto
+// en el panel: nunca queremos exponer detalles de un producto ajeno por
+// adivinar su `id` en la URL.
+export async function findOwnedProduct(
+  id: string,
+  sellerId: string,
+): Promise<ProductWithJoins | null> {
+  "use cache";
+  cacheTag(`product:${id}`);
+  const row = await prisma.product.findFirst({
+    where: { id, sellerId, deletedAt: null },
+    select: productSelect,
+  });
+  return row ? toProductWithJoins(row) : null;
+}
+
+// Variante que incluye productos soft-deleted. Usada por el detalle de
+// pedidos: si la publicación se eliminó, el pedido sigue siendo válido y
+// debe poder mostrarse con los datos del producto al momento de la venta.
+export async function findOwnedProductIncludingDeleted(
+  id: string,
+  sellerId: string,
+): Promise<ProductWithJoins | null> {
+  "use cache";
+  cacheTag(`product:${id}`);
+  const row = await prisma.product.findFirst({
+    where: { id, sellerId },
+    select: productSelect,
+  });
+  return row ? toProductWithJoins(row) : null;
+}
+
+export async function saveProduct(
+  sellerId: string,
+  input: ProductInput,
+): Promise<ProductWithJoins> {
+  const data = {
+    title: input.title,
+    description: input.description,
+    weight: input.weight,
+    height: input.height,
+    width: input.width,
+    depth: input.depth,
+    condition: input.condition,
+    material: input.material,
+    color: input.color,
+    price: new Prisma.Decimal(input.price),
+    currency: input.currency,
+    categoryId: input.categoryId,
+    stock: input.stock,
+    status: input.status,
+    thumbnailUrl: input.thumbnailUrl,
+    images: [...input.images],
+  };
+  if (input.id) {
+    // Verificamos ownership antes de tocar el row. `sellerId` no entra al
+    // `data` — un seller no puede reasignarse productos ajenos. El filtro por
+    // `deletedAt: null` impide editar publicaciones soft-deleted.
+    const existing = await prisma.product.findFirst({
+      where: { id: input.id, sellerId, deletedAt: null },
+      select: { id: true, thumbnailUrl: true, images: true },
+    });
+    if (!existing) throw new Error("Producto no encontrado.");
+    const row = await prisma.product.update({
+      where: { id: input.id },
+      data,
+      select: productSelect,
+    });
+    // Cleanup best-effort de imágenes que el seller quitó del form.
+    const oldImages = Array.isArray(existing.images)
+      ? existing.images.filter((x): x is string => typeof x === 'string')
+      : [];
+    const orphans = removedUrls(oldImages, input.images);
+    if (existing.thumbnailUrl && existing.thumbnailUrl !== input.thumbnailUrl) {
+      orphans.push(existing.thumbnailUrl);
+    }
+    await Promise.all(orphans.map((url) => deleteImageByUrl(url)));
+    return toProductWithJoins(row);
+  }
+  const row = await prisma.product.create({
+    data: { id: newId(PREFIXES.product), sellerId, ...data },
+    select: productSelect,
+  });
+  return toProductWithJoins(row);
+}
+
+export async function updateProductStock(
+  productId: string,
+  sellerId: string,
+  stock: number,
+): Promise<void> {
+  // `updateMany` con filtro por `sellerId` evita modificar stock ajeno y
+  // `deletedAt: null` impide tocar publicaciones soft-deleted.
+  const result = await prisma.product.updateMany({
+    where: { id: productId, sellerId, deletedAt: null },
+    data: { stock },
+  });
+  if (result.count === 0) {
+    throw new Error("Producto no encontrado.");
+  }
+}
+
+export async function deleteProduct(
+  productId: string,
+  sellerId: string,
+): Promise<void> {
+  // Soft delete: el row sobrevive para preservar el historial de ventas y
+  // reservas. El filtro por `sellerId` evita borrar productos ajenos y
+  // `deletedAt: null` hace la operación idempotente.
+  const result = await prisma.product.updateMany({
+    where: { id: productId, sellerId, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
+  if (result.count === 0) {
+    throw new Error("Producto no encontrado.");
+  }
+}
+
+// El productId no existe todavía al subir desde "Nueva publicación", por eso
+// agrupamos las imágenes solo por seller. Si el seller nunca guarda el form,
+// las URLs quedan huérfanas en el bucket — limitación conocida.
+export async function uploadProductImage(
+  sellerId: string,
+  file: File,
+): Promise<string> {
+  return uploadImage(file, `products/${sellerId}`);
+}

@@ -1,0 +1,167 @@
+// UniHousing — Seller App
+//
+// Schema base del bounded context Seller.
+// Decisiones de modelado deben quedar reflejadas en docs/modelo-de-datos-seller.md.
+//
+// IDs: ULID con prefijo por modelo (`prd_`, `usr_`, `cat_`, `vnt_`, `rsv_`),
+// según el contrato definido en docs/apis.md. La generación se hace en la app
+// vía `lib/ids.ts` y la extensión de Prisma Client en `lib/db.ts`, no en el DB.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ProductStatus {
+  active
+  paused
+}
+
+// Solo dos estados válidos. El data layer convierte el valor del DB al tipo de dominio.
+enum ProductCondition {
+  nuevo
+  usado
+}
+
+// Alineado con venta.status del modelo de datos y con el tipo OrderStatus del dominio.
+// El flujo en esta app empieza una vez aprobado el pago: la venta nace en `paid`
+// y avanza linealmente. `shipping_failed` lo setea Shipping App si el envío rebota.
+enum SaleStatus {
+  paid
+  shipping
+  delivered
+  shipping_failed
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+// Caché local del usuario de Clerk. `clerkUserId` es la única fuente de
+// identidad — `email`/`phone` son denormalizaciones del usuario de Clerk y
+// NO se usan como clave: Clerk ya asegura unicidad de email a nivel de cuenta,
+// y duplicar el constraint acá generaría conflictos al re-provisionar.
+//
+// `shopName` se completa en /onboarding (no viene de Clerk). Mientras esté
+// vacío, el gate de `(seller)/layout.tsx` redirige al onboarding. El nombre
+// real del usuario vive solo en Clerk (`first_name`/`last_name`) y se lee con
+// `currentUser()` cuando la UI lo necesita — no se denormaliza acá.
+model Seller {
+  id          String     @id
+  clerkUserId String     @unique
+  shopName    String
+  email       String
+  phone       String
+  bio         String?
+  // El rol (seller / seller_admin) NO vive acá: se modela en Clerk
+  // (`publicMetadata.role`) y se lee con `lib/auth/role.ts`. La identidad y los
+  // permisos son responsabilidad de Clerk; esta tabla es solo caché de perfil.
+  //
+  // Moderación: un admin puede suspender la cuenta. Mientras `suspended` sea
+  // true, los productos del seller se excluyen del catálogo público y su panel
+  // queda bloqueado (ver `(seller)/layout.tsx`).
+  suspended   Boolean    @default(false)
+  city        String
+  street      String
+  number      String
+  apartment   String?
+  postalCode  String
+  coverUrl    String?
+  logoUrl     String?
+  products    Product[]
+  sales       Sale[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Categoria {
+  id       String    @id
+  name     String
+  products Product[]
+}
+
+model Product {
+  id           String           @id
+  sellerId     String
+  title        String
+  description  String
+  weight       Int
+  height       Int
+  width        Int
+  depth        Int
+  condition    ProductCondition @default(nuevo)
+  material     String
+  color        String
+  price        Decimal          @db.Decimal(10, 2)
+  currency     String           @default("ARS") @db.Char(3)
+  categoryId   String
+  stock        Int              @default(0)
+  status       ProductStatus    @default(active)
+  // Moderación del admin: cuando es true la publicación se excluye del catálogo
+  // público sin importar `status`. Es autoridad del admin — el seller no puede
+  // revertirla desde su panel (a diferencia de `status: paused`).
+  hiddenByAdmin Boolean         @default(false)
+  thumbnailUrl String?
+  images       Json             @default("[]")
+  // Soft delete: null mientras la publicación esté viva. Cuando el seller la
+  // elimina, se setea con timestamp y la publicación deja de aparecer en el
+  // catálogo, pero el row sobrevive para preservar las ventas/reservas
+  // históricas que la referencian.
+  deletedAt    DateTime?
+  seller       Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  category     Categoria        @relation(fields: [categoryId], references: [id])
+  sales        Sale[]
+  reservations Reserva[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([sellerId, status])
+  @@index([sellerId, deletedAt])
+  @@index([title])
+}
+
+// Una venta = una línea de pedido del Buyer App.
+// Múltiples ventas pueden compartir el mismo orderId (un pedido con varios productos).
+model Sale {
+  id        String     @id
+  orderId   String
+  productId String
+  sellerId  String
+  buyerId   String
+  buyerName String
+  paymentId String
+  amount    Int
+  total     Decimal    @db.Decimal(10, 2)
+  fee       Decimal    @db.Decimal(10, 2)
+  status    SaleStatus @default(paid)
+  // Lo devuelve la Shipping App al pasar de `paid` → `shipping`. Null mientras
+  // la venta esté en `paid`. Se conserva en `delivered`/`shipping_failed`
+  // aunque la UI solo lo muestre durante `shipping`.
+  trackingCode String?
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  seller    Seller     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([sellerId, status])
+  @@index([orderId])
+  @@index([sellerId, createdAt])
+}
+
+// Reserva temporal de stock durante el proceso de checkout del Buyer App.
+model Reserva {
+  id        String   @id
+  productId String
+  orderId   String
+  buyerId   String
+  buyerName String
+  quantity  Int
+  expiresAt DateTime
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}

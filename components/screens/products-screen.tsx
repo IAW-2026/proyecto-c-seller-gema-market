@@ -1,0 +1,180 @@
+import Link from "next/link";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { Pager } from "@/components/ui/pager";
+import { Pill } from "@/components/ui/pill";
+import { ProductThumb } from "@/components/ui/product-thumb";
+import type { TabItem } from "@/components/ui/tabs";
+import { fmtARS, fmtOrderDate } from "@/lib/ui/format";
+import type { ProductWithJoins } from "@/types/domain";
+import { DeleteProductButton } from "./delete-product-button";
+import { ProductsToolbar } from "./products-toolbar";
+
+export type ProductsScreenProps = {
+  products: ReadonlyArray<ProductWithJoins>;
+  page: number;
+  pageSize: number;
+  total: number;
+  activeTab: string;
+  counts: { active: number; paused: number };
+};
+
+export function ProductsScreen({
+  products,
+  page,
+  pageSize,
+  total,
+  activeTab,
+  counts,
+}: ProductsScreenProps) {
+  const tabs: ReadonlyArray<TabItem> = [
+    { id: "active", label: "Activas", count: counts.active },
+    { id: "paused", label: "Pausadas", count: counts.paused },
+  ];
+
+  return (
+    <>
+      <ProductsToolbar activeTab={activeTab} tabs={tabs} />
+      <div className="mt-4">
+        <Card padding={0}>
+          <div className="overflow-x-auto hidden lgx:block">
+            <table className="w-full border-collapse text-[13px] min-w-[640px]">
+              <thead className="bg-cream">
+                <tr className="text-left text-ink-3 font-mono text-[11px] uppercase tracking-[0.06em]">
+                  <th className="py-2.5 px-5">Producto</th>
+                  <th className="py-2.5 px-3">Precio</th>
+                  <th className="py-2.5 px-3">Stock</th>
+                  <th className="py-2.5 px-3">Ventas</th>
+                  <th className="py-2.5 px-3">Publicado</th>
+                  <th className="py-2.5 px-5"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => {
+                  return (
+                  <tr key={p.id} className="border-b border-line">
+                    <td className="py-3 px-5">
+                      <Link
+                        href={`/products/${p.id}`}
+                        className="flex items-center gap-3"
+                      >
+                        <ProductThumb
+                          product={p}
+                          className="w-11 h-11 rounded-[10px]"
+                          glyphSize={28}
+                          imageSizes="44px"
+                        />
+                        <div>
+                          <div className="font-medium">{p.title}</div>
+                          <div className="text-[11px] text-ink-3">
+                            {p.categoryName}
+                          </div>
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="py-3 px-3 font-semibold">{fmtARS(p.price)}</td>
+                    <td className="py-3 px-3">
+                      <Pill size="sm" tone={p.stock < 5 ? "warn" : "sage"}>
+                        {p.stock}
+                      </Pill>
+                    </td>
+                    <td className="py-3 px-3 text-ink-3">{p.salesCount}</td>
+                    <td className="py-3 px-3 text-ink-3 whitespace-nowrap">
+                      {fmtOrderDate(p.createdAt)}
+                    </td>
+                    <td className="py-3 px-5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/products/${p.id}`}
+                          className="w-8 h-8 rounded-full bg-bone inline-flex items-center justify-center hover:bg-[#e8e2d9] transition-colors"
+                          aria-label={`Editar ${p.title}`}
+                        >
+                          <Icon name="edit" size={14} />
+                        </Link>
+                        <DeleteProductButton
+                          productId={p.id}
+                          productName={p.title}
+                          variant="icon"
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                  );
+                })}
+                {products.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-12 px-5 text-center text-ink-3">
+                      No hay publicaciones que coincidan con tu búsqueda.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="grid gap-3 p-3 lgx:hidden">
+            {products.map((p) => {
+              return (
+                <div
+                  key={p.id}
+                  className="relative bg-paper border border-line rounded-2xl p-3"
+                >
+                  <Link
+                    href={`/products/${p.id}`}
+                    className="block"
+                    aria-label={`Editar ${p.title}`}
+                  >
+                    <div className="flex gap-3 items-center pr-10">
+                      <ProductThumb
+                        product={p}
+                        className="w-[52px] h-[52px] rounded-xl"
+                        glyphSize={32}
+                        imageSizes="52px"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold leading-[1.25]">
+                          {p.title}
+                        </div>
+                        <div className="text-[11px] text-ink-3 mt-[3px]">
+                          {p.categoryName} · {fmtOrderDate(p.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      <div className="bg-cream rounded-xl p-2.5">
+                        <div className="text-[10px] text-ink-3">Precio</div>
+                        <div className="text-[13px] font-bold">{fmtARS(p.price)}</div>
+                      </div>
+                      <div className="bg-cream rounded-xl p-2.5">
+                        <div className="text-[10px] text-ink-3">Stock</div>
+                        <Pill size="sm" tone={p.stock < 5 ? "warn" : "sage"}>
+                          {p.stock}
+                        </Pill>
+                      </div>
+                      <div className="bg-cream rounded-xl p-2.5">
+                        <div className="text-[10px] text-ink-3">Ventas</div>
+                        <div className="text-[13px] font-bold">{p.salesCount}</div>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="absolute top-2.5 right-2.5">
+                    <DeleteProductButton
+                      productId={p.id}
+                      productName={p.title}
+                      variant="icon"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {products.length === 0 && (
+              <div className="text-center text-ink-3 py-10 text-sm">
+                No hay publicaciones que coincidan con tu búsqueda.
+              </div>
+            )}
+          </div>
+          <Pager page={page} pageSize={pageSize} total={total} basePath="/products" />
+        </Card>
+      </div>
+    </>
+  );
+}
